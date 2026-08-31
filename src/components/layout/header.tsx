@@ -72,12 +72,12 @@ export function Header() {
           </SheetTrigger>
           <SheetContent
             side="right"
-            className="glass-panel w-full max-w-sm border-l border-border-subtle bg-surface-base"
+            className="glass-panel w-full max-w-sm border-l border-border-subtle bg-surface-base px-6 pb-8 pt-14"
           >
-            <SheetHeader>
+            <SheetHeader className="p-0">
               <SheetTitle className="sr-only">Navigation menu</SheetTitle>
             </SheetHeader>
-            <nav className="mt-8 flex flex-col gap-6" aria-label="Mobile">
+            <nav className="flex flex-col gap-6" aria-label="Mobile">
               {siteConfig.nav.map((item) => (
                 <Link
                   key={item.href}

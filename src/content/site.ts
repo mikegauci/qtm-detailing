@@ -11,22 +11,19 @@ export const siteConfig = {
     phone: "+356 9997 1101",
     whatsapp: "+356 9997 1101",
     address: "Xemxija, Malta",
-    mapEmbedUrl:
-      "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3232.5!2d14.461!3d35.898!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMzXCsDUzJzUyLjgiTiAxNMKwMjcnMzkuNiJF!5e0!3m2!1sen!2smt!4v1700000000000",
     coordinates: {
       lat: 35.898,
       lng: 14.461,
     },
   },
   hours: [
-    { day: "Monday – Friday", hours: "08:00 – 18:00" },
-    { day: "Saturday", hours: "09:00 – 14:00" },
+    { day: "Monday – Friday", hours: "09:00 – 19:00" },
+    { day: "Saturday", hours: "09:00 – 13:00" },
     { day: "Sunday", hours: "Closed" },
   ],
   social: {
     instagram: "https://instagram.com/qtm.detailing",
     facebook: "https://facebook.com/qtm.detailing",
-    tiktok: "https://tiktok.com/@qtm.detailing",
   },
   nav: [
     { label: "Home", href: "/" },

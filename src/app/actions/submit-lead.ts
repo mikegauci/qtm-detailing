@@ -9,7 +9,6 @@ const leadSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
   phone: z.string().optional(),
   vehicle: z.string().optional(),
-  service_interest: z.string().optional(),
   message: z.string().optional(),
   website: z.string().optional(),
 });
@@ -50,7 +49,6 @@ export async function submitLead(
     email: formData.get("email"),
     phone: formData.get("phone") || undefined,
     vehicle: formData.get("vehicle") || undefined,
-    service_interest: formData.get("service_interest") || undefined,
     message: formData.get("message") || undefined,
     website: formData.get("website") || undefined,
   };
@@ -95,7 +93,6 @@ export async function submitLead(
       email: leadData.email,
       phone: leadData.phone ?? null,
       vehicle: leadData.vehicle ?? null,
-      service_interest: leadData.service_interest ?? null,
       message: leadData.message ?? null,
       source: "website",
     });

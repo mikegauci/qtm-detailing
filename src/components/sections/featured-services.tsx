@@ -8,7 +8,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-
 
 export function FeaturedServicesSection() {
   return (
-    <section className="section-padding">
+    <section className="section-padding bg-surface-base">
       <div className="container-narrow">
         <FadeIn>
           <SectionHeading

@@ -4,18 +4,10 @@ import { useActionState, useEffect } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import { submitLead, type LeadFormState } from "@/app/actions/submit-lead";
-import { services } from "@/content/services";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 const initialState: LeadFormState = {
   success: false,
@@ -40,7 +32,7 @@ export function ContactForm() {
   }, [state]);
 
   return (
-    <form action={formAction} className="space-y-6" noValidate>
+    <form action={formAction} className="flex h-full flex-col gap-6" noValidate>
       {/* Honeypot — hidden from users, bots fill it */}
       <div className="absolute -left-[9999px]" aria-hidden="true">
         <Label htmlFor="website">Website</Label>
@@ -110,30 +102,13 @@ export function ContactForm() {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="service_interest">Service Interest</Label>
-        <Select name="service_interest">
-          <SelectTrigger id="service_interest">
-            <SelectValue placeholder="Select a service" />
-          </SelectTrigger>
-          <SelectContent>
-            {services.map((service) => (
-              <SelectItem key={service.id} value={service.title}>
-                {service.title}
-              </SelectItem>
-            ))}
-            <SelectItem value="Not sure yet">Not sure yet</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      <div className="space-y-2">
+      <div className="flex min-h-0 flex-1 flex-col gap-2">
         <Label htmlFor="message">Message</Label>
         <Textarea
           id="message"
           name="message"
           placeholder="Tell us about your vehicle's condition and what you're looking for..."
-          rows={5}
+          className="min-h-0 flex-1 resize-none field-sizing-fixed"
         />
       </div>
 

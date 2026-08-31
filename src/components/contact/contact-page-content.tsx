@@ -16,9 +16,9 @@ export function ContactPageContent() {
           />
         </FadeIn>
 
-        <div className="grid gap-12 lg:grid-cols-5">
-          <FadeIn delay={0.1} className="lg:col-span-3">
-            <div className="glass-panel rounded-2xl p-6 sm:p-8">
+        <div className="grid items-stretch gap-12 lg:grid-cols-5">
+          <FadeIn delay={0.1} className="h-full lg:col-span-3">
+            <div className="glass-panel flex h-full flex-col rounded-2xl p-6 sm:p-8">
               <ContactForm />
             </div>
           </FadeIn>
@@ -78,17 +78,6 @@ export function ContactPageContent() {
                     </li>
                   ))}
                 </ul>
-              </div>
-
-              <div className="glass-panel overflow-hidden rounded-2xl">
-                <iframe
-                  src={siteConfig.contact.mapEmbedUrl}
-                  title="QTM Detailing location map"
-                  className="h-64 w-full border-0 grayscale contrast-125"
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  allowFullScreen
-                />
               </div>
             </div>
           </FadeIn>

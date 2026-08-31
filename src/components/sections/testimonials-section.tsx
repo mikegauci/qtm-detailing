@@ -10,8 +10,8 @@ export function TestimonialsSection() {
         <FadeIn>
           <SectionHeading
             eyebrow="Testimonials"
-            title="Trusted by Malta's drivers"
-            description="Don't take our word for it — hear from customers who've experienced the QTM difference."
+            title="What our customers say"
+            description="Real feedback from people who've experienced the QTM difference firsthand."
           />
         </FadeIn>
 

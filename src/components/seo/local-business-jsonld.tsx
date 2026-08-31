@@ -24,23 +24,19 @@ export function LocalBusinessJsonLd() {
       {
         "@type": "OpeningHoursSpecification",
         dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
-        opens: "08:00",
-        closes: "18:00",
+        opens: "09:00",
+        closes: "19:00",
       },
       {
         "@type": "OpeningHoursSpecification",
         dayOfWeek: "Saturday",
         opens: "09:00",
-        closes: "14:00",
+        closes: "13:00",
       },
     ],
     priceRange: "€€",
     image: `${siteConfig.url}/qtm-logo.png`,
-    sameAs: [
-      siteConfig.social.instagram,
-      siteConfig.social.facebook,
-      siteConfig.social.tiktok,
-    ],
+    sameAs: [siteConfig.social.instagram, siteConfig.social.facebook],
   };
 
   return (

@@ -46,10 +46,12 @@ export function FeaturedServicesSection() {
                     <span className="text-sm font-semibold text-brand-cyan-400">
                       From {formatPrice(service.priceFrom)}
                     </span>
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      {service.duration}
-                    </span>
+                    {service.duration && (
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {service.duration}
+                      </span>
+                    )}
                   </div>
                 </div>
               </Link>

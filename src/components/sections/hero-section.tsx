@@ -1,16 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { ArrowRight, Shield, Sparkles, Award, Clock } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { CTAButton } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
-
-const trustItems = [
-  { icon: Shield, label: "Insured & Certified" },
-  { icon: Sparkles, label: "Premium Products" },
-  { icon: Award, label: "500+ Cars Detailed" },
-  { icon: Clock, label: "Same-Day Options" },
-];
 
 export function HeroSection() {
   return (
@@ -63,22 +56,6 @@ export function HeroSection() {
             >
               View Services
             </CTAButton>
-          </div>
-        </FadeIn>
-
-        <FadeIn delay={0.4}>
-          <div className="mt-16 grid grid-cols-2 gap-4 sm:grid-cols-4 lg:gap-8">
-            {trustItems.map((item) => (
-              <div
-                key={item.label}
-                className="glass-panel flex items-center gap-3 rounded-xl px-4 py-3"
-              >
-                <item.icon className="h-5 w-5 shrink-0 text-brand-purple-400" />
-                <span className="text-sm font-medium text-foreground">
-                  {item.label}
-                </span>
-              </div>
-            ))}
           </div>
         </FadeIn>
       </div>

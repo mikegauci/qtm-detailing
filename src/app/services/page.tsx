@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Clock, Check } from "lucide-react";
-import { services } from "@/content/services";
+import {
+  services,
+  paintProtectionIntro,
+  pricingInformation,
+} from "@/content/services";
 import { packages, comparisonFeatures } from "@/content/packages";
 import { faqItems } from "@/content/faq";
 import { formatPrice } from "@/lib/utils";
@@ -19,7 +23,7 @@ import { cn } from "@/lib/utils";
 export const metadata: Metadata = {
   title: "Services",
   description:
-    "Explore QTM Detailing services — exterior detailing, paint correction, ceramic coating, interior deep clean, and more. Premium automotive care in Malta.",
+    "Explore QTM Detailing services — premium interior deep clean, exterior detail, paint enhancement, ceramic protection, and signature packages. Premium automotive care in Malta.",
 };
 
 export default function ServicesPage() {
@@ -29,62 +33,100 @@ export default function ServicesPage() {
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
-              eyebrow="Services"
+              eyebrow="Premium Detailing Services"
               title="Every detail, perfected"
               description="Professional automotive detailing services tailored to your vehicle's needs. All prices in EUR."
             />
           </FadeIn>
 
           <StaggerContainer className="grid gap-8">
-            {services.map((service, index) => (
-              <StaggerItem key={service.id}>
-                <article
-                  className={cn(
-                    "glass-panel grid overflow-hidden rounded-2xl lg:grid-cols-2",
-                    index % 2 === 1 && "lg:[&>*:first-child]:order-2",
-                  )}
-                >
-                  <div className="relative aspect-[16/10] lg:aspect-auto lg:min-h-[320px]">
-                    <Image
-                      src={service.image}
-                      alt={service.title}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                    />
-                  </div>
-                  <div className="flex flex-col justify-center p-6 lg:p-10">
-                    <h2 className="text-2xl font-bold">{service.title}</h2>
-                    <p className="mt-3 text-muted-foreground">
-                      {service.description}
-                    </p>
-                    <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                      <span className="font-semibold text-brand-cyan-400">
-                        From {formatPrice(service.priceFrom)}
-                      </span>
-                      <span className="flex items-center gap-1 text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        {service.duration}
-                      </span>
+            {services.map((service, index) => {
+              const isFirstProtection =
+                service.category === "protection" &&
+                services.findIndex((s) => s.category === "protection") ===
+                  index;
+
+              return (
+                <StaggerItem key={service.id}>
+                  {isFirstProtection && (
+                    <div className="mb-8">
+                      <h2 className="text-xl font-bold">Paint Protection</h2>
+                      <p className="mt-2 text-muted-foreground">
+                        {paintProtectionIntro}
+                      </p>
                     </div>
-                    <ul className="mt-6 space-y-2">
-                      {service.features.map((feature) => (
-                        <li
-                          key={feature}
-                          className="flex items-center gap-2 text-sm text-muted-foreground"
-                        >
-                          <Check className="h-4 w-4 text-brand-purple-400" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    <CTAButton href="/contact" className="mt-8 w-fit">
-                      Request Quote
-                    </CTAButton>
-                  </div>
-                </article>
-              </StaggerItem>
-            ))}
+                  )}
+                  <article
+                    className={cn(
+                      "glass-panel grid overflow-hidden rounded-2xl lg:grid-cols-2",
+                      index % 2 === 1 && "lg:[&>*:first-child]:order-2",
+                    )}
+                  >
+                    <div className="relative aspect-[16/10] lg:aspect-auto lg:min-h-[320px]">
+                      <Image
+                        src={service.image}
+                        alt={service.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                      />
+                    </div>
+                    <div className="flex flex-col justify-center p-6 lg:p-10">
+                      <h2 className="text-2xl font-bold">{service.title}</h2>
+                      <p className="mt-3 text-muted-foreground">
+                        {service.description}
+                      </p>
+                      <div className="mt-4 flex flex-wrap gap-4 text-sm">
+                        <span className="font-semibold text-brand-cyan-400">
+                          From {formatPrice(service.priceFrom)}
+                        </span>
+                        {service.duration && (
+                          <span className="flex items-center gap-1 text-muted-foreground">
+                            <Clock className="h-4 w-4" />
+                            {service.duration}
+                          </span>
+                        )}
+                      </div>
+                      {service.includedServices &&
+                        service.includedServices.length > 0 && (
+                          <ul className="mt-6 space-y-2">
+                            {service.includedServices.map((item) => (
+                              <li
+                                key={item}
+                                className="flex items-center gap-2 text-sm text-muted-foreground"
+                              >
+                                <Check className="h-4 w-4 text-brand-purple-400" />
+                                {item}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      {service.features.length > 0 && (
+                        <ul className="mt-6 space-y-2">
+                          {service.features.map((feature) => (
+                            <li
+                              key={feature}
+                              className="flex items-center gap-2 text-sm text-muted-foreground"
+                            >
+                              <Check className="h-4 w-4 text-brand-purple-400" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {service.note && (
+                        <p className="mt-4 text-sm text-muted-foreground/80">
+                          {service.note}
+                        </p>
+                      )}
+                      <CTAButton href="/contact" className="mt-8 w-fit">
+                        Request Quote
+                      </CTAButton>
+                    </div>
+                  </article>
+                </StaggerItem>
+              );
+            })}
           </StaggerContainer>
         </div>
       </section>
@@ -142,6 +184,24 @@ export default function ServicesPage() {
               </tbody>
             </table>
           </div>
+        </div>
+      </section>
+
+      <section className="section-padding bg-surface-raised/30">
+        <div className="container-narrow max-w-3xl">
+          <FadeIn>
+            <SectionHeading
+              eyebrow="Pricing"
+              title={pricingInformation.title}
+            />
+          </FadeIn>
+          <FadeIn delay={0.1}>
+            <div className="space-y-4 text-muted-foreground">
+              {pricingInformation.paragraphs.map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
+            </div>
+          </FadeIn>
         </div>
       </section>
 

@@ -5,132 +5,230 @@ export type Service = {
   shortDescription: string;
   description: string;
   priceFrom: number;
-  duration: string;
+  duration?: string;
   features: string[];
+  includedServices?: string[];
+  note?: string;
   image: string;
   featured?: boolean;
+  category?: "standard" | "bundle" | "protection";
 };
 
 export const services: Service[] = [
   {
-    id: "exterior-detailing",
-    title: "Exterior Detailing",
-    slug: "exterior-detailing",
-    shortDescription: "Deep wash, decontamination, and paint-safe finishing for a mirror-like shine.",
+    id: "premium-interior-deep-clean",
+    title: "Premium Interior Deep Clean",
+    slug: "premium-interior-deep-clean",
+    shortDescription:
+      "A professional deep clean tailored to your vehicle's interior materials, age and condition.",
     description:
-      "Our signature exterior detail removes bonded contaminants, restores clarity, and finishes with premium sealants for lasting protection against Malta's sun and salt air.",
-    priceFrom: 89,
-    duration: "3–4 hours",
+      "A professional deep clean tailored to your vehicle's interior materials, age and condition.",
+    priceFrom: 159,
     features: [
-      "Multi-stage safe wash",
+      "Thorough interior vacuum",
+      "Deep carpet & floor cleaning",
+      "Upholstery cleaning where appropriate",
+      "Plastics & interior trim cleaning & treatment",
+      "Leather cleaning & conditioning where applicable",
+      "Steam cleaning where suitable",
+      "Detailed finishing",
+      "Includes a complimentary basic exterior wash",
+    ],
+    note: "Vehicles with excessive soiling, heavy staining, pet hair, strong odours or requiring specialist treatment may incur an additional charge.",
+    image: "/premium-interior-deep-clean.jpg",
+    featured: true,
+    category: "standard",
+  },
+  {
+    id: "exterior-detail",
+    title: "Exterior Detail",
+    slug: "exterior-detail",
+    shortDescription:
+      "A thorough exterior refresh designed to safely clean, maintain and enhance your vehicle's appearance.",
+    description:
+      "A thorough exterior refresh designed to safely clean, maintain and enhance your vehicle's appearance.",
+    priceFrom: 159,
+    features: [
+      "Safe pre-wash & hand wash",
+      "Deep wheel & rim cleaning",
+      "Wheel arches & under-arches",
+      "Exterior detailing & finishing",
+    ],
+    image: "/exterior-detail.jpg",
+    featured: true,
+    category: "standard",
+  },
+  {
+    id: "complete-detail",
+    title: "Complete Detail",
+    slug: "complete-detail",
+    shortDescription:
+      "Our complete interior and exterior refresh — the ideal choice for customers looking to thoroughly refresh the entire vehicle.",
+    description:
+      "Our complete interior and exterior refresh. The ideal choice for customers looking to thoroughly refresh the entire vehicle.",
+    priceFrom: 289,
+    features: [],
+    includedServices: ["Premium Interior Deep Clean", "Exterior Detail"],
+    image: "/complete-detail.jpg",
+    featured: true,
+    category: "bundle",
+  },
+  {
+    id: "paint-enhancement",
+    title: "Paint Enhancement",
+    slug: "paint-enhancement",
+    shortDescription:
+      "A more intensive exterior treatment designed to restore gloss, improve paint clarity and enhance the overall appearance of the paintwork.",
+    description:
+      "A more intensive exterior treatment designed to restore gloss, improve paint clarity and enhance the overall appearance of the paintwork.",
+    priceFrom: 279,
+    features: [
+      "Safe pre-wash & hand wash",
+      "Deep wheel & rim cleaning",
+      "Wheel arches & under-arches",
       "Iron & tar decontamination",
       "Clay bar treatment",
-      "Machine polish finish",
-      "Tyre & trim dressing",
+      "Machine paint enhancement",
     ],
-    image:
-      "https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200&q=80",
+    note: "Heavily scratched, oxidised or neglected paintwork requiring additional correction will be assessed and quoted separately.",
+    image: "/paint-enhancement.jpg",
     featured: true,
+    category: "standard",
   },
   {
-    id: "paint-correction",
-    title: "Paint Correction",
-    slug: "paint-correction",
-    shortDescription: "Remove swirls, scratches, and oxidation for a flawless, deep gloss finish.",
+    id: "complete-paint-enhancement",
+    title: "Complete Paint Enhancement",
+    slug: "complete-paint-enhancement",
+    shortDescription:
+      "The complete inside-and-out treatment — ideal for customers looking for a complete vehicle transformation.",
     description:
-      "Multi-stage machine polishing eliminates years of wash marks and environmental damage, revealing the true depth and colour of your paintwork.",
-    priceFrom: 249,
-    duration: "1–2 days",
+      "The complete inside-and-out treatment. Ideal for customers looking for a complete vehicle transformation.",
+    priceFrom: 419,
+    features: [],
+    includedServices: ["Paint Enhancement", "Premium Interior Deep Clean"],
+    image: "/complete-paint-enhancement.jpg",
+    category: "bundle",
+  },
+  {
+    id: "premium-wax-protection",
+    title: "Premium Wax Protection",
+    slug: "premium-wax-protection",
+    shortDescription:
+      "Enhanced gloss, water repellency and up to 9 months of protection.",
+    description:
+      "Enhanced gloss, water repellency and up to 9 months of protection. Protection can be added to any suitable Paint Enhancement service.",
+    priceFrom: 129,
     features: [
-      "Paint depth measurement",
-      "Multi-stage compound & refine",
-      "Swirl & scratch removal",
-      "Hologram-free finish",
-      "Paint inspection report",
+      "Enhanced gloss finish",
+      "Water repellency",
+      "Up to 9 months of protection",
     ],
-    image:
-      "https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=1200&q=80",
-    featured: true,
+    image: "/premium-wax-protection.jpg",
+    category: "protection",
   },
   {
-    id: "ceramic-coating",
-    title: "Ceramic Coating",
-    slug: "ceramic-coating",
-    shortDescription: "Long-lasting hydrophobic protection with extreme gloss and UV resistance.",
+    id: "ceramic-paint-protection",
+    title: "1-Year Ceramic Paint Protection",
+    slug: "ceramic-paint-protection",
+    shortDescription:
+      "Enhanced gloss, strong hydrophobic properties and long-lasting paint protection.",
     description:
-      "Professional-grade ceramic coating bonds to your paint for years of protection, making maintenance washes effortless and keeping your vehicle looking showroom fresh.",
-    priceFrom: 449,
-    duration: "2–3 days",
+      "Enhanced gloss, strong hydrophobic properties and long-lasting paint protection. Protection can be added to any suitable Paint Enhancement service.",
+    priceFrom: 199,
     features: [
-      "Full paint preparation",
-      "9H ceramic application",
-      "Hydrophobic top coat",
-      "Up to 5-year warranty",
-      "Aftercare kit included",
+      "Enhanced gloss finish",
+      "Strong hydrophobic properties",
+      "Long-lasting paint protection",
     ],
-    image:
-      "https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=1200&q=80",
-    featured: true,
+    image: "/ceramic-paint-protection.jpg",
+    category: "protection",
   },
   {
-    id: "interior-detailing",
-    title: "Interior Deep Clean",
-    slug: "interior-detailing",
-    shortDescription: "Steam extraction, leather conditioning, and odour elimination throughout.",
+    id: "exterior-glass-ceramic",
+    title: "Exterior Glass Ceramic Coating",
+    slug: "exterior-glass-ceramic",
+    shortDescription:
+      "Enhanced water repellency and improved visibility during wet conditions.",
     description:
-      "From leather seats to headliners, we restore every surface with OEM-safe products — perfect for daily drivers and prestige vehicles alike.",
-    priceFrom: 119,
-    duration: "4–6 hours",
-    features: [
-      "Full vacuum & steam clean",
-      "Leather clean & condition",
-      "Fabric extraction",
-      "Dashboard & trim detail",
-      "Odour neutralisation",
-    ],
-    image:
-      "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=1200&q=80",
-    featured: true,
-  },
-  {
-    id: "headlight-restoration",
-    title: "Headlight Restoration",
-    slug: "headlight-restoration",
-    shortDescription: "Restore clarity and UV protection to faded, yellowed headlights.",
-    description:
-      "Improve visibility and the overall look of your vehicle with professional headlight restoration and a durable UV-resistant sealant.",
-    priceFrom: 69,
-    duration: "1–2 hours",
-    features: [
-      "Sand & polish process",
-      "UV yellowing removal",
-      "Clarity restoration",
-      "UV sealant application",
-      "Same-day service",
-    ],
-    image:
-      "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=1200&q=80",
-  },
-  {
-    id: "engine-bay",
-    title: "Engine Bay Detail",
-    slug: "engine-bay",
-    shortDescription: "Safe degreasing and dressing for a factory-fresh engine bay.",
-    description:
-      "Meticulous engine bay cleaning using water-safe techniques and premium dressings — ideal before sale or show events.",
+      "Enhanced water repellency and improved visibility during wet conditions. Protection can be added to any suitable Paint Enhancement service.",
     priceFrom: 79,
-    duration: "2–3 hours",
+    features: [
+      "Enhanced water repellency",
+      "Improved visibility in wet conditions",
+    ],
+    image: "/exterior-glass-ceramic-coating.jpg",
+    category: "protection",
+  },
+  {
+    id: "engine-bay-detail",
+    title: "Engine Bay Detail",
+    slug: "engine-bay-detail",
+    shortDescription:
+      "A careful and detailed engine bay clean using appropriate products and techniques around sensitive components.",
+    description:
+      "A careful and detailed engine bay clean using appropriate products and techniques around sensitive components.",
+    priceFrom: 89,
     features: [
       "Safe degreasing",
       "Hand brush agitation",
       "Plastic & rubber dressing",
       "Protected electrical areas",
-      "Show-ready finish",
     ],
-    image:
-      "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1200&q=80",
+    image: "/engine-bay-detail.jpg",
+    category: "standard",
+  },
+  {
+    id: "signature-detail",
+    title: "Signature Detail",
+    slug: "signature-detail",
+    shortDescription:
+      "Our ultimate complete vehicle transformation — a complete inside-and-out detail finished with long-lasting ceramic protection.",
+    description:
+      "Our ultimate complete vehicle transformation. A complete inside-and-out detail finished with long-lasting ceramic protection.",
+    priceFrom: 599,
+    features: [],
+    includedServices: [
+      "Paint Enhancement",
+      "Premium Interior Deep Clean",
+      "1-Year Ceramic Paint Protection",
+    ],
+    image: "/signature-detail.jpg",
+    category: "bundle",
+  },
+  {
+    id: "signature-detail-glass",
+    title: "Signature Detail + Glass Protection",
+    slug: "signature-detail-glass-protection",
+    shortDescription:
+      "Everything included in the Signature Detail, plus exterior glass ceramic coating — the ultimate inside-and-out detailing and protection package.",
+    description:
+      "Everything included in the Signature Detail, plus exterior glass ceramic coating. The ultimate inside-and-out detailing and protection package.",
+    priceFrom: 669,
+    features: [],
+    includedServices: [
+      "Paint Enhancement",
+      "Premium Interior Deep Clean",
+      "1-Year Ceramic Paint Protection",
+      "Exterior Glass Ceramic Coating",
+    ],
+    image: "/signature-detail-glass-protection.jpg",
+    category: "bundle",
   },
 ];
+
+export const paintProtectionIntro =
+  "Protection can be added to any suitable Paint Enhancement service.";
+
+export const pricingInformation = {
+  title: "Important Pricing Information",
+  paragraphs: [
+    "All prices shown are starting prices and may vary depending on vehicle size, condition and individual requirements.",
+    "Vehicles requiring additional labour due to heavy contamination, severe paint defects, excessive soiling, staining, pet hair, odours or specialist treatment may incur an additional charge.",
+    "Classic, vintage and older vehicles, as well as vehicles with delicate or sensitive materials, will be assessed individually and treated using appropriate products and techniques.",
+    "Any additional costs will always be discussed and agreed with the customer before work begins.",
+    "Message us for a personalised quotation for your vehicle.",
+  ],
+};
 
 export const featuredServices = services.filter((s) => s.featured);
 

@@ -9,55 +9,66 @@ export type Package = {
 };
 
 export const comparisonFeatures = [
-  "Exterior wash & protection",
-  "Interior deep clean",
-  "Paint enhancement / correction",
-  "Engine bay detail",
-  "Long-term ceramic protection",
+  "Premium Interior Deep Clean",
+  "Exterior Detail",
+  "Paint Enhancement",
+  "1-Year Ceramic Paint Protection",
+  "Exterior Glass Ceramic Coating",
 ];
 
 export const packages: Package[] = [
   {
-    id: "essential",
-    name: "Essential",
-    price: 149,
-    description: "Perfect for regular maintenance and a refreshed look.",
+    id: "complete-detail",
+    name: "Complete Detail",
+    price: 289,
+    description:
+      "Our complete interior and exterior refresh — ideal for thoroughly refreshing the entire vehicle.",
     features: [
-      "Exterior wash & protection",
-      "Interior vacuum & wipe-down",
-      "Glass inside & out",
-      "Tyre dressing",
-      "Light decontamination",
+      "Premium Interior Deep Clean",
+      "Exterior Detail",
+      "Complimentary basic exterior wash included with interior",
     ],
-    includes: [true, false, false, false, false],
+    includes: [true, true, false, false, false],
   },
   {
-    id: "premium",
-    name: "Premium",
-    price: 349,
-    description: "Our most popular package for a complete transformation.",
+    id: "complete-paint-enhancement",
+    name: "Complete Paint Enhancement",
+    price: 419,
+    description:
+      "The complete inside-and-out treatment for a full vehicle transformation.",
+    features: [
+      "Paint Enhancement",
+      "Premium Interior Deep Clean",
+      "Machine paint enhancement & decontamination",
+    ],
+    includes: [true, false, true, false, false],
+  },
+  {
+    id: "signature-detail",
+    name: "Signature Detail",
+    price: 599,
+    description:
+      "Our ultimate complete vehicle transformation with long-lasting ceramic protection.",
     popular: true,
     features: [
-      "Full exterior detail",
-      "Interior deep clean",
-      "Single-stage paint enhancement",
-      "Engine bay light clean",
-      "Ceramic spray sealant (6 months)",
+      "Paint Enhancement",
+      "Premium Interior Deep Clean",
+      "1-Year Ceramic Paint Protection",
     ],
-    includes: [true, true, true, true, false],
+    includes: [true, false, true, true, false],
   },
   {
-    id: "signature",
-    name: "Signature",
-    price: 799,
-    description: "Showroom-grade correction and long-term protection.",
+    id: "signature-detail-glass",
+    name: "Signature Detail + Glass",
+    price: 669,
+    description:
+      "Everything in the Signature Detail, plus exterior glass ceramic coating.",
     features: [
-      "Multi-stage paint correction",
-      "Full interior restoration",
-      "Ceramic coating (3 years)",
-      "Engine bay detail",
-      "Complimentary maintenance wash",
+      "Paint Enhancement",
+      "Premium Interior Deep Clean",
+      "1-Year Ceramic Paint Protection",
+      "Exterior Glass Ceramic Coating",
     ],
-    includes: [true, true, true, true, true],
+    includes: [true, false, true, true, true],
   },
 ];

@@ -71,11 +71,12 @@ export default async function PageCopyAdminPage() {
       ?.content as CtaBandContent) ?? defaultCta;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-5xl space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Page Copy</h1>
         <p className="mt-1 text-white/60">
-          Edit homepage hero, why QTM, and CTA band content.
+          Edit homepage sections one at a time. Changes preview live on the
+          right.
         </p>
       </div>
       <PageCopyEditor hero={hero} whyQtm={whyQtm} ctaBand={ctaBand} />

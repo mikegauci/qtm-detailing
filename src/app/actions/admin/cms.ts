@@ -8,7 +8,6 @@ import {
   comparisonFeatures as staticComparisonFeatures,
 } from "@/content/packages";
 import { faqItems as staticFaqs } from "@/content/faq";
-import { testimonials as staticTestimonials } from "@/content/testimonials";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 
@@ -385,6 +384,37 @@ const defaultCtaContent = {
   secondaryCta: { label: "Explore Services", href: "/services" },
 };
 
+const defaultTestimonials = [
+  {
+    name: "Simon Cutajar",
+    vehicle: "BMW 420D",
+    quote:
+      "Absolutely blown away by the paint correction. Swirls I had for years are completely gone. QTM Detailing treated my car like their own.",
+    rating: 5,
+  },
+  {
+    name: "Roberta Gauci Attard",
+    vehicle: "Audi A1",
+    quote:
+      "The ceramic coating has made washing so easy. Water just beads off. Professional team and spotless workshop.",
+    rating: 5,
+  },
+  {
+    name: "Vince Bartolo",
+    vehicle: "VW T-Roc",
+    quote:
+      "Great detailing experience in Malta. Attention to detail is unmatched — interior smells brand new and paint depth is incredible.",
+    rating: 5,
+  },
+  {
+    name: "Erika Zammit Martins",
+    vehicle: "Toyota C-HR",
+    quote:
+      "Booked the Signature package for my daily. Car looked better than when I collected it from the dealer.",
+    rating: 5,
+  },
+];
+
 export async function seedContentFromStatic(): Promise<ActionResult> {
   try {
     const { supabase } = await requireAdmin();
@@ -491,7 +521,7 @@ export async function seedContentFromStatic(): Promise<ActionResult> {
       .select("*", { count: "exact", head: true });
 
     if (!reviewCount) {
-      for (const testimonial of staticTestimonials) {
+      for (const testimonial of defaultTestimonials) {
         await supabase.from("reviews").insert({
           customer_name: testimonial.name,
           vehicle: testimonial.vehicle,

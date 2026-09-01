@@ -84,7 +84,9 @@ export default async function HomePage() {
       <WhyQtmSection content={whyQtm} />
       <BeforeAfterShowcase items={galleryItems} />
       <PricingPreviewSection packages={packages} />
-      <TestimonialsSection testimonials={testimonials} />
+      {testimonials.length > 0 && (
+        <TestimonialsSection testimonials={testimonials} />
+      )}
       <CtaBand content={cta} />
     </>
   );

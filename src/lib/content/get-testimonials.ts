@@ -1,9 +1,13 @@
-import {
-  testimonials as staticTestimonials,
-  type Testimonial,
-} from "@/content/testimonials";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
+
+export type Testimonial = {
+  id: string;
+  name: string;
+  vehicle: string;
+  quote: string;
+  rating: number;
+};
 
 function mapDbReview(row: Tables<"reviews">): Testimonial {
   return {
@@ -31,7 +35,7 @@ export async function getTestimonials(
   const { data, error } = await query;
 
   if (error || !data?.length) {
-    return staticTestimonials;
+    return [];
   }
 
   return data.map(mapDbReview);

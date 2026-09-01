@@ -1,5 +1,5 @@
 import { Star } from "lucide-react";
-import type { Testimonial } from "@/content/testimonials";
+import type { Testimonial } from "@/lib/content/get-testimonials";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 

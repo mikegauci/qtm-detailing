@@ -8,8 +8,8 @@ export const siteConfig = {
   currency: "EUR",
   contact: {
     email: "hello@qtmdetailing.mt",
-    phone: "+356 9997 1101",
-    whatsapp: "+356 9997 1101",
+    phone: "+356 9925 6511",
+    whatsapp: "+356 9925 6511",
     address: "Xemxija, Malta",
     coordinates: {
       lat: 35.898,

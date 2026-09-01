@@ -44,7 +44,7 @@ export function HeroSection() {
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-48 bg-gradient-to-b from-transparent via-surface-base/80 to-surface-base sm:h-56 lg:h-64" />
 
-      <div className="container-narrow relative flex min-h-screen flex-col justify-center px-4 pt-28 pb-20 sm:px-6 lg:px-8">
+      <div className="container-narrow relative z-[2] flex min-h-screen flex-col justify-center px-4 pt-28 pb-20 sm:px-6 lg:px-8">
         <FadeIn>
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.25em] text-brand-cyan-400">
             Malta&apos;s Premium Detailing Studio

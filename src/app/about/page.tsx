@@ -55,7 +55,7 @@ export default function AboutPage() {
               <SectionHeading
                 eyebrow="About QTM Detailing"
                 title="Passion for perfection"
-                description="Founded in Malta with a simple mission: deliver showroom-grade results that last. Every vehicle that enters our studio receives the same obsessive attention, whether it's a daily commuter or a weekend supercar."
+                description="Founded with a simple mission: deliver showroom-grade results that last. Every vehicle that enters our studio receives the same obsessive attention, whether it's a daily commuter or a weekend supercar."
                 align="left"
                 className="mb-0"
               />
@@ -99,7 +99,7 @@ export default function AboutPage() {
           <FadeIn>
             <SectionHeading
               eyebrow="Our Process"
-              title="Four steps to showroom"
+              title="Four steps to showroom finish"
               description="A transparent, repeatable process that delivers consistent results every time."
             />
           </FadeIn>

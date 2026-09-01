@@ -82,7 +82,6 @@
 
   html {
     scroll-behavior: smooth;
-    scroll-padding-top: 6rem;
   }
 
   body {
@@ -140,6 +139,15 @@
 
   .container-narrow {
     @apply mx-auto max-w-7xl;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
   }
 }
 

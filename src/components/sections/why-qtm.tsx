@@ -32,7 +32,7 @@ export function WhyQtmSection() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <FadeIn>
             <SectionHeading
-              eyebrow="Why QTM"
+              eyebrow="Why QTM Detailing"
               title="Obsessive detail. Lasting results."
               description="We don't rush. Every vehicle gets a personalised treatment plan based on its condition, paint type, and your expectations."
               align="left"

@@ -38,7 +38,7 @@ export default function GalleryPage() {
             <SectionHeading
               eyebrow="Gallery"
               title="Our latest work"
-              description="Real transformations from our Birkirkara studio. Click any project to view before and after."
+              description="Real transformations straight from our studio. Click any project to view before and after."
             />
           </FadeIn>
 

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { Clock, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { paintProtectionIntro, pricingInformation } from "@/content/services";
 import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
@@ -52,7 +52,7 @@ export default async function ServicesPage() {
             <SectionHeading
               eyebrow="Premium Detailing Services"
               title="Every detail, perfected"
-              description="Professional automotive detailing services tailored to your vehicle's needs. All prices in EUR."
+              description="Professional automotive detailing services tailored to your vehicle's needs."
             />
           </FadeIn>
 
@@ -94,17 +94,6 @@ export default async function ServicesPage() {
                       <p className="mt-3 text-muted-foreground">
                         {service.description}
                       </p>
-                      <div className="mt-4 flex flex-wrap gap-4 text-sm">
-                        <span className="font-semibold text-brand-cyan-400">
-                          From {formatPrice(service.priceFrom)}
-                        </span>
-                        {service.duration && (
-                          <span className="flex items-center gap-1 text-muted-foreground">
-                            <Clock className="h-4 w-4" />
-                            {service.duration}
-                          </span>
-                        )}
-                      </div>
                       {service.includedServices &&
                         service.includedServices.length > 0 && (
                           <ul className="mt-6 space-y-2">

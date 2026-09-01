@@ -57,10 +57,6 @@ export async function upsertService(input: {
   slug: string;
   short_description?: string;
   description?: string;
-  price: number;
-  price_suv?: number;
-  price_van?: number;
-  estimated_duration_minutes: number;
   featured?: boolean;
   features?: string[];
   image_url?: string;
@@ -75,10 +71,10 @@ export async function upsertService(input: {
       slug: input.slug,
       short_description: input.short_description ?? null,
       description: input.description ?? null,
-      price: input.price,
-      price_suv: input.price_suv ?? input.price,
-      price_van: input.price_van ?? input.price,
-      estimated_duration_minutes: input.estimated_duration_minutes,
+      price: 0,
+      price_suv: 0,
+      price_van: 0,
+      estimated_duration_minutes: 0,
       featured: input.featured ?? false,
       features: input.features ?? [],
       image_url: input.image_url ?? null,
@@ -425,6 +421,17 @@ export async function seedContentFromStatic(): Promise<ActionResult> {
       updated_at: new Date().toISOString(),
     });
 
+    const staticSlugs = staticServices.map((service) => service.slug);
+    const { data: existingServices } = await supabase
+      .from("services")
+      .select("id, slug");
+
+    for (const existing of existingServices ?? []) {
+      if (!staticSlugs.includes(existing.slug)) {
+        await supabase.from("services").delete().eq("id", existing.id);
+      }
+    }
+
     for (const [index, service] of staticServices.entries()) {
       const features = [
         ...service.features,
@@ -438,10 +445,10 @@ export async function seedContentFromStatic(): Promise<ActionResult> {
         description: service.note
           ? `${service.description}\n\n${service.note}`
           : service.description,
-        price: service.priceFrom,
-        price_suv: service.priceFrom,
-        price_van: service.priceFrom,
-        estimated_duration_minutes: 480,
+        price: 0,
+        price_suv: 0,
+        price_van: 0,
+        estimated_duration_minutes: 0,
         featured: service.featured ?? false,
         features,
         image_url: service.image,

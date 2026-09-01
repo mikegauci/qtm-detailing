@@ -21,8 +21,6 @@ type ServiceFormState = {
   slug: string;
   short_description: string;
   description: string;
-  price: number;
-  estimated_duration_minutes: number;
   featured: boolean;
   featuresText: string;
   image_url: string;
@@ -36,8 +34,6 @@ const emptyService: ServiceFormState = {
   slug: "",
   short_description: "",
   description: "",
-  price: 0,
-  estimated_duration_minutes: 480,
   featured: false,
   featuresText: "",
   image_url: "",
@@ -60,8 +56,6 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
         slug: editing.slug,
         short_description: editing.short_description,
         description: editing.description,
-        price: Number(editing.price),
-        estimated_duration_minutes: Number(editing.estimated_duration_minutes),
         featured: editing.featured,
         features: editing.featuresText
           .split("\n")
@@ -120,8 +114,6 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
                 slug: service.slug,
                 short_description: service.short_description ?? "",
                 description: service.description ?? "",
-                price: Number(service.price),
-                estimated_duration_minutes: service.estimated_duration_minutes,
                 featured: service.featured,
                 featuresText: (service.features ?? []).join("\n"),
                 image_url: service.image_url ?? "",
@@ -195,43 +187,18 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
             rows={4}
           />
         </div>
-        <div className="grid gap-3 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Price (EUR)</Label>
-            <Input
-              type="number"
-              value={editing.price}
-              onChange={(e) =>
-                setEditing((p) => ({ ...p, price: Number(e.target.value) }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Duration (min)</Label>
-            <Input
-              type="number"
-              value={editing.estimated_duration_minutes}
-              onChange={(e) =>
-                setEditing((p) => ({
-                  ...p,
-                  estimated_duration_minutes: Number(e.target.value),
-                }))
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Sort order</Label>
-            <Input
-              type="number"
-              value={editing.sort_order ?? 0}
-              onChange={(e) =>
-                setEditing((p) => ({
-                  ...p,
-                  sort_order: Number(e.target.value),
-                }))
-              }
-            />
-          </div>
+        <div className="space-y-2">
+          <Label>Sort order</Label>
+          <Input
+            type="number"
+            value={editing.sort_order ?? 0}
+            onChange={(e) =>
+              setEditing((p) => ({
+                ...p,
+                sort_order: Number(e.target.value),
+              }))
+            }
+          />
         </div>
         <div className="space-y-2">
           <Label>Image URL</Label>

@@ -4,8 +4,6 @@ export type Service = {
   slug: string;
   shortDescription: string;
   description: string;
-  priceFrom: number;
-  duration?: string;
   features: string[];
   includedServices?: string[];
   note?: string;
@@ -23,7 +21,6 @@ export const services: Service[] = [
       "A professional deep clean tailored to your vehicle's interior materials, age and condition.",
     description:
       "A professional deep clean tailored to your vehicle's interior materials, age and condition.",
-    priceFrom: 159,
     features: [
       "Thorough interior vacuum",
       "Deep carpet & floor cleaning",
@@ -47,7 +44,6 @@ export const services: Service[] = [
       "A thorough exterior refresh designed to safely clean, maintain and enhance your vehicle's appearance.",
     description:
       "A thorough exterior refresh designed to safely clean, maintain and enhance your vehicle's appearance.",
-    priceFrom: 159,
     features: [
       "Safe pre-wash & hand wash",
       "Deep wheel & rim cleaning",
@@ -66,7 +62,6 @@ export const services: Service[] = [
       "Our complete interior and exterior refresh — the ideal choice for customers looking to thoroughly refresh the entire vehicle.",
     description:
       "Our complete interior and exterior refresh. The ideal choice for customers looking to thoroughly refresh the entire vehicle.",
-    priceFrom: 289,
     features: [],
     includedServices: ["Premium Interior Deep Clean", "Exterior Detail"],
     image: "/complete-detail.jpg",
@@ -81,7 +76,6 @@ export const services: Service[] = [
       "A more intensive exterior treatment designed to restore gloss, improve paint clarity and enhance the overall appearance of the paintwork.",
     description:
       "A more intensive exterior treatment designed to restore gloss, improve paint clarity and enhance the overall appearance of the paintwork.",
-    priceFrom: 279,
     features: [
       "Safe pre-wash & hand wash",
       "Deep wheel & rim cleaning",
@@ -103,7 +97,6 @@ export const services: Service[] = [
       "The complete inside-and-out treatment — ideal for customers looking for a complete vehicle transformation.",
     description:
       "The complete inside-and-out treatment. Ideal for customers looking for a complete vehicle transformation.",
-    priceFrom: 419,
     features: [],
     includedServices: ["Paint Enhancement", "Premium Interior Deep Clean"],
     image: "/complete-paint-enhancement.jpg",
@@ -117,7 +110,6 @@ export const services: Service[] = [
       "Enhanced gloss, water repellency and up to 9 months of protection.",
     description:
       "Enhanced gloss, water repellency and up to 9 months of protection. Protection can be added to any suitable Paint Enhancement service.",
-    priceFrom: 129,
     features: [
       "Enhanced gloss finish",
       "Water repellency",
@@ -134,7 +126,6 @@ export const services: Service[] = [
       "Enhanced gloss, strong hydrophobic properties and long-lasting paint protection.",
     description:
       "Enhanced gloss, strong hydrophobic properties and long-lasting paint protection. Protection can be added to any suitable Paint Enhancement service.",
-    priceFrom: 199,
     features: [
       "Enhanced gloss finish",
       "Strong hydrophobic properties",
@@ -151,7 +142,6 @@ export const services: Service[] = [
       "Enhanced water repellency and improved visibility during wet conditions.",
     description:
       "Enhanced water repellency and improved visibility during wet conditions. Protection can be added to any suitable Paint Enhancement service.",
-    priceFrom: 79,
     features: [
       "Enhanced water repellency",
       "Improved visibility in wet conditions",
@@ -167,7 +157,6 @@ export const services: Service[] = [
       "A careful and detailed engine bay clean using appropriate products and techniques around sensitive components.",
     description:
       "A careful and detailed engine bay clean using appropriate products and techniques around sensitive components.",
-    priceFrom: 89,
     features: [
       "Safe degreasing",
       "Hand brush agitation",
@@ -185,7 +174,6 @@ export const services: Service[] = [
       "Our ultimate complete vehicle transformation — a complete inside-and-out detail finished with long-lasting ceramic protection.",
     description:
       "Our ultimate complete vehicle transformation. A complete inside-and-out detail finished with long-lasting ceramic protection.",
-    priceFrom: 599,
     features: [],
     includedServices: [
       "Paint Enhancement",
@@ -203,7 +191,6 @@ export const services: Service[] = [
       "Everything included in the Signature Detail, plus exterior glass ceramic coating — the ultimate inside-and-out detailing and protection package.",
     description:
       "Everything included in the Signature Detail, plus exterior glass ceramic coating. The ultimate inside-and-out detailing and protection package.",
-    priceFrom: 669,
     features: [],
     includedServices: [
       "Paint Enhancement",
@@ -222,7 +209,7 @@ export const paintProtectionIntro =
 export const pricingInformation = {
   title: "Important Pricing Information",
   paragraphs: [
-    "All prices shown are starting prices and may vary depending on vehicle size, condition and individual requirements.",
+    "Pricing varies depending on vehicle size, condition and individual requirements.",
     "Vehicles requiring additional labour due to heavy contamination, severe paint defects, excessive soiling, staining, pet hair, odours or specialist treatment may incur an additional charge.",
     "Classic, vintage and older vehicles, as well as vehicles with delicate or sensitive materials, will be assessed individually and treated using appropriate products and techniques.",
     "Any additional costs will always be discussed and agreed with the customer before work begins.",

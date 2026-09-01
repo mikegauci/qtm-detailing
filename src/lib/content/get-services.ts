@@ -5,14 +5,6 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
-function formatDuration(minutes: number): string | undefined {
-  if (minutes < 60) return `${minutes} min`;
-  const hours = Math.floor(minutes / 60);
-  const remainder = minutes % 60;
-  if (remainder === 0) return `${hours}h`;
-  return `${hours}h ${remainder}m`;
-}
-
 function mapDbService(row: Tables<"services">): Service {
   const includedServices: string[] = [];
   const features: string[] = [];
@@ -31,8 +23,6 @@ function mapDbService(row: Tables<"services">): Service {
     slug: row.slug,
     shortDescription: row.short_description ?? "",
     description: row.description ?? "",
-    priceFrom: Number(row.price),
-    duration: formatDuration(row.estimated_duration_minutes),
     features,
     includedServices:
       includedServices.length > 0 ? includedServices : undefined,

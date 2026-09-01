@@ -18,6 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CtaBand } from "@/components/sections/cta-band";
+import { HashScroll } from "@/components/services/hash-scroll";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -29,6 +30,7 @@ export const metadata: Metadata = {
 export default function ServicesPage() {
   return (
     <>
+      <HashScroll />
       <section className="section-padding pt-32">
         <div className="container-narrow">
           <FadeIn>
@@ -57,8 +59,9 @@ export default function ServicesPage() {
                     </div>
                   )}
                   <article
+                    id={service.slug}
                     className={cn(
-                      "glass-panel grid overflow-hidden rounded-2xl lg:grid-cols-2",
+                      "glass-panel grid scroll-mt-28 overflow-hidden rounded-2xl lg:grid-cols-2",
                       index % 2 === 1 && "lg:[&>*:first-child]:order-2",
                     )}
                   >

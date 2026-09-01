@@ -28,7 +28,7 @@ export const testimonials: Testimonial[] = [
     name: "Vince Bartolo",
     vehicle: "VW T-Roc",
     quote:
-      "Best detailing experience in Malta. Attention to detail is unmatched — interior smells brand new and paint depth is incredible.",
+      "Great detailing experience in Malta. Attention to detail is unmatched — interior smells brand new and paint depth is incredible.",
     rating: 5,
   },
   {

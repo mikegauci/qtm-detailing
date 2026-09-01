@@ -22,7 +22,7 @@ export function FeaturedServicesSection() {
           {featuredServices.map((service) => (
             <StaggerItem key={service.id}>
               <Link
-                href="/services"
+                href={`/services#${service.slug}`}
                 className="group glass-panel block overflow-hidden rounded-2xl transition-all duration-300 hover:border-brand-purple-400/30 hover:glow-purple"
               >
                 <div className="relative aspect-[4/3] overflow-hidden">

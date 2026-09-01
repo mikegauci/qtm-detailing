@@ -3,6 +3,7 @@ import { siteConfig } from "@/content/site";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ContactForm } from "@/components/contact/contact-form";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
 export function ContactPageContent() {
   return (
@@ -12,22 +13,36 @@ export function ContactPageContent() {
           <SectionHeading
             eyebrow="Contact"
             title="Request a quote"
-            description="Tell us about your vehicle and the services you're interested in. We'll get back within 24 hours."
+            description="Tell us about your vehicle and the services you're interested in. WhatsApp is the fastest way to reach us — or use the form below and we'll get back within 24 hours."
           />
         </FadeIn>
 
         <div className="grid items-stretch gap-12 lg:grid-cols-5">
-          <FadeIn delay={0.1} className="h-full lg:col-span-3">
+          <FadeIn delay={0.1} className="order-2 h-full lg:order-1 lg:col-span-3">
             <div className="glass-panel flex h-full flex-col rounded-2xl p-6 sm:p-8">
               <ContactForm />
             </div>
           </FadeIn>
 
-          <FadeIn delay={0.2} className="lg:col-span-2">
+          <FadeIn delay={0.2} className="order-1 lg:order-2 lg:col-span-2">
             <div className="space-y-6">
               <div className="glass-panel rounded-2xl p-6">
                 <h3 className="mb-4 font-semibold">Get in touch</h3>
                 <ul className="space-y-4">
+                  <li className="flex items-start gap-3">
+                    <WhatsAppIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#25D366]" />
+                    <div>
+                      <p className="text-sm text-muted-foreground">WhatsApp</p>
+                      <a
+                        href={siteConfig.contact.whatsappUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-medium hover:text-[#25D366]"
+                      >
+                        {siteConfig.contact.whatsapp}
+                      </a>
+                    </div>
+                  </li>
                   <li className="flex items-start gap-3">
                     <Phone className="mt-0.5 h-5 w-5 shrink-0 text-brand-purple-400" />
                     <div>

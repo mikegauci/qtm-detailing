@@ -12,7 +12,7 @@ export function LocalBusinessJsonLd() {
     address: {
       "@type": "PostalAddress",
       streetAddress: siteConfig.contact.address,
-      addressLocality: "Birkirkara",
+      addressLocality: "Xemxija",
       addressCountry: "MT",
     },
     geo: {

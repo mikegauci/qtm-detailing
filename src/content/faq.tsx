@@ -1,8 +1,14 @@
+import type { ReactNode } from "react";
+import { siteConfig } from "@/content/site";
+
 export type FaqItem = {
   id: string;
   question: string;
-  answer: string;
+  answer: ReactNode;
 };
+
+const faqLinkClass =
+  "font-medium text-brand-purple-400 underline-offset-2 hover:underline";
 
 export const faqItems: FaqItem[] = [
   {
@@ -15,7 +21,7 @@ export const faqItems: FaqItem[] = [
     id: "mobile",
     question: "Do you offer mobile detailing?",
     answer:
-      "We operate from our Birkirkara studio for the best results. Mobile services may be available for select packages — contact us to discuss.",
+      "We operate from our Xemxija studio for the best results. Mobile services may be available for select packages — contact us to discuss.",
   },
   {
     id: "ceramic-vs-wax",
@@ -32,13 +38,31 @@ export const faqItems: FaqItem[] = [
   {
     id: "booking",
     question: "How do I book an appointment?",
-    answer:
-      "Fill out our contact form with your vehicle details and preferred service. We'll respond within 24 hours with availability and a personalised quote.",
+    answer: (
+      <>
+        Message us on{" "}
+        <a
+          href={siteConfig.contact.whatsappUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={faqLinkClass}
+        >
+          WhatsApp
+        </a>{" "}
+        with your vehicle details and preferred service for the fastest response,
+        or fill out our{" "}
+        <a href="/contact" className={faqLinkClass}>
+          contact form
+        </a>
+        . We&apos;ll respond within 24 hours with availability and a personalised
+        quote.
+      </>
+    ),
   },
   {
     id: "payment",
     question: "What payment methods do you accept?",
     answer:
-      "We accept cash, bank transfer, and major credit/debit cards. A deposit may be required for multi-day services.",
+      "We accept cash, Revolut, and BOV Mobile. A deposit may be required for multi-day services.",
   },
 ];

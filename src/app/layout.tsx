@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     "car detailing Malta",
     "paint correction Malta",
     "ceramic coating Malta",
-    "auto detailing Birkirkara",
+    "auto detailing Xemxija",
     "QTM Detailing",
   ],
   openGraph: {

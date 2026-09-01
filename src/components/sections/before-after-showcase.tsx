@@ -27,7 +27,7 @@ export function BeforeAfterShowcase({ items }: BeforeAfterShowcaseProps) {
           <SectionHeading
             eyebrow="Results"
             title="See the transformation"
-            description="Drag the slider to compare before and after. Real results from our Birkirkara studio."
+            description="Drag the slider to compare before and after. Real results from our Xemxija studio."
           />
         </FadeIn>
 

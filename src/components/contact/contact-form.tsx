@@ -50,7 +50,7 @@ export function ContactForm() {
           <Input
             id="name"
             name="name"
-            placeholder="John Smith"
+            placeholder="Joseph Borg"
             required
             aria-invalid={!!state.errors?.name}
             aria-describedby={state.errors?.name ? "name-error" : undefined}
@@ -97,7 +97,7 @@ export function ContactForm() {
           <Input
             id="vehicle"
             name="vehicle"
-            placeholder="e.g. BMW M4 2022"
+            placeholder="BMW M4 2022"
           />
         </div>
       </div>
@@ -115,7 +115,7 @@ export function ContactForm() {
       <Button
         type="submit"
         disabled={isPending}
-        className="w-full bg-gradient-to-r from-brand-purple-600 to-brand-cyan-700 hover:from-brand-purple-500 hover:to-brand-cyan-600 sm:w-auto"
+        className="w-full bg-gradient-to-r from-brand-purple-600 to-brand-cyan-700 text-white hover:from-brand-purple-500 hover:to-brand-cyan-600 sm:w-auto"
       >
         {isPending ? (
           <>

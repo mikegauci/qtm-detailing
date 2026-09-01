@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Facebook } from "lucide-react";
 import { siteConfig } from "@/content/site";
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
@@ -66,6 +67,17 @@ export function Footer() {
               Contact
             </h3>
             <ul className="space-y-3 text-muted-foreground">
+              <li>
+                <a
+                  href={siteConfig.contact.whatsappUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 transition-colors hover:text-[#25D366]"
+                >
+                  <WhatsAppIcon className="h-4 w-4" />
+                  WhatsApp
+                </a>
+              </li>
               <li>
                 <a
                   href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}

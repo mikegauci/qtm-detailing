@@ -10,6 +10,7 @@ export const siteConfig = {
     email: "hello@qtmdetailing.mt",
     phone: "+356 9997 1101",
     whatsapp: "+356 9997 1101",
+    whatsappUrl: "https://wa.link/lvy8rn",
     address: "Xemxija, Malta",
     coordinates: {
       lat: 35.898,

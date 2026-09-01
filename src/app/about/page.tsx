@@ -67,7 +67,7 @@ export default function AboutPage() {
                 deserves nothing less than mastery.
               </p>
               <CTAButton href="/contact" className="mt-8">
-                Work With Us
+                Contact Us
               </CTAButton>
             </FadeIn>
 

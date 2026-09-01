@@ -1,8 +1,25 @@
 import type { NextConfig } from "next";
 
-const supabaseHost = process.env.SUPABASE_URL
-  ? new URL(process.env.SUPABASE_URL).hostname
-  : undefined;
+function getSupabaseHostname(): string | undefined {
+  const supabaseUrl = process.env.SUPABASE_URL?.trim();
+
+  if (!supabaseUrl) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "SUPABASE_URL is required for production builds. Set it in your deployment environment.",
+      );
+    }
+    return undefined;
+  }
+
+  try {
+    return new URL(supabaseUrl).hostname;
+  } catch {
+    throw new Error("SUPABASE_URL must be a valid URL.");
+  }
+}
+
+const supabaseHost = getSupabaseHostname();
 
 const nextConfig: NextConfig = {
   images: supabaseHost

@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
+import { getOptionalSiteUrl } from "@/lib/env";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const settings = await getSiteSettings();
-  const baseUrl = process.env.SITE_URL || settings.url;
+  const baseUrl = getOptionalSiteUrl() || settings.url;
 
   const routes = ["", "/services", "/gallery", "/about", "/contact"];
 

@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { galleryItems } from "@/content/gallery";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
+import { BeforeAfterSlider } from "@/components/gallery/before-after-slider";
 import { cn } from "@/lib/utils";
 
 export function BeforeAfterShowcase() {
@@ -26,36 +26,13 @@ export function BeforeAfterShowcase() {
 
         <FadeIn delay={0.1}>
           <div className="glass-panel overflow-hidden rounded-2xl">
-            <div className="relative aspect-[16/9] overflow-hidden">
-              <Image
-                src={item.afterImage}
-                alt={`${item.title} - after`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1280px) 100vw, 1280px"
-              />
-              <div
-                className="absolute inset-y-0 left-0 overflow-hidden"
-                style={{ width: "50%" }}
-              >
-                <div className="relative h-full w-[200%] max-w-none">
-                  <Image
-                    src={item.beforeImage}
-                    alt={`${item.title} - before`}
-                    fill
-                    className="object-cover"
-                    sizes="(max-width: 1280px) 100vw, 1280px"
-                  />
-                </div>
-              </div>
-              <div className="absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-white/80 shadow-lg" />
-              <div className="absolute top-4 left-4 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                Before
-              </div>
-              <div className="absolute top-4 right-4 rounded-full bg-black/60 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                After
-              </div>
-            </div>
+            <BeforeAfterSlider
+              key={item.id}
+              beforeImage={item.beforeImage}
+              afterImage={item.afterImage}
+              title={item.title}
+              className="rounded-none"
+            />
 
             <div className="border-t border-border-subtle p-6">
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -78,6 +55,7 @@ export function BeforeAfterShowcase() {
                           : "bg-muted hover:bg-muted-foreground/30",
                       )}
                       aria-label={`View ${g.title}`}
+                      aria-pressed={i === activeIndex}
                     />
                   ))}
                 </div>

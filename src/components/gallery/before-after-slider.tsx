@@ -18,8 +18,8 @@ export function BeforeAfterSlider({
   className,
 }: BeforeAfterSliderProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const isDraggingRef = useRef(false);
   const [position, setPosition] = useState(50);
-  const [isDragging, setIsDragging] = useState(false);
 
   const updatePosition = useCallback((clientX: number) => {
     const container = containerRef.current;
@@ -31,18 +31,21 @@ export function BeforeAfterSlider({
   }, []);
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    setIsDragging(true);
+    isDraggingRef.current = true;
     updatePosition(e.clientX);
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    containerRef.current?.setPointerCapture(e.pointerId);
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
+    if (!isDraggingRef.current) return;
     updatePosition(e.clientX);
   };
 
-  const handlePointerUp = () => {
-    setIsDragging(false);
+  const handlePointerUp = (e: React.PointerEvent) => {
+    isDraggingRef.current = false;
+    if (containerRef.current?.hasPointerCapture(e.pointerId)) {
+      containerRef.current.releasePointerCapture(e.pointerId);
+    }
   };
 
   return (
@@ -58,6 +61,7 @@ export function BeforeAfterSlider({
       onPointerCancel={handlePointerUp}
       role="slider"
       aria-label={`Before and after comparison for ${title}`}
+      aria-orientation="horizontal"
       aria-valuenow={Math.round(position)}
       aria-valuemin={0}
       aria-valuemax={100}
@@ -65,6 +69,8 @@ export function BeforeAfterSlider({
       onKeyDown={(e) => {
         if (e.key === "ArrowLeft") setPosition((p) => Math.max(0, p - 5));
         if (e.key === "ArrowRight") setPosition((p) => Math.min(100, p + 5));
+        if (e.key === "Home") setPosition(0);
+        if (e.key === "End") setPosition(100);
       }}
     >
       <Image

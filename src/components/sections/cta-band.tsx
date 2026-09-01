@@ -1,9 +1,15 @@
 import { CTAButton } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
+import { cn } from "@/lib/utils";
 
 export function CtaBand() {
   return (
-    <section className="section-padding">
+    <section
+      className={cn(
+        "px-4 pb-20 sm:px-6 lg:px-8 lg:pb-28",
+        "pt-8 lg:pt-10",
+      )}
+    >
       <div className="container-narrow">
         <FadeIn>
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-purple-900 via-brand-purple-950 to-surface-base px-8 py-16 text-center sm:px-12 lg:py-20">

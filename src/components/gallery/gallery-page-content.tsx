@@ -8,16 +8,9 @@ import type { GalleryCategory, GalleryPhoto } from "@/types/content";
 import type { CtaBandContent, SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { CtaBand } from "@/components/sections/cta-band";
-
-const DIALOG_CLOSE_MS = 200;
+import { GalleryLightbox } from "@/components/gallery/gallery-lightbox";
 
 type GalleryPageContentProps = {
   photos: GalleryPhoto[];
@@ -125,8 +118,8 @@ export function GalleryPageContent({
 }: GalleryPageContentProps) {
   const [category, setCategory] = useState<GalleryCategory>("all");
   const [selectedCar, setSelectedCar] = useState("all");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
 
   const categoryPhotos = useMemo(
     () =>
@@ -159,15 +152,9 @@ export function GalleryPageContent({
   }, [carNames, selectedCar]);
 
   const openPhoto = (photo: GalleryPhoto) => {
-    setSelectedPhoto(photo);
-    setDialogOpen(true);
-  };
-
-  const handleDialogChange = (open: boolean) => {
-    setDialogOpen(open);
-    if (!open) {
-      window.setTimeout(() => setSelectedPhoto(null), DIALOG_CLOSE_MS);
-    }
+    const index = filteredPhotos.findIndex((item) => item.id === photo.id);
+    setLightboxIndex(index >= 0 ? index : 0);
+    setLightboxOpen(true);
   };
 
   const handleCategoryChange = (nextCategory: GalleryCategory) => {
@@ -263,28 +250,13 @@ export function GalleryPageContent({
         </div>
       </section>
 
-      <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent className="glass-panel max-w-4xl border-border-subtle bg-surface-base p-0">
-          {selectedPhoto && (
-            <>
-              <DialogHeader className="p-6 pb-0">
-                <DialogTitle>
-                  {selectedPhoto.carName ?? "Gallery photo"}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="relative aspect-[4/3] p-6 pt-4">
-                <Image
-                  src={selectedPhoto.imageUrl}
-                  alt={selectedPhoto.carName ?? "Gallery photo"}
-                  fill
-                  className="rounded-lg object-contain"
-                  sizes="(max-width: 896px) 100vw, 896px"
-                />
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <GalleryLightbox
+        photos={filteredPhotos}
+        index={lightboxIndex}
+        open={lightboxOpen}
+        onOpenChange={setLightboxOpen}
+        onIndexChange={setLightboxIndex}
+      />
 
       <CtaBand content={cta} />
     </>

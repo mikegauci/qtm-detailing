@@ -45,9 +45,6 @@ export function BeforeAfterShowcase({ items }: BeforeAfterShowcaseProps) {
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {item.description}
-                  </p>
                 </div>
                 <div className="flex gap-2">
                   {showcaseItems.map((g, i) => (

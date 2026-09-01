@@ -8,9 +8,12 @@ import { requireAdmin } from "@/lib/supabase/admin";
 export type ActionResult = {
   success: boolean;
   message: string;
+  photoId?: string;
 };
 
 const GALLERY_CUSTOMER_EMAIL = "gallery@qtmdetailing.internal";
+
+const GALLERY_CONFIRMATION_CODE = "GALLERY";
 
 async function getGalleryBookingId(supabase: Awaited<
   ReturnType<typeof requireAdmin>
@@ -24,6 +27,16 @@ async function getGalleryBookingId(supabase: Awaited<
 
   if (existingPhoto?.booking_id) {
     return existingPhoto.booking_id;
+  }
+
+  const { data: existingBooking } = await supabase
+    .from("bookings")
+    .select("id")
+    .eq("confirmation_code", GALLERY_CONFIRMATION_CODE)
+    .maybeSingle();
+
+  if (existingBooking?.id) {
+    return existingBooking.id;
   }
 
   let customerId: string;
@@ -59,7 +72,7 @@ async function getGalleryBookingId(supabase: Awaited<
       booking_date: today,
       start_time: "09:00",
       end_time: "17:00",
-      confirmation_code: "GALLERY",
+      confirmation_code: GALLERY_CONFIRMATION_CODE,
       status: "completed",
       total_price: 0,
     })
@@ -76,39 +89,145 @@ async function getGalleryBookingId(supabase: Awaited<
 export async function linkDrivePhoto(input: {
   driveFileId: string;
   driveFolderId: string;
+  driveFolderName: string;
   photoType: "before" | "after";
-  title: string;
   category?: string;
-  description?: string;
 }): Promise<ActionResult> {
   try {
     const { supabase } = await requireAdmin();
     const bookingId = await getGalleryBookingId(supabase);
 
-    const { error } = await supabase.from("job_photos").insert({
-      booking_id: bookingId,
-      drive_file_id: input.driveFileId,
-      drive_folder_id: input.driveFolderId,
-      photo_type: input.photoType,
-      title: input.title,
-      category: input.category ?? "exterior",
-      description: input.description ?? null,
-      photo_url: "",
-      publish_to_gallery: false,
-    });
+    const { data: photo, error } = await supabase
+      .from("job_photos")
+      .insert({
+        booking_id: bookingId,
+        drive_file_id: input.driveFileId,
+        drive_folder_id: input.driveFolderId,
+        drive_folder_name: input.driveFolderName,
+        photo_type: input.photoType,
+        title: null,
+        category: input.category ?? "exterior",
+        description: null,
+        photo_url: "",
+        publish_to_gallery: false,
+      })
+      .select("id")
+      .single();
 
-    if (error) {
-      return { success: false, message: error.message };
+    if (error || !photo) {
+      return { success: false, message: error?.message ?? "Failed to link photo." };
     }
 
     revalidatePath("/admin/gallery");
-    return { success: true, message: "Photo linked from Google Drive." };
+    return { success: true, message: "Photo linked from Google Drive.", photoId: photo.id };
   } catch (err) {
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to link photo.",
     };
   }
+}
+
+export async function linkAndPublishDrivePhotos(input: {
+  driveFileIds: string[];
+  driveFolderId: string;
+  driveFolderName: string;
+  photoType: "before" | "after";
+  category?: string;
+}): Promise<ActionResult> {
+  if (input.driveFileIds.length === 0) {
+    return { success: false, message: "No photos selected." };
+  }
+
+  let published = 0;
+  const errors: string[] = [];
+
+  for (const driveFileId of input.driveFileIds) {
+    const linkResult = await linkDrivePhoto({
+      driveFileId,
+      driveFolderId: input.driveFolderId,
+      driveFolderName: input.driveFolderName,
+      photoType: input.photoType,
+      category: input.category,
+    });
+
+    if (!linkResult.success || !linkResult.photoId) {
+      errors.push(linkResult.message);
+      continue;
+    }
+
+    const publishResult = await publishPhoto(linkResult.photoId);
+    if (publishResult.success) {
+      published += 1;
+    } else {
+      errors.push(publishResult.message);
+    }
+  }
+
+  revalidatePath("/admin/gallery");
+  revalidatePath("/gallery");
+
+  if (published === 0) {
+    return {
+      success: false,
+      message: errors[0] ?? "Failed to publish photos.",
+    };
+  }
+
+  if (errors.length > 0) {
+    return {
+      success: true,
+      message: `Published ${published} of ${input.driveFileIds.length} photos. Some failed.`,
+    };
+  }
+
+  return {
+    success: true,
+    message:
+      published === 1
+        ? "Photo published to gallery."
+        : `Published ${published} photos to gallery.`,
+  };
+}
+
+export async function publishAllPhotos(photoIds: string[]): Promise<ActionResult> {
+  if (photoIds.length === 0) {
+    return { success: false, message: "No photos to publish." };
+  }
+
+  let published = 0;
+  const errors: string[] = [];
+
+  for (const photoId of photoIds) {
+    const result = await publishPhoto(photoId);
+    if (result.success) {
+      published += 1;
+    } else {
+      errors.push(result.message);
+    }
+  }
+
+  if (published === 0) {
+    return {
+      success: false,
+      message: errors[0] ?? "Failed to publish photos.",
+    };
+  }
+
+  if (errors.length > 0) {
+    return {
+      success: true,
+      message: `Published ${published} of ${photoIds.length} photos. Some failed.`,
+    };
+  }
+
+  return {
+    success: true,
+    message:
+      published === 1
+        ? "Photo published to gallery."
+        : `Published ${published} photos to gallery.`,
+  };
 }
 
 export async function publishPhoto(photoId: string): Promise<ActionResult> {
@@ -172,6 +291,37 @@ export async function publishPhoto(photoId: string): Promise<ActionResult> {
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to publish photo.",
+    };
+  }
+}
+
+export async function updatePhotoMetadata(input: {
+  photoId: string;
+  photoType: "before" | "after";
+  category: string;
+}): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const { error } = await supabase
+      .from("job_photos")
+      .update({
+        photo_type: input.photoType,
+        category: input.category,
+      })
+      .eq("id", input.photoId);
+
+    if (error) {
+      return { success: false, message: error.message };
+    }
+
+    revalidatePath("/admin/gallery");
+    revalidatePath("/gallery");
+    return { success: true, message: "Photo updated." };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to update photo.",
     };
   }
 }

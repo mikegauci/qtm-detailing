@@ -59,7 +59,24 @@ export type GalleryCategory =
   | "exterior"
   | "interior"
   | "correction"
-  | "coating";
+  | "coating"
+  | "car";
+
+export type GalleryPhotoCategory = Exclude<GalleryCategory, "all">;
+
+export type GalleryPhoto = {
+  id: string;
+  imageUrl: string;
+  photoType: "before" | "after";
+  category: GalleryPhotoCategory;
+  carName?: string;
+};
+
+export type CarGalleryGroup = {
+  carName: string;
+  beforePhotos: GalleryPhoto[];
+  afterPhotos: GalleryPhoto[];
+};
 
 export type GalleryItem = {
   id: string;

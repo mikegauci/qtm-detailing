@@ -1,55 +1,178 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import {
-  galleryCategories,
-} from "@/lib/content/gallery-categories";
-import type { GalleryCategory, GalleryItem } from "@/types/content";
+import { motion, useReducedMotion } from "motion/react";
+import { galleryCategories } from "@/lib/content/gallery-categories";
+import type { GalleryCategory, GalleryPhoto } from "@/types/content";
 import type { CtaBandContent, SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
+import { FadeIn } from "@/components/motion/fade-in";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { BeforeAfterSlider } from "@/components/gallery/before-after-slider";
 import { CtaBand } from "@/components/sections/cta-band";
 
 const DIALOG_CLOSE_MS = 200;
 
 type GalleryPageContentProps = {
-  items: GalleryItem[];
+  photos: GalleryPhoto[];
   cta: CtaBandContent;
   hero: SectionHeadingContent;
 };
 
-export function GalleryPageContent({ items, cta, hero }: GalleryPageContentProps) {
+function PhotoGrid({
+  items,
+  filterKey,
+  onSelect,
+}: {
+  items: GalleryPhoto[];
+  filterKey: string;
+  onSelect: (photo: GalleryPhoto) => void;
+}) {
+  const shouldReduceMotion = useReducedMotion();
+
+  if (shouldReduceMotion) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((photo) => (
+          <PhotoGridItem key={photo.id} photo={photo} onSelect={onSelect} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <motion.div
+      key={filterKey}
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: {},
+        visible: { transition: { staggerChildren: 0.08 } },
+      }}
+    >
+      {items.map((photo) => (
+        <PhotoGridItem key={photo.id} photo={photo} onSelect={onSelect} animated />
+      ))}
+    </motion.div>
+  );
+}
+
+function PhotoGridItem({
+  photo,
+  onSelect,
+  animated = false,
+}: {
+  photo: GalleryPhoto;
+  onSelect: (photo: GalleryPhoto) => void;
+  animated?: boolean;
+}) {
+  const content = (
+    <button
+      type="button"
+      onClick={() => onSelect(photo)}
+      className="group glass-panel w-full overflow-hidden rounded-2xl text-left transition-all hover:border-brand-purple-400/30 hover:glow-purple"
+    >
+      <div className="relative aspect-[4/3] overflow-hidden">
+        <Image
+          src={photo.imageUrl}
+          alt={photo.carName ?? "Gallery photo"}
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          sizes="(max-width: 768px) 100vw, 33vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-surface-base/80 via-transparent to-transparent" />
+        {photo.carName && (
+          <div className="absolute right-3 bottom-3 left-3">
+            <p className="font-semibold text-white">{photo.carName}</p>
+            <p className="text-xs text-white/70 capitalize">{photo.photoType}</p>
+          </div>
+        )}
+      </div>
+    </button>
+  );
+
+  if (!animated) {
+    return content;
+  }
+
+  return (
+    <motion.div
+      variants={{
+        hidden: { opacity: 0, y: 24 },
+        visible: {
+          opacity: 1,
+          y: 0,
+          transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] },
+        },
+      }}
+    >
+      {content}
+    </motion.div>
+  );
+}
+
+export function GalleryPageContent({
+  photos,
+  cta,
+  hero,
+}: GalleryPageContentProps) {
   const [category, setCategory] = useState<GalleryCategory>("all");
+  const [selectedCar, setSelectedCar] = useState("all");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedPhoto, setSelectedPhoto] = useState<GalleryPhoto | null>(null);
 
-  const filtered =
-    category === "all"
-      ? items
-      : items.filter((item) => item.category === category);
+  const categoryPhotos = useMemo(
+    () =>
+      category === "all"
+        ? photos
+        : photos.filter((photo) => photo.category === category),
+    [photos, category],
+  );
 
-  const selectedItem = items.find((item) => item.id === selectedId);
+  const carNames = useMemo(
+    () =>
+      Array.from(
+        new Set(categoryPhotos.map((photo) => photo.carName).filter(Boolean)),
+      ).sort() as string[],
+    [categoryPhotos],
+  );
 
-  const openItem = (id: string) => {
-    setSelectedId(id);
+  const filteredPhotos = useMemo(() => {
+    if (selectedCar === "all") {
+      return categoryPhotos;
+    }
+
+    return categoryPhotos.filter((photo) => photo.carName === selectedCar);
+  }, [categoryPhotos, selectedCar]);
+
+  useEffect(() => {
+    if (selectedCar !== "all" && !carNames.includes(selectedCar)) {
+      setSelectedCar("all");
+    }
+  }, [carNames, selectedCar]);
+
+  const openPhoto = (photo: GalleryPhoto) => {
+    setSelectedPhoto(photo);
     setDialogOpen(true);
   };
 
   const handleDialogChange = (open: boolean) => {
     setDialogOpen(open);
     if (!open) {
-      window.setTimeout(() => setSelectedId(null), DIALOG_CLOSE_MS);
+      window.setTimeout(() => setSelectedPhoto(null), DIALOG_CLOSE_MS);
     }
+  };
+
+  const handleCategoryChange = (nextCategory: GalleryCategory) => {
+    setCategory(nextCategory);
+    setSelectedCar("all");
   };
 
   return (
@@ -65,13 +188,13 @@ export function GalleryPageContent({ items, cta, hero }: GalleryPageContentProps
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <div className="mb-10 flex flex-wrap justify-center gap-2">
+            <div className="mb-6 flex flex-wrap justify-center gap-2">
               {galleryCategories.map((cat) => (
                 <button
                   key={cat.id}
                   type="button"
                   aria-pressed={category === cat.id}
-                  onClick={() => setCategory(cat.id)}
+                  onClick={() => handleCategoryChange(cat.id)}
                   className={cn(
                     "rounded-full px-4 py-2 text-sm font-medium transition-colors",
                     category === cat.id
@@ -83,59 +206,79 @@ export function GalleryPageContent({ items, cta, hero }: GalleryPageContentProps
                 </button>
               ))}
             </div>
+
+            {carNames.length > 0 && (
+              <div className="mb-10 flex flex-col items-center gap-3">
+                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                  Vehicle
+                </p>
+                <div className="flex flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    aria-pressed={selectedCar === "all"}
+                    onClick={() => setSelectedCar("all")}
+                    className={cn(
+                      "rounded-full px-3 py-1.5 text-sm transition-colors",
+                      selectedCar === "all"
+                        ? "bg-brand-cyan-500/20 text-brand-cyan-300 ring-1 ring-brand-cyan-400/40"
+                        : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
+                    )}
+                  >
+                    All
+                  </button>
+                  {carNames.map((carName) => (
+                    <button
+                      key={carName}
+                      type="button"
+                      aria-pressed={selectedCar === carName}
+                      onClick={() => setSelectedCar(carName)}
+                      className={cn(
+                        "rounded-full px-3 py-1.5 text-sm transition-colors",
+                        selectedCar === carName
+                          ? "bg-brand-cyan-500/20 text-brand-cyan-300 ring-1 ring-brand-cyan-400/40"
+                          : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
+                      )}
+                    >
+                      {carName}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </FadeIn>
 
-          {filtered.length === 0 ? (
+          {filteredPhotos.length === 0 ? (
             <FadeIn>
               <p className="text-center text-muted-foreground">
                 No projects in this category yet. Try another filter or check back soon.
               </p>
             </FadeIn>
           ) : (
-            <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-              {filtered.map((item) => (
-                <StaggerItem key={item.id}>
-                  <button
-                    type="button"
-                    onClick={() => openItem(item.id)}
-                    className="group glass-panel w-full overflow-hidden rounded-2xl text-left transition-all hover:border-brand-purple-400/30 hover:glow-purple"
-                  >
-                    <div className="relative aspect-[4/3] overflow-hidden">
-                      <Image
-                        src={item.afterImage}
-                        alt={item.title}
-                        fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-105"
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-surface-base/80 via-transparent to-transparent" />
-                      <div className="absolute right-3 bottom-3 left-3">
-                        <p className="font-semibold text-white">{item.title}</p>
-                        <p className="text-xs text-white/70">{item.description}</p>
-                      </div>
-                    </div>
-                  </button>
-                </StaggerItem>
-              ))}
-            </StaggerContainer>
+            <PhotoGrid
+              filterKey={`${category}-${selectedCar}`}
+              items={filteredPhotos}
+              onSelect={openPhoto}
+            />
           )}
         </div>
       </section>
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
         <DialogContent className="glass-panel max-w-4xl border-border-subtle bg-surface-base p-0">
-          {selectedItem && (
+          {selectedPhoto && (
             <>
               <DialogHeader className="p-6 pb-0">
-                <DialogTitle>{selectedItem.title}</DialogTitle>
-                <DialogDescription>{selectedItem.description}</DialogDescription>
+                <DialogTitle>
+                  {selectedPhoto.carName ?? "Gallery photo"}
+                </DialogTitle>
               </DialogHeader>
-              <div className="p-6 pt-4">
-                <BeforeAfterSlider
-                  key={selectedItem.id}
-                  beforeImage={selectedItem.beforeImage}
-                  afterImage={selectedItem.afterImage}
-                  title={selectedItem.title}
+              <div className="relative aspect-[4/3] p-6 pt-4">
+                <Image
+                  src={selectedPhoto.imageUrl}
+                  alt={selectedPhoto.carName ?? "Gallery photo"}
+                  fill
+                  className="rounded-lg object-contain"
+                  sizes="(max-width: 896px) 100vw, 896px"
                 />
               </div>
             </>

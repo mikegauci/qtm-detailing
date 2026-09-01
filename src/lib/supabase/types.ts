@@ -313,6 +313,7 @@ export type Database = {
           description: string | null
           drive_file_id: string | null
           drive_folder_id: string | null
+          drive_folder_name: string | null
           id: string
           photo_type: string
           photo_url: string
@@ -327,6 +328,7 @@ export type Database = {
           description?: string | null
           drive_file_id?: string | null
           drive_folder_id?: string | null
+          drive_folder_name?: string | null
           id?: string
           photo_type: string
           photo_url: string
@@ -341,6 +343,7 @@ export type Database = {
           description?: string | null
           drive_file_id?: string | null
           drive_folder_id?: string | null
+          drive_folder_name?: string | null
           id?: string
           photo_type?: string
           photo_url?: string

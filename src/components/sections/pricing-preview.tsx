@@ -1,11 +1,15 @@
 import { Check } from "lucide-react";
-import { packages } from "@/content/packages";
+import type { Package } from "@/content/packages";
 import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
 
-export function PricingPreviewSection() {
+type PricingPreviewSectionProps = {
+  packages: Package[];
+};
+
+export function PricingPreviewSection({ packages }: PricingPreviewSectionProps) {
   return (
     <section className="section-padding bg-surface-raised/30">
       <div className="container-narrow">

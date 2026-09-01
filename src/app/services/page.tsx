@@ -1,13 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Clock, Check } from "lucide-react";
-import {
-  services,
-  paintProtectionIntro,
-  pricingInformation,
-} from "@/content/services";
-import { packages, comparisonFeatures } from "@/content/packages";
-import { faqItems } from "@/content/faq";
+import { paintProtectionIntro, pricingInformation } from "@/content/services";
 import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
@@ -20,6 +14,11 @@ import {
 import { CtaBand } from "@/components/sections/cta-band";
 import { HashScroll } from "@/components/services/hash-scroll";
 import { cn } from "@/lib/utils";
+import { getServices } from "@/lib/content/get-services";
+import { getPackages } from "@/lib/content/get-packages";
+import { getFaqs } from "@/lib/content/get-faqs";
+import { getPageSection } from "@/lib/content/get-page-section";
+import type { CtaBandContent } from "@/components/admin/page-copy-editor";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -27,7 +26,23 @@ export const metadata: Metadata = {
     "Explore QTM Detailing services — premium interior deep clean, exterior detail, paint enhancement, ceramic protection, and signature packages. Premium automotive care in Malta.",
 };
 
-export default function ServicesPage() {
+const defaultCta: CtaBandContent = {
+  title: "Ready for showroom results?",
+  description:
+    "Request a free quote and we'll get back within 24 hours with availability and personalised pricing for your vehicle.",
+  primaryCta: { label: "Request a Quote", href: "/contact" },
+  secondaryCta: { label: "Explore Services", href: "/services" },
+};
+
+export default async function ServicesPage() {
+  const [services, { packages, comparisonFeatures }, faqItems, cta] =
+    await Promise.all([
+      getServices(),
+      getPackages(),
+      getFaqs(),
+      getPageSection("home", "cta-band", defaultCta),
+    ]);
+
   return (
     <>
       <HashScroll />
@@ -235,7 +250,7 @@ export default function ServicesPage() {
         </div>
       </section>
 
-      <CtaBand />
+      <CtaBand content={cta} />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Clock } from "lucide-react";
-import { services, type Service } from "@/content/services";
+import type { Service } from "@/content/services";
 import { formatPrice } from "@/lib/utils";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScrollCarousel } from "@/components/ui/scroll-carousel";
@@ -46,7 +46,13 @@ function ServiceCard({ service }: { service: Service }) {
   );
 }
 
-export function FeaturedServicesSection() {
+type FeaturedServicesSectionProps = {
+  services: Service[];
+};
+
+export function FeaturedServicesSection({
+  services,
+}: FeaturedServicesSectionProps) {
   return (
     <section className="section-padding overflow-x-clip bg-surface-base">
       <div className="container-narrow">
@@ -57,7 +63,6 @@ export function FeaturedServicesSection() {
             description="From daily drivers to supercars, every vehicle receives the same obsessive attention to detail."
           />
         </FadeIn>
-
       </div>
 
       <FadeIn className="mt-10">

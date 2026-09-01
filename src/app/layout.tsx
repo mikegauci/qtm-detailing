@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Sora } from "next/font/google";
-import { Header } from "@/components/layout/header";
-import { Footer } from "@/components/layout/footer";
+import { SiteChrome } from "@/components/layout/site-chrome";
 import { Toaster } from "@/components/ui/sonner";
 import { siteConfig } from "@/content/site";
 import { LocalBusinessJsonLd } from "@/components/seo/local-business-jsonld";
@@ -63,9 +62,7 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body className={`${inter.variable} ${sora.variable} antialiased`}>
         <LocalBusinessJsonLd />
-        <Header />
-        <main>{children}</main>
-        <Footer />
+        <SiteChrome>{children}</SiteChrome>
         <Toaster position="top-center" richColors />
       </body>
     </html>

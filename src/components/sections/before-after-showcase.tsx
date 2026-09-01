@@ -3,15 +3,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { galleryItems } from "@/content/gallery";
+import type { GalleryItem } from "@/content/gallery";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { BeforeAfterSlider } from "@/components/gallery/before-after-slider";
 import { cn } from "@/lib/utils";
 
-export function BeforeAfterShowcase() {
+type BeforeAfterShowcaseProps = {
+  items: GalleryItem[];
+};
+
+export function BeforeAfterShowcase({ items }: BeforeAfterShowcaseProps) {
   const [activeIndex, setActiveIndex] = useState(0);
-  const item = galleryItems[activeIndex];
+  const showcaseItems = items.slice(0, 4);
+  const item = showcaseItems[activeIndex] ?? items[0];
+
+  if (!item) return null;
 
   return (
     <section className="section-padding">
@@ -43,7 +50,7 @@ export function BeforeAfterShowcase() {
                   </p>
                 </div>
                 <div className="flex gap-2">
-                  {galleryItems.slice(0, 4).map((g, i) => (
+                  {showcaseItems.map((g, i) => (
                     <button
                       key={g.id}
                       type="button"

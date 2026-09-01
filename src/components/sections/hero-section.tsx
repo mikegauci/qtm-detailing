@@ -4,8 +4,13 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { CTAButton } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
+import type { HeroContent } from "@/components/admin/page-copy-editor";
 
-export function HeroSection() {
+type HeroSectionProps = {
+  content: HeroContent;
+};
+
+export function HeroSection({ content }: HeroSectionProps) {
   return (
     <section className="relative min-h-screen overflow-hidden noise-overlay">
       <div className="absolute inset-0 bg-surface-base">
@@ -15,7 +20,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-0 lg:hidden">
         <FadeIn delay={0.25} direction="up" className="relative h-full">
           <Image
-            src="/about-page-mobile.jpg"
+            src={content.mobileImage}
             alt="Glossy black sports car in the QTM detailing studio"
             fill
             priority
@@ -30,7 +35,7 @@ export function HeroSection() {
       <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[58%] lg:block">
         <FadeIn delay={0.25} direction="left" className="relative h-full">
           <Image
-            src="/about-page.jpg"
+            src={content.desktopImage}
             alt="Glossy black sports car in the QTM detailing studio"
             fill
             priority
@@ -47,37 +52,39 @@ export function HeroSection() {
       <div className="container-narrow relative z-[2] flex min-h-screen flex-col justify-center px-4 pt-28 pb-20 sm:px-6 lg:px-8">
         <FadeIn>
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.25em] text-brand-cyan-400">
-            Malta&apos;s Premium Detailing Studio
+            {content.eyebrow}
           </p>
         </FadeIn>
 
         <FadeIn delay={0.1}>
           <h1 className="max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:max-w-2xl lg:text-7xl">
-            <span className="gradient-text">Showroom-grade</span>
+            <span className="gradient-text">{content.titleLine1}</span>
             <br />
-            <span className="text-foreground">detailing for every drive</span>
+            <span className="text-foreground">{content.titleLine2}</span>
           </h1>
         </FadeIn>
 
         <FadeIn delay={0.2}>
           <p className="mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl lg:max-w-lg">
-            Paint correction, ceramic coating, and interior restoration,
-            crafted with precision for Malta&apos;s most discerning drivers.
+            {content.description}
           </p>
         </FadeIn>
 
         <FadeIn delay={0.3}>
           <div className="mt-10 flex flex-col gap-4 sm:flex-row">
-            <CTAButton href="/contact" className="gap-2 px-8 py-4 text-base">
-              Request a Quote
+            <CTAButton
+              href={content.primaryCta.href}
+              className="gap-2 px-8 py-4 text-base"
+            >
+              {content.primaryCta.label}
               <ArrowRight className="h-4 w-4" />
             </CTAButton>
             <CTAButton
-              href="/services"
+              href={content.secondaryCta.href}
               variant="outline"
               className="px-8 py-4 text-base"
             >
-              View Services
+              {content.secondaryCta.label}
             </CTAButton>
           </div>
         </FadeIn>

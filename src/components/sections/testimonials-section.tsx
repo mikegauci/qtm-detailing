@@ -1,9 +1,15 @@
 import { Star } from "lucide-react";
-import { testimonials } from "@/content/testimonials";
+import type { Testimonial } from "@/content/testimonials";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 
-export function TestimonialsSection() {
+type TestimonialsSectionProps = {
+  testimonials: Testimonial[];
+};
+
+export function TestimonialsSection({
+  testimonials,
+}: TestimonialsSectionProps) {
   return (
     <section className="section-padding">
       <div className="container-narrow">

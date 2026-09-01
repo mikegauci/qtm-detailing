@@ -1,8 +1,21 @@
 import { CTAButton } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
+import type { CtaBandContent } from "@/components/admin/page-copy-editor";
 
-export function CtaBand() {
+type CtaBandProps = {
+  content?: CtaBandContent;
+};
+
+const defaultContent: CtaBandContent = {
+  title: "Ready for showroom results?",
+  description:
+    "Request a free quote and we'll get back within 24 hours with availability and personalised pricing for your vehicle.",
+  primaryCta: { label: "Request a Quote", href: "/contact" },
+  secondaryCta: { label: "Explore Services", href: "/services" },
+};
+
+export function CtaBand({ content = defaultContent }: CtaBandProps) {
   return (
     <section
       className={cn(
@@ -16,22 +29,24 @@ export function CtaBand() {
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgb(90_220_242_/_0.15),transparent_50%)]" />
             <div className="relative">
               <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-                Ready for showroom results?
+                {content.title}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
-                Request a free quote and we&apos;ll get back within 24 hours with
-                availability and personalised pricing for your vehicle.
+                {content.description}
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <CTAButton href="/contact" className="px-8 py-4 text-base">
-                  Request a Quote
+                <CTAButton
+                  href={content.primaryCta.href}
+                  className="px-8 py-4 text-base"
+                >
+                  {content.primaryCta.label}
                 </CTAButton>
                 <CTAButton
-                  href="/services"
+                  href={content.secondaryCta.href}
                   variant="outline"
                   className="px-8 py-4 text-base"
                 >
-                  Explore Services
+                  {content.secondaryCta.label}
                 </CTAButton>
               </div>
             </div>

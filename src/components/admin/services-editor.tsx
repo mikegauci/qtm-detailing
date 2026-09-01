@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteService, upsertService } from "@/app/actions/admin/cms";
+import { CmsImageField } from "@/components/admin/cms-image-field";
 import type { Tables } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -200,15 +201,13 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
             }
           />
         </div>
-        <div className="space-y-2">
-          <Label>Image URL</Label>
-          <Input
-            value={editing.image_url ?? ""}
-            onChange={(e) =>
-              setEditing((p) => ({ ...p, image_url: e.target.value }))
-            }
-          />
-        </div>
+        <CmsImageField
+          label="Service image"
+          value={editing.image_url ?? ""}
+          onChange={(url) => setEditing((p) => ({ ...p, image_url: url }))}
+          folder="services"
+          filename={editing.slug || undefined}
+        />
         <div className="space-y-2">
           <Label>Features (one per line)</Label>
           <Textarea

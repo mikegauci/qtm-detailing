@@ -56,8 +56,8 @@ export const defaultHero: HeroContent = {
     "Paint correction, ceramic coating, and interior restoration, crafted with precision for Malta's most discerning drivers.",
   primaryCta: { label: "Request a Quote", href: "/contact" },
   secondaryCta: { label: "View Services", href: "/services" },
-  mobileImage: "/about-page-mobile.jpg",
-  desktopImage: "/about-page.jpg",
+  mobileImage: "",
+  desktopImage: "",
 };
 
 export const defaultWhyQtm: WhyQtmContent = {
@@ -148,8 +148,8 @@ export const defaultAboutIntro: AboutIntroContent = {
     "Founded with a simple mission: deliver showroom-grade results that last. Every vehicle that enters our studio receives the same obsessive attention, whether it's a daily commuter or a weekend supercar.",
   mission:
     'QTM stands for Quad Tang Muto, meaning "What I touch, I change." Our team combines years of experience in automotive care with continuous training on the latest products and techniques. We believe detailing is a craft, and your car deserves nothing less than mastery.',
-  mobileImage: "/about-page-mobile.jpg",
-  desktopImage: "/about-page.jpg",
+  mobileImage: "",
+  desktopImage: "",
 };
 
 export const defaultProcessSteps: ProcessStepsContent = {

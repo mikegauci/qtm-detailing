@@ -23,7 +23,7 @@ function mapDbService(row: Tables<"services">): Service {
     features,
     includedServices:
       includedServices.length > 0 ? includedServices : undefined,
-    image: row.image_url ?? "/exterior-detail-v2.jpg",
+    image: row.image_url ?? "",
     featured: row.featured,
     category: (row.category as Service["category"]) ?? undefined,
   };

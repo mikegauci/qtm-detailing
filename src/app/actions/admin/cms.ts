@@ -1,6 +1,11 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import {
+  CMS_ASSETS_BUCKET,
+  cmsAssetStoragePath,
+  optimizeCmsImage,
+} from "@/lib/cms/upload-cms-asset";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
@@ -9,6 +14,57 @@ export type ActionResult = {
   success: boolean;
   message: string;
 };
+
+export type UploadCmsAssetResult = ActionResult & {
+  url?: string;
+};
+
+export async function uploadCmsAsset(formData: FormData): Promise<UploadCmsAssetResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const file = formData.get("file");
+    const folder = String(formData.get("folder") ?? "misc");
+    const filename = String(formData.get("filename") ?? "");
+
+    if (!(file instanceof File) || file.size === 0) {
+      return { success: false, message: "No image file provided." };
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return { success: false, message: "File must be an image." };
+    }
+
+    const baseName =
+      filename ||
+      file.name.replace(/\.[^.]+$/, "") ||
+      `asset-${Date.now()}`;
+    const storagePath = cmsAssetStoragePath(folder, `${baseName}.jpg`);
+    const optimized = await optimizeCmsImage(Buffer.from(await file.arrayBuffer()));
+
+    const { error: uploadError } = await supabase.storage
+      .from(CMS_ASSETS_BUCKET)
+      .upload(storagePath, optimized, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return { success: false, message: uploadError.message };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(CMS_ASSETS_BUCKET).getPublicUrl(storagePath);
+
+    return { success: true, message: "Image uploaded.", url: publicUrl };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to upload image.",
+    };
+  }
+}
 
 function revalidateContent() {
   revalidatePath("/");

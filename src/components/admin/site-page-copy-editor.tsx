@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { upsertPageSection } from "@/app/actions/admin/cms";
+import { CmsImageField } from "@/components/admin/cms-image-field";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -389,30 +390,30 @@ export function SitePageCopyEditor({
                 />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="space-y-2">
-                  <Label>Mobile image</Label>
-                  <Input
-                    value={aboutIntroContent.mobileImage}
-                    onChange={(e) =>
-                      setAboutIntroContent((p) => ({
-                        ...p,
-                        mobileImage: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Desktop image</Label>
-                  <Input
-                    value={aboutIntroContent.desktopImage}
-                    onChange={(e) =>
-                      setAboutIntroContent((p) => ({
-                        ...p,
-                        desktopImage: e.target.value,
-                      }))
-                    }
-                  />
-                </div>
+                <CmsImageField
+                  label="Mobile image"
+                  value={aboutIntroContent.mobileImage}
+                  onChange={(url) =>
+                    setAboutIntroContent((p) => ({
+                      ...p,
+                      mobileImage: url,
+                    }))
+                  }
+                  folder="about"
+                  filename="about-page-mobile"
+                />
+                <CmsImageField
+                  label="Desktop image"
+                  value={aboutIntroContent.desktopImage}
+                  onChange={(url) =>
+                    setAboutIntroContent((p) => ({
+                      ...p,
+                      desktopImage: url,
+                    }))
+                  }
+                  folder="about"
+                  filename="about-page"
+                />
               </div>
               <div className="flex justify-end">
                 <Button

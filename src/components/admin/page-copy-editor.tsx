@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { upsertPageSection } from "@/app/actions/admin/cms";
+import { CmsImageField } from "@/components/admin/cms-image-field";
 import {
   Accordion,
   AccordionContent,
@@ -362,6 +363,32 @@ export function PageCopyEditor({ hero, whyQtm, ctaBand }: PageCopyEditorProps) {
                       }))
                     }
                   />
+                </FieldGroup>
+
+                <FieldGroup
+                  title="Hero images"
+                  description="Background images shown on the homepage hero"
+                >
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <CmsImageField
+                      label="Mobile image"
+                      value={heroContent.mobileImage}
+                      onChange={(url) =>
+                        setHeroContent((p) => ({ ...p, mobileImage: url }))
+                      }
+                      folder="hero"
+                      filename="hero-mobile"
+                    />
+                    <CmsImageField
+                      label="Desktop image"
+                      value={heroContent.desktopImage}
+                      onChange={(url) =>
+                        setHeroContent((p) => ({ ...p, desktopImage: url }))
+                      }
+                      folder="hero"
+                      filename="hero-desktop"
+                    />
+                  </div>
                 </FieldGroup>
 
                 <FieldGroup

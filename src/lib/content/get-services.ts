@@ -1,7 +1,4 @@
-import {
-  services as staticServices,
-  type Service,
-} from "@/content/services";
+import type { Service } from "@/types/content";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -53,11 +50,7 @@ export async function getServices(options?: {
   const { data, error } = await query;
 
   if (error || !data?.length) {
-    let fallback = staticServices;
-    if (options?.featuredOnly) {
-      fallback = staticServices.filter((s) => s.featured);
-    }
-    return fallback;
+    return [];
   }
 
   return data.map(mapDbService);

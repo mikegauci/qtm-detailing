@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import type { Package } from "@/content/packages";
+import type { Package } from "@/types/content";
 import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";

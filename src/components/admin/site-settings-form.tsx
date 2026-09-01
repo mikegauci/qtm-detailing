@@ -4,12 +4,11 @@ import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { upsertSiteSettings } from "@/app/actions/admin/cms";
-import { SeedContentButton } from "@/components/admin/seed-content-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import type { SiteConfig } from "@/content/site";
+import type { SiteConfig } from "@/types/content";
 
 type SiteSettingsFormProps = {
   initialSettings: SiteConfig;
@@ -142,7 +141,6 @@ export function SiteSettingsForm({ initialSettings }: SiteSettingsFormProps) {
             "Save settings"
           )}
         </Button>
-        <SeedContentButton />
       </div>
     </form>
   );

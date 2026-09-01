@@ -4,9 +4,9 @@ import { useState } from "react";
 import Image from "next/image";
 import {
   galleryCategories,
-  type GalleryCategory,
-  type GalleryItem,
-} from "@/content/gallery";
+} from "@/lib/content/gallery-categories";
+import type { GalleryCategory, GalleryItem } from "@/types/content";
+import type { CtaBandContent, SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import {
@@ -19,16 +19,16 @@ import {
 import { cn } from "@/lib/utils";
 import { BeforeAfterSlider } from "@/components/gallery/before-after-slider";
 import { CtaBand } from "@/components/sections/cta-band";
-import type { CtaBandContent } from "@/components/admin/page-copy-editor";
 
 const DIALOG_CLOSE_MS = 200;
 
 type GalleryPageContentProps = {
   items: GalleryItem[];
   cta: CtaBandContent;
+  hero: SectionHeadingContent;
 };
 
-export function GalleryPageContent({ items, cta }: GalleryPageContentProps) {
+export function GalleryPageContent({ items, cta, hero }: GalleryPageContentProps) {
   const [category, setCategory] = useState<GalleryCategory>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -58,9 +58,9 @@ export function GalleryPageContent({ items, cta }: GalleryPageContentProps) {
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
-              eyebrow="Gallery"
-              title="Our latest work"
-              description="Real transformations straight from our studio. Click any project to view before and after."
+              eyebrow={hero.eyebrow}
+              title={hero.title}
+              description={hero.description}
             />
           </FadeIn>
 

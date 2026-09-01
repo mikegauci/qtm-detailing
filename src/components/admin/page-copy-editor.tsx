@@ -29,30 +29,23 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 
-export type HeroContent = {
-  eyebrow: string;
-  titleLine1: string;
-  titleLine2: string;
-  description: string;
-  primaryCta: { label: string; href: string };
-  secondaryCta: { label: string; href: string };
-  mobileImage: string;
-  desktopImage: string;
-};
+export type {
+  HeroContent,
+  WhyQtmContent,
+  CtaBandContent,
+  SectionHeadingContent,
+  AboutIntroContent,
+  ProcessStepsContent,
+  EquipmentContent,
+  PricingInfoContent,
+  PaintProtectionIntroContent,
+} from "@/types/page-sections";
 
-export type WhyQtmContent = {
-  eyebrow: string;
-  title: string;
-  description: string;
-  reasons: { title: string; description: string }[];
-};
-
-export type CtaBandContent = {
-  title: string;
-  description: string;
-  primaryCta: { label: string; href: string };
-  secondaryCta: { label: string; href: string };
-};
+import type {
+  HeroContent,
+  WhyQtmContent,
+  CtaBandContent,
+} from "@/types/page-sections";
 
 type PageCopyEditorProps = {
   hero: HeroContent;

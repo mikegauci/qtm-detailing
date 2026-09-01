@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-import { siteConfig } from "@/content/site";
+import { getSiteSettings } from "@/lib/content/get-site-settings";
 
-export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || siteConfig.url;
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const settings = await getSiteSettings();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || settings.url;
 
   return {
     rules: {

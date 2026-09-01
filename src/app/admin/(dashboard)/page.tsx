@@ -9,7 +9,6 @@ import {
 } from "@/lib/utils/booking";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { SeedContentButton } from "@/components/admin/seed-content-button";
 
 export default async function AdminDashboardPage() {
   const { supabase } = await requireAdmin();
@@ -82,14 +81,11 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-          <p className="mt-1 text-sm text-white/60">
-            Overview for {format(new Date(), "EEEE, d MMMM yyyy")}
-          </p>
-        </div>
-        <SeedContentButton />
+      <div>
+        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <p className="mt-1 text-sm text-white/60">
+          Overview for {format(new Date(), "EEEE, d MMMM yyyy")}
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

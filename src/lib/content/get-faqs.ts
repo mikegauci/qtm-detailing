@@ -1,4 +1,4 @@
-import { faqItems as staticFaqs, type FaqItem } from "@/content/faq";
+import type { FaqItem } from "@/types/content";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -24,7 +24,7 @@ export async function getFaqs(includeInactive = false): Promise<FaqItem[]> {
   const { data, error } = await query;
 
   if (error || !data?.length) {
-    return staticFaqs;
+    return [];
   }
 
   return data.map(mapDbFaq);

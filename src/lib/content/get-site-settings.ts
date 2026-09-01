@@ -1,4 +1,5 @@
-import { siteConfig, type SiteConfig } from "@/content/site";
+import type { SiteConfig } from "@/types/content";
+import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getSiteSettings(): Promise<SiteConfig> {
@@ -13,5 +14,5 @@ export async function getSiteSettings(): Promise<SiteConfig> {
     return data.value as SiteConfig;
   }
 
-  return siteConfig;
+  return defaultSiteConfig;
 }

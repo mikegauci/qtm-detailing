@@ -1,21 +1,14 @@
 import { CTAButton } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
-import type { CtaBandContent } from "@/components/admin/page-copy-editor";
+import type { CtaBandContent } from "@/types/page-sections";
+import { defaultCtaBand } from "@/lib/content/cms-defaults";
 
 type CtaBandProps = {
   content?: CtaBandContent;
 };
 
-const defaultContent: CtaBandContent = {
-  title: "Ready for showroom results?",
-  description:
-    "Request a free quote and we'll get back within 24 hours with availability and personalised pricing for your vehicle.",
-  primaryCta: { label: "Request a Quote", href: "/contact" },
-  secondaryCta: { label: "Explore Services", href: "/services" },
-};
-
-export function CtaBand({ content = defaultContent }: CtaBandProps) {
+export function CtaBand({ content = defaultCtaBand }: CtaBandProps) {
   return (
     <section
       className={cn(

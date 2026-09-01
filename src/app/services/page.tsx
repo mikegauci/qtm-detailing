@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Check } from "lucide-react";
-import { paintProtectionIntro, pricingInformation } from "@/content/services";
 import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
@@ -14,11 +13,18 @@ import {
 import { CtaBand } from "@/components/sections/cta-band";
 import { HashScroll } from "@/components/services/hash-scroll";
 import { cn } from "@/lib/utils";
-import { getServices } from "@/lib/content/get-services";
-import { getPackages } from "@/lib/content/get-packages";
+import {
+  defaultCtaBand,
+  defaultFaqHeading,
+  defaultPackagesHeading,
+  defaultPaintProtectionIntro,
+  defaultPricingInfo,
+  defaultServicesHero,
+} from "@/lib/content/cms-defaults";
 import { getFaqs } from "@/lib/content/get-faqs";
+import { getPackages } from "@/lib/content/get-packages";
 import { getPageSection } from "@/lib/content/get-page-section";
-import type { CtaBandContent } from "@/components/admin/page-copy-editor";
+import { getServices } from "@/lib/content/get-services";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -26,22 +32,32 @@ export const metadata: Metadata = {
     "Explore QTM Detailing services — premium interior deep clean, exterior detail, paint enhancement, ceramic protection, and signature packages. Premium automotive care in Malta.",
 };
 
-const defaultCta: CtaBandContent = {
-  title: "Ready for showroom results?",
-  description:
-    "Request a free quote and we'll get back within 24 hours with availability and personalised pricing for your vehicle.",
-  primaryCta: { label: "Request a Quote", href: "/contact" },
-  secondaryCta: { label: "Explore Services", href: "/services" },
-};
-
 export default async function ServicesPage() {
-  const [services, { packages, comparisonFeatures }, faqItems, cta] =
-    await Promise.all([
-      getServices(),
-      getPackages(),
-      getFaqs(),
-      getPageSection("home", "cta-band", defaultCta),
-    ]);
+  const [
+    services,
+    { packages, comparisonFeatures },
+    faqItems,
+    cta,
+    hero,
+    packagesHeading,
+    pricingInfo,
+    faqHeading,
+    paintProtectionIntro,
+  ] = await Promise.all([
+    getServices(),
+    getPackages(),
+    getFaqs(),
+    getPageSection("home", "cta-band", defaultCtaBand),
+    getPageSection("services", "hero", defaultServicesHero),
+    getPageSection("services", "packages-heading", defaultPackagesHeading),
+    getPageSection("services", "pricing-info", defaultPricingInfo),
+    getPageSection("services", "faq-heading", defaultFaqHeading),
+    getPageSection(
+      "services",
+      "paint-protection-intro",
+      defaultPaintProtectionIntro,
+    ),
+  ]);
 
   return (
     <>
@@ -50,9 +66,9 @@ export default async function ServicesPage() {
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
-              eyebrow="Premium Detailing Services"
-              title="Every detail, perfected"
-              description="Professional automotive detailing services tailored to your vehicle's needs."
+              eyebrow={hero.eyebrow}
+              title={hero.title}
+              description={hero.description}
             />
           </FadeIn>
 
@@ -67,9 +83,11 @@ export default async function ServicesPage() {
                 <StaggerItem key={service.id}>
                   {isFirstProtection && (
                     <div className="mb-8">
-                      <h2 className="text-xl font-bold">Paint Protection</h2>
+                      <h2 className="text-xl font-bold">
+                        {paintProtectionIntro.heading}
+                      </h2>
                       <p className="mt-2 text-muted-foreground">
-                        {paintProtectionIntro}
+                        {paintProtectionIntro.intro}
                       </p>
                     </div>
                   )}
@@ -142,9 +160,9 @@ export default async function ServicesPage() {
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
-              eyebrow="Packages"
-              title="Bundle and save"
-              description="Our packages combine the most popular services at a better value."
+              eyebrow={packagesHeading.eyebrow}
+              title={packagesHeading.title}
+              description={packagesHeading.description}
             />
           </FadeIn>
 
@@ -197,14 +215,11 @@ export default async function ServicesPage() {
       <section className="section-padding bg-surface-raised/30">
         <div className="container-narrow max-w-3xl">
           <FadeIn>
-            <SectionHeading
-              eyebrow="Pricing"
-              title={pricingInformation.title}
-            />
+            <SectionHeading eyebrow="Pricing" title={pricingInfo.title} />
           </FadeIn>
           <FadeIn delay={0.1}>
             <div className="space-y-4 text-muted-foreground">
-              {pricingInformation.paragraphs.map((paragraph) => (
+              {pricingInfo.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
@@ -216,9 +231,9 @@ export default async function ServicesPage() {
         <div className="container-narrow max-w-3xl">
           <FadeIn>
             <SectionHeading
-              eyebrow="FAQ"
-              title="Common questions"
-              description="Everything you need to know before booking."
+              eyebrow={faqHeading.eyebrow}
+              title={faqHeading.title}
+              description={faqHeading.description}
             />
           </FadeIn>
 

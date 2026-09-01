@@ -1,24 +1,24 @@
-import { siteConfig } from "@/content/site";
+import type { SiteConfig } from "@/types/content";
 
-export function LocalBusinessJsonLd() {
+export function LocalBusinessJsonLd({ settings }: { settings: SiteConfig }) {
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoRepair",
-    name: siteConfig.name,
-    description: siteConfig.description,
-    url: siteConfig.url,
-    telephone: siteConfig.contact.phone,
-    email: siteConfig.contact.email,
+    name: settings.name,
+    description: settings.description,
+    url: settings.url,
+    telephone: settings.contact.phone,
+    email: settings.contact.email,
     address: {
       "@type": "PostalAddress",
-      streetAddress: siteConfig.contact.address,
+      streetAddress: settings.contact.address,
       addressLocality: "Xemxija",
       addressCountry: "MT",
     },
     geo: {
       "@type": "GeoCoordinates",
-      latitude: siteConfig.contact.coordinates.lat,
-      longitude: siteConfig.contact.coordinates.lng,
+      latitude: settings.contact.coordinates.lat,
+      longitude: settings.contact.coordinates.lng,
     },
     openingHoursSpecification: [
       {
@@ -35,8 +35,8 @@ export function LocalBusinessJsonLd() {
       },
     ],
     priceRange: "€€",
-    image: `${siteConfig.url}/qtm-logo.png`,
-    sameAs: [siteConfig.social.instagram, siteConfig.social.facebook],
+    image: `${settings.url}/qtm-logo.png`,
+    sameAs: [settings.social.instagram, settings.social.facebook],
   };
 
   return (

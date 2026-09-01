@@ -1,19 +1,25 @@
 import { Mail, MapPin, Phone, Clock } from "lucide-react";
-import { siteConfig } from "@/content/site";
+import type { SiteConfig } from "@/types/content";
+import type { SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { ContactForm } from "@/components/contact/contact-form";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
-export function ContactPageContent() {
+type ContactPageContentProps = {
+  settings: SiteConfig;
+  hero: SectionHeadingContent;
+};
+
+export function ContactPageContent({ settings, hero }: ContactPageContentProps) {
   return (
     <section className="section-padding pt-32">
       <div className="container-narrow">
         <FadeIn>
           <SectionHeading
-            eyebrow="Contact"
-            title="Request a quote"
-            description="Tell us about your vehicle and the services you're interested in. WhatsApp is the fastest way to reach us — or use the form below and we'll get back within 24 hours."
+            eyebrow={hero.eyebrow}
+            title={hero.title}
+            description={hero.description}
           />
         </FadeIn>
 
@@ -34,12 +40,12 @@ export function ContactPageContent() {
                     <div>
                       <p className="text-sm text-muted-foreground">WhatsApp</p>
                       <a
-                        href={siteConfig.contact.whatsappUrl}
+                        href={settings.contact.whatsappUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="font-medium hover:text-[#25D366]"
                       >
-                        {siteConfig.contact.whatsapp}
+                        {settings.contact.whatsapp}
                       </a>
                     </div>
                   </li>
@@ -48,10 +54,10 @@ export function ContactPageContent() {
                     <div>
                       <p className="text-sm text-muted-foreground">Phone</p>
                       <a
-                        href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
+                        href={`tel:${settings.contact.phone.replace(/\s/g, "")}`}
                         className="font-medium hover:text-brand-purple-400"
                       >
-                        {siteConfig.contact.phone}
+                        {settings.contact.phone}
                       </a>
                     </div>
                   </li>
@@ -60,10 +66,10 @@ export function ContactPageContent() {
                     <div>
                       <p className="text-sm text-muted-foreground">Email</p>
                       <a
-                        href={`mailto:${siteConfig.contact.email}`}
+                        href={`mailto:${settings.contact.email}`}
                         className="font-medium hover:text-brand-cyan-400"
                       >
-                        {siteConfig.contact.email}
+                        {settings.contact.email}
                       </a>
                     </div>
                   </li>
@@ -71,7 +77,7 @@ export function ContactPageContent() {
                     <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-brand-purple-400" />
                     <div>
                       <p className="text-sm text-muted-foreground">Address</p>
-                      <p className="font-medium">{siteConfig.contact.address}</p>
+                      <p className="font-medium">{settings.contact.address}</p>
                     </div>
                   </li>
                 </ul>
@@ -83,7 +89,7 @@ export function ContactPageContent() {
                   Opening Hours
                 </h3>
                 <ul className="space-y-2">
-                  {siteConfig.hours.map((h) => (
+                  {settings.hours.map((h) => (
                     <li
                       key={h.day}
                       className="flex justify-between text-sm text-muted-foreground"

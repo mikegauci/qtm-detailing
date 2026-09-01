@@ -1,8 +1,4 @@
-import {
-  packages as staticPackages,
-  comparisonFeatures as staticComparisonFeatures,
-  type Package,
-} from "@/content/packages";
+import type { Package } from "@/types/content";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -59,16 +55,10 @@ export async function getPackages(
   ]);
 
   if (error || !packages?.length) {
-    return {
-      packages: staticPackages,
-      comparisonFeatures: staticComparisonFeatures,
-    };
+    return { packages: [], comparisonFeatures: [] };
   }
 
-  const comparisonFeatures =
-    features?.length && features.length > 0
-      ? features.map((f) => f.label)
-      : staticComparisonFeatures;
+  const comparisonFeatures = features?.map((f) => f.label) ?? [];
 
   return {
     packages: packages.map((pkg) =>

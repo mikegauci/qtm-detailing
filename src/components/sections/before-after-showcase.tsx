@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { GalleryItem } from "@/content/gallery";
+import type { GalleryItem } from "@/types/content";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { BeforeAfterSlider } from "@/components/gallery/before-after-slider";

@@ -1,0 +1,71 @@
+export type SiteConfig = {
+  name: string;
+  tagline: string;
+  description: string;
+  url: string;
+  locale: string;
+  currency: string;
+  contact: {
+    email: string;
+    phone: string;
+    whatsapp: string;
+    whatsappUrl: string;
+    address: string;
+    coordinates: {
+      lat: number;
+      lng: number;
+    };
+  };
+  hours: { day: string; hours: string }[];
+  social: {
+    instagram: string;
+    facebook: string;
+  };
+  nav: { label: string; href: string }[];
+};
+
+export type Service = {
+  id: string;
+  title: string;
+  slug: string;
+  shortDescription: string;
+  description: string;
+  features: string[];
+  includedServices?: string[];
+  note?: string;
+  image: string;
+  featured?: boolean;
+  category?: "interior" | "exterior" | "protection" | "bundle";
+};
+
+export type Package = {
+  id: string;
+  name: string;
+  price: number;
+  description: string;
+  popular?: boolean;
+  features: string[];
+  includes: boolean[];
+};
+
+export type FaqItem = {
+  id: string;
+  question: string;
+  answer: string;
+};
+
+export type GalleryCategory =
+  | "all"
+  | "exterior"
+  | "interior"
+  | "correction"
+  | "coating";
+
+export type GalleryItem = {
+  id: string;
+  title: string;
+  category: GalleryCategory;
+  beforeImage: string;
+  afterImage: string;
+  description: string;
+};

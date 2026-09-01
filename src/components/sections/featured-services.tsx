@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { Service } from "@/content/services";
+import type { Service } from "@/types/content";
+import type { SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScrollCarousel } from "@/components/ui/scroll-carousel";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -36,26 +37,28 @@ function ServiceCard({ service }: { service: Service }) {
 
 type FeaturedServicesSectionProps = {
   services: Service[];
+  heading: SectionHeadingContent;
 };
 
 export function FeaturedServicesSection({
   services,
+  heading,
 }: FeaturedServicesSectionProps) {
   return (
     <section className="section-padding overflow-x-clip bg-surface-base">
       <div className="container-narrow">
         <FadeIn>
           <SectionHeading
-            eyebrow="Our Services"
-            title="Precision detailing, tailored to you"
-            description="From daily drivers to supercars, every vehicle receives the same obsessive attention to detail."
+            eyebrow={heading.eyebrow}
+            title={heading.title}
+            description={heading.description}
           />
         </FadeIn>
 
         <FadeIn className="mt-10">
           <div className="w-[calc(100vw-(100vw-100%)/2)]">
             <ScrollCarousel
-              itemClassName="h-full w-[min(82vw,340px)] sm:w-[min(72vw,360px)] md:w-[min(55vw,380px)] lg:w-[min(25vw,300px)]"
+              itemClassName="h-full w-[min(82vw,340px)] sm:w-[min(72vw,360px)] md:w-[min(55vw,380px)] lg:w-[min(30vw,340px)]"
             >
               {services.map((service) => (
                 <ServiceCard key={service.id} service={service} />

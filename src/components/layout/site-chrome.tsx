@@ -3,8 +3,14 @@
 import { usePathname } from "next/navigation";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import type { SiteConfig } from "@/types/content";
 
-export function SiteChrome({ children }: { children: React.ReactNode }) {
+type SiteChromeProps = {
+  children: React.ReactNode;
+  settings: SiteConfig;
+};
+
+export function SiteChrome({ children, settings }: SiteChromeProps) {
   const pathname = usePathname();
   const isAdmin = pathname.startsWith("/admin");
 
@@ -14,9 +20,9 @@ export function SiteChrome({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      <Header />
+      <Header settings={settings} />
       <main>{children}</main>
-      <Footer />
+      <Footer settings={settings} />
     </>
   );
 }

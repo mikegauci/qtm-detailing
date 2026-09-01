@@ -1,8 +1,4 @@
-import {
-  galleryItems as staticGalleryItems,
-  type GalleryItem,
-  type GalleryCategory,
-} from "@/content/gallery";
+import type { GalleryItem, GalleryCategory } from "@/types/content";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -73,9 +69,8 @@ export async function getGalleryItems(): Promise<GalleryItem[]> {
     .order("created_at", { ascending: false });
 
   if (error || !data?.length) {
-    return staticGalleryItems;
+    return [];
   }
 
-  const grouped = groupPhotos(data);
-  return grouped.length > 0 ? grouped : staticGalleryItems;
+  return groupPhotos(data);
 }

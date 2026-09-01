@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import { siteConfig } from "@/content/site";
+import type { SiteConfig } from "@/types/content";
 import { cn } from "@/lib/utils";
 import { CTAButton } from "@/components/ui/section-heading";
 import {
@@ -15,7 +15,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-export function Header() {
+export function Header({ settings }: { settings: SiteConfig }) {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -48,7 +48,7 @@ export function Header() {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
-          {siteConfig.nav.map((item) => (
+          {settings.nav.map((item) => (
             <Link
               key={item.href}
               href={item.href}
@@ -78,7 +78,7 @@ export function Header() {
               <SheetTitle className="sr-only">Navigation menu</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-6" aria-label="Mobile">
-              {siteConfig.nav.map((item) => (
+              {settings.nav.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

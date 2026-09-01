@@ -54,7 +54,7 @@ export const services: Service[] = [
       "Wheel arches & under-arches",
       "Exterior detailing & finishing",
     ],
-    image: "/exterior-detail.jpg",
+    image: "/exterior-detail-v2.jpg",
     featured: true,
     category: "standard",
   },

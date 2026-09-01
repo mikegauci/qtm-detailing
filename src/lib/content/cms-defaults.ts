@@ -209,5 +209,5 @@ export const defaultGalleryHero: SectionHeadingContent = {
   eyebrow: "Gallery",
   title: "Our latest work",
   description:
-    "Real transformations straight from our studio. Click any project to view before and after.",
+    "Real transformations straight from our studio. Click any photo to view it full size.",
 };

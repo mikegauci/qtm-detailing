@@ -1,13 +1,16 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { galleryCategories } from "@/lib/content/gallery-categories";
+import {
+  galleryCategories,
+  getGalleryPhotoLabel,
+} from "@/lib/content/gallery-categories";
 import type { GalleryCategory, GalleryPhoto } from "@/types/content";
 import type { CtaBandContent, SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { FadeIn } from "@/components/motion/fade-in";
+import { FadeIn, StaggerItem } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
 import { CtaBand } from "@/components/sections/cta-band";
 import { GalleryLightbox } from "@/components/gallery/gallery-lightbox";
@@ -17,6 +20,41 @@ type GalleryPageContentProps = {
   cta: CtaBandContent;
   hero: SectionHeadingContent;
 };
+
+function FilterPill({
+  active,
+  onClick,
+  children,
+  variant = "purple",
+  size = "md",
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: ReactNode;
+  variant?: "purple" | "cyan";
+  size?: "md" | "sm";
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={active}
+      onClick={onClick}
+      className={cn(
+        "rounded-full transition-colors",
+        size === "md" ? "px-4 py-2 text-sm font-medium" : "px-3 py-1.5 text-sm",
+        active
+          ? variant === "purple"
+            ? "bg-brand-purple-600 text-white"
+            : "bg-brand-cyan-500/20 text-brand-cyan-300 ring-1 ring-brand-cyan-400/40"
+          : variant === "purple"
+            ? "border border-border-subtle text-muted-foreground hover:border-brand-purple-400/50 hover:text-foreground"
+            : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 function PhotoGrid({
   items,
@@ -75,7 +113,7 @@ function PhotoGridItem({
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
           src={photo.imageUrl}
-          alt={photo.carName ?? "Gallery photo"}
+          alt={getGalleryPhotoLabel(photo)}
           fill
           className="object-cover transition-transform duration-500 group-hover:scale-105"
           sizes="(max-width: 768px) 100vw, 33vw"
@@ -95,20 +133,7 @@ function PhotoGridItem({
     return content;
   }
 
-  return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 24 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] },
-        },
-      }}
-    >
-      {content}
-    </motion.div>
-  );
+  return <StaggerItem>{content}</StaggerItem>;
 }
 
 export function GalleryPageContent({
@@ -177,20 +202,13 @@ export function GalleryPageContent({
           <FadeIn delay={0.1}>
             <div className="mb-6 flex flex-wrap justify-center gap-2">
               {galleryCategories.map((cat) => (
-                <button
+                <FilterPill
                   key={cat.id}
-                  type="button"
-                  aria-pressed={category === cat.id}
+                  active={category === cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
-                  className={cn(
-                    "rounded-full px-4 py-2 text-sm font-medium transition-colors",
-                    category === cat.id
-                      ? "bg-brand-purple-600 text-white"
-                      : "border border-border-subtle text-muted-foreground hover:border-brand-purple-400/50 hover:text-foreground",
-                  )}
                 >
                   {cat.label}
-                </button>
+                </FilterPill>
               ))}
             </div>
 
@@ -200,34 +218,24 @@ export function GalleryPageContent({
                   Vehicle
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
-                  <button
-                    type="button"
-                    aria-pressed={selectedCar === "all"}
+                  <FilterPill
+                    active={selectedCar === "all"}
                     onClick={() => setSelectedCar("all")}
-                    className={cn(
-                      "rounded-full px-3 py-1.5 text-sm transition-colors",
-                      selectedCar === "all"
-                        ? "bg-brand-cyan-500/20 text-brand-cyan-300 ring-1 ring-brand-cyan-400/40"
-                        : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
-                    )}
+                    variant="cyan"
+                    size="sm"
                   >
                     All
-                  </button>
+                  </FilterPill>
                   {carNames.map((carName) => (
-                    <button
+                    <FilterPill
                       key={carName}
-                      type="button"
-                      aria-pressed={selectedCar === carName}
+                      active={selectedCar === carName}
                       onClick={() => setSelectedCar(carName)}
-                      className={cn(
-                        "rounded-full px-3 py-1.5 text-sm transition-colors",
-                        selectedCar === carName
-                          ? "bg-brand-cyan-500/20 text-brand-cyan-300 ring-1 ring-brand-cyan-400/40"
-                          : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
-                      )}
+                      variant="cyan"
+                      size="sm"
                     >
                       {carName}
-                    </button>
+                    </FilterPill>
                   ))}
                 </div>
               </div>

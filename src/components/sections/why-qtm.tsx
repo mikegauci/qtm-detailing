@@ -1,7 +1,7 @@
 import { CheckCircle2 } from "lucide-react";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
-import type { WhyQtmContent } from "@/components/admin/page-copy-editor";
+import type { WhyQtmContent } from "@/types/page-sections";
 
 type WhyQtmSectionProps = {
   content: WhyQtmContent;

@@ -71,18 +71,3 @@ export type GalleryPhoto = {
   category: GalleryPhotoCategory;
   carName?: string;
 };
-
-export type CarGalleryGroup = {
-  carName: string;
-  beforePhotos: GalleryPhoto[];
-  afterPhotos: GalleryPhoto[];
-};
-
-export type GalleryItem = {
-  id: string;
-  title: string;
-  category: GalleryCategory;
-  beforeImage: string;
-  afterImage: string;
-  description: string;
-};

@@ -4,7 +4,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { CTAButton } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
-import type { HeroContent } from "@/components/admin/page-copy-editor";
+import type { HeroContent } from "@/types/page-sections";
 
 type HeroSectionProps = {
   content: HeroContent;

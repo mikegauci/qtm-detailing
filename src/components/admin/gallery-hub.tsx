@@ -27,6 +27,7 @@ import {
   updatePhotoMetadata,
 } from "@/app/actions/admin/gallery";
 import type { Tables } from "@/lib/supabase/types";
+import { galleryPhotoCategoryOptions } from "@/lib/content/gallery-categories";
 import { LinkedPhotosPanel } from "@/components/admin/linked-photos-panel";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -532,11 +533,11 @@ export function GalleryHub({
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="exterior">Exterior</SelectItem>
-                          <SelectItem value="interior">Interior</SelectItem>
-                          <SelectItem value="correction">Correction</SelectItem>
-                          <SelectItem value="coating">Coating</SelectItem>
-                          <SelectItem value="car">Car</SelectItem>
+                          {galleryPhotoCategoryOptions.map((option) => (
+                            <SelectItem key={option.id} value={option.id}>
+                              {option.label}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>

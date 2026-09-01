@@ -4,6 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import { EyeOff, ImageIcon, Pencil, Search, Trash2, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
+import {
+  galleryPhotoCategoryIds,
+  galleryPhotoCategoryOptions,
+} from "@/lib/content/gallery-categories";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,14 +35,6 @@ type LinkedPhotosPanelProps = {
     category: string,
   ) => void;
 };
-
-const PHOTO_CATEGORIES = [
-  "exterior",
-  "interior",
-  "correction",
-  "coating",
-  "car",
-] as const;
 
 type StatusFilter = "all" | "published" | "draft";
 type TypeFilter = "all" | "before" | "after";
@@ -162,9 +158,9 @@ function LinkedPhotoCard({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {PHOTO_CATEGORIES.map((option) => (
-                    <SelectItem key={option} value={option}>
-                      {option}
+                  {galleryPhotoCategoryOptions.map((option) => (
+                    <SelectItem key={option.id} value={option.id}>
+                      {option.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -293,7 +289,7 @@ export function LinkedPhotosPanel({
     () =>
       Array.from(
         new Set([
-          ...PHOTO_CATEGORIES,
+          ...galleryPhotoCategoryIds,
           ...photos.map((photo) => photo.category).filter(Boolean),
         ]),
       ).sort() as string[],

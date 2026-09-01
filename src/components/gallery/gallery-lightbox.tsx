@@ -4,6 +4,7 @@ import { useCallback, useEffect } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import type { GalleryPhoto } from "@/types/content";
+import { getGalleryPhotoLabel } from "@/lib/content/gallery-categories";
 import {
   Dialog,
   DialogContent,
@@ -78,7 +79,7 @@ export function GalleryLightbox({
         <div className="flex shrink-0 items-center justify-between gap-4 px-4 pt-4 pb-2 sm:px-6">
           <div className="min-w-0 pr-10">
             <DialogTitle className="truncate text-base text-white sm:text-lg">
-              {photo.carName ?? "Gallery photo"}
+              {getGalleryPhotoLabel(photo)}
             </DialogTitle>
             <p className="text-sm text-white/60 capitalize">
               {photo.photoType}
@@ -108,7 +109,7 @@ export function GalleryLightbox({
             <Image
               key={photo.id}
               src={photo.imageUrl}
-              alt={photo.carName ?? "Gallery photo"}
+              alt={getGalleryPhotoLabel(photo)}
               fill
               unoptimized
               priority

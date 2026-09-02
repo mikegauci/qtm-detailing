@@ -17,7 +17,8 @@ export function Footer({ settings }: { settings: SiteConfig }) {
               alt="QTM Detailing"
               width={120}
               height={40}
-              className="mb-4 h-10 w-auto"
+              className="mb-4 h-10"
+              style={{ width: "auto", height: "auto" }}
             />
             <p className="max-w-sm text-muted-foreground">
               {settings.description}
@@ -40,6 +41,15 @@ export function Footer({ settings }: { settings: SiteConfig }) {
                 aria-label="Facebook"
               >
                 <Facebook className="h-5 w-5" />
+              </a>
+              <a
+                href={settings.contact.whatsappUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-border-subtle text-muted-foreground transition-colors hover:border-[#25D366] hover:text-[#25D366]"
+                aria-label="WhatsApp"
+              >
+                <WhatsAppIcon className="h-5 w-5" />
               </a>
             </div>
           </div>

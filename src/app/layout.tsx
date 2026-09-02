@@ -65,7 +65,7 @@ export default async function RootLayout({
   const settings = await getSiteSettings();
 
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" data-scroll-behavior="smooth">
       <body className={`${inter.variable} ${sora.variable} antialiased`}>
         <LocalBusinessJsonLd settings={settings} />
         <SiteChrome settings={settings}>{children}</SiteChrome>

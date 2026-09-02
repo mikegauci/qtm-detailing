@@ -1,17 +1,26 @@
 import type { Package } from "@/types/content";
+import { resolvePackageFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
+function parseIncludedServices(features: string[] | null): string[] {
+  return (features ?? [])
+    .filter((feature) => feature.startsWith("Includes: "))
+    .map((feature) => feature.slice("Includes: ".length));
+}
+
 function mapDbPackage(
   row: Tables<"packages">,
-  featureCount: number,
+  comparisonFeatures: string[],
+  includedServicesBySlug: Map<string, string[]>,
 ): Package {
-  const includes = Array.isArray(row.includes)
+  const featureCount = comparisonFeatures.length;
+  const storedIncludes = Array.isArray(row.includes)
     ? (row.includes as boolean[]).slice(0, featureCount)
     : [];
 
-  while (includes.length < featureCount) {
-    includes.push(false);
+  while (storedIncludes.length < featureCount) {
+    storedIncludes.push(false);
   }
 
   return {
@@ -20,8 +29,17 @@ function mapDbPackage(
     price: Number(row.price),
     description: row.description ?? "",
     popular: row.is_popular,
-    features: row.features ?? [],
-    includes,
+    features: resolvePackageFeatures(
+      row.name,
+      includedServicesBySlug,
+      row.features ?? [],
+    ),
+    includes: resolvePackageIncludes(
+      row.name,
+      comparisonFeatures,
+      includedServicesBySlug,
+      storedIncludes,
+    ),
   };
 }
 
@@ -45,24 +63,35 @@ export async function getPackages(
     .select("*")
     .order("sort_order", { ascending: true });
 
+  let servicesQuery = supabase
+    .from("services")
+    .select("slug, features")
+    .eq("category", "bundle")
+    .order("sort_order", { ascending: true });
+
   if (!includeInactive) {
     packagesQuery = packagesQuery.eq("is_active", true);
+    servicesQuery = servicesQuery.eq("is_active", true);
   }
 
-  const [{ data: features }, { data: packages, error }] = await Promise.all([
-    featuresQuery,
-    packagesQuery,
-  ]);
+  const [{ data: features }, { data: packages, error }, { data: services }] =
+    await Promise.all([featuresQuery, packagesQuery, servicesQuery]);
 
   if (error || !packages?.length) {
     return { packages: [], comparisonFeatures: [] };
   }
 
   const comparisonFeatures = features?.map((f) => f.label) ?? [];
+  const includedServicesBySlug = new Map(
+    (services ?? []).map((service) => [
+      service.slug,
+      parseIncludedServices(service.features),
+    ]),
+  );
 
   return {
     packages: packages.map((pkg) =>
-      mapDbPackage(pkg, comparisonFeatures.length),
+      mapDbPackage(pkg, comparisonFeatures, includedServicesBySlug),
     ),
     comparisonFeatures,
   };

@@ -1,6 +1,5 @@
 import { Check } from "lucide-react";
 import type { Package } from "@/types/content";
-import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
@@ -39,11 +38,6 @@ export function PricingPreviewSection({ packages }: PricingPreviewSectionProps) 
                 <h3 className="text-xl font-bold">{pkg.name}</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
                   {pkg.description}
-                </p>
-                <p className="mt-4">
-                  <span className="text-4xl font-bold text-foreground">
-                    {formatPrice(pkg.price)}
-                  </span>
                 </p>
                 <ul className="mt-6 flex-1 space-y-3">
                   {pkg.features.map((feature) => (

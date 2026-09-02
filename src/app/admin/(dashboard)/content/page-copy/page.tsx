@@ -6,7 +6,6 @@ import {
   defaultAboutIntro,
   defaultContactHero,
   defaultCtaBand,
-  defaultEquipment,
   defaultFaqHeading,
   defaultFeaturedServicesHeading,
   defaultGalleryHero,
@@ -21,7 +20,6 @@ import {
 import type {
   AboutIntroContent,
   CtaBandContent,
-  EquipmentContent,
   HeroContent,
   PaintProtectionIntroContent,
   PricingInfoContent,
@@ -119,12 +117,6 @@ export default async function PageCopyAdminPage() {
           "about",
           "process-steps",
           defaultProcessSteps,
-        )}
-        equipment={findSection<EquipmentContent>(
-          sections,
-          "about",
-          "equipment",
-          defaultEquipment,
         )}
         contactHero={findSection<SectionHeadingContent>(
           sections,

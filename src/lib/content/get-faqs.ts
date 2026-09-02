@@ -1,4 +1,5 @@
 import type { FaqItem } from "@/types/content";
+import { sanitizeFaqAnswer } from "@/lib/content/sanitize-faq-answer";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -6,7 +7,7 @@ function mapDbFaq(row: Tables<"faqs">): FaqItem {
   return {
     id: row.id,
     question: row.question,
-    answer: row.answer,
+    answer: sanitizeFaqAnswer(row.answer),
   };
 }
 

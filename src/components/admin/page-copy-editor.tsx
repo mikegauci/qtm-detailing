@@ -37,7 +37,6 @@ export type {
   SectionHeadingContent,
   AboutIntroContent,
   ProcessStepsContent,
-  EquipmentContent,
   PricingInfoContent,
   PaintProtectionIntroContent,
 } from "@/types/page-sections";

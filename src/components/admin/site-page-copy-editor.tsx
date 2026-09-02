@@ -19,7 +19,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type {
   AboutIntroContent,
-  EquipmentContent,
   PaintProtectionIntroContent,
   PricingInfoContent,
   ProcessStepsContent,
@@ -35,7 +34,6 @@ type SitePageCopyEditorProps = {
   paintProtectionIntro: PaintProtectionIntroContent;
   aboutIntro: AboutIntroContent;
   processSteps: ProcessStepsContent;
-  equipment: EquipmentContent;
   contactHero: SectionHeadingContent;
   galleryHero: SectionHeadingContent;
 };
@@ -86,7 +84,6 @@ export function SitePageCopyEditor({
   paintProtectionIntro,
   aboutIntro,
   processSteps,
-  equipment,
   contactHero,
   galleryHero,
 }: SitePageCopyEditorProps) {
@@ -103,7 +100,6 @@ export function SitePageCopyEditor({
   );
   const [aboutIntroContent, setAboutIntroContent] = useState(aboutIntro);
   const [processStepsContent, setProcessStepsContent] = useState(processSteps);
-  const [equipmentContent, setEquipmentContent] = useState(equipment);
   const [contactHeroContent, setContactHeroContent] = useState(contactHero);
   const [galleryHeroContent, setGalleryHeroContent] = useState(galleryHero);
   const [savingKey, setSavingKey] = useState<string | null>(null);
@@ -485,48 +481,6 @@ export function SitePageCopyEditor({
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     "Save process"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Equipment</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <SectionHeadingFields
-                content={equipmentContent}
-                onChange={(content) =>
-                  setEquipmentContent({ ...equipmentContent, ...content })
-                }
-              />
-              <div className="space-y-2">
-                <Label>Items (one per line)</Label>
-                <Textarea
-                  rows={4}
-                  value={equipmentContent.items.join("\n")}
-                  onChange={(e) =>
-                    setEquipmentContent((p) => ({
-                      ...p,
-                      items: e.target.value
-                        .split("\n")
-                        .map((line) => line.trim())
-                        .filter(Boolean),
-                    }))
-                  }
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => save("about", "equipment", equipmentContent)}
-                  disabled={isSaving("about", "equipment")}
-                >
-                  {isSaving("about", "equipment") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save equipment"
                   )}
                 </Button>
               </div>

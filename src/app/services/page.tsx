@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Check } from "lucide-react";
-import { formatPrice } from "@/lib/utils";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import {
@@ -11,6 +10,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { CtaBand } from "@/components/sections/cta-band";
+import { FaqAnswer } from "@/components/faq/faq-answer";
 import { HashScroll } from "@/components/services/hash-scroll";
 import { cn } from "@/lib/utils";
 import {
@@ -170,8 +170,8 @@ export default async function ServicesPage() {
             <table className="w-full min-w-[640px] border-collapse">
               <thead>
                 <tr className="border-b border-border-subtle">
-                  <th className="py-4 text-left text-sm font-medium text-muted-foreground">
-                    Feature
+                  <th className="py-4 text-left text-sm font-semibold">
+                    Packages
                   </th>
                   {packages.map((pkg) => (
                     <th
@@ -179,9 +179,6 @@ export default async function ServicesPage() {
                       className="px-4 py-4 text-center text-sm font-semibold"
                     >
                       {pkg.name}
-                      <div className="mt-1 text-brand-cyan-400">
-                        {formatPrice(pkg.price)}
-                      </div>
                     </th>
                   ))}
                 </tr>
@@ -244,8 +241,12 @@ export default async function ServicesPage() {
                   <AccordionTrigger className="text-left">
                     {item.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-muted-foreground">
-                    {item.answer}
+                  <AccordionContent>
+                    <FaqAnswer
+                      question={item.question}
+                      answer={item.answer}
+                      className="text-muted-foreground"
+                    />
                   </AccordionContent>
                 </AccordionItem>
               ))}

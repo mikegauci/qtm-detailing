@@ -39,10 +39,6 @@ export type ProcessStepsContent = SectionHeadingContent & {
   steps: { step: string; title: string; description: string }[];
 };
 
-export type EquipmentContent = SectionHeadingContent & {
-  items: string[];
-};
-
 export type PricingInfoContent = {
   title: string;
   paragraphs: string[];

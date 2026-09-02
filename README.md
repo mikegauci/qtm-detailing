@@ -51,7 +51,7 @@ Premium dark marketing site for **QTM Detailing** — automotive detailing in Ma
 | `/`        | Homepage with hero, services, pricing |
 | `/services`| Full service catalog and FAQ         |
 | `/gallery` | Before/after portfolio with lightbox |
-| `/about`   | Story, process, equipment            |
+| `/about`   | Story and process                    |
 | `/contact` | Quote request form (Supabase leads)  |
 
 ## Brand Colors

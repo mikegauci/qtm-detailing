@@ -2,7 +2,6 @@ import type { SiteConfig } from "@/types/content";
 import type {
   AboutIntroContent,
   CtaBandContent,
-  EquipmentContent,
   HeroContent,
   PaintProtectionIntroContent,
   PricingInfoContent,
@@ -182,19 +181,6 @@ export const defaultProcessSteps: ProcessStepsContent = {
       description:
         "Final quality check under dedicated lighting. We walk you through the results and provide aftercare guidance.",
     },
-  ],
-};
-
-export const defaultEquipment: EquipmentContent = {
-  eyebrow: "Equipment",
-  title: "Studio-grade tools",
-  description:
-    "We invest in professional equipment and premium products so your results speak for themselves.",
-  items: [
-    "Rupes & Flex polishers",
-    "Gyeon & Koch Chemie products",
-    "Paint depth gauges & IR curing",
-    "Climate-controlled studio",
   ],
 };
 

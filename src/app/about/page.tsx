@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Image from "next/image";
-import { MapPin, Wrench, Shield, Sparkles } from "lucide-react";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { CtaBand } from "@/components/sections/cta-band";
 import {
   defaultAboutIntro,
   defaultCtaBand,
-  defaultEquipment,
   defaultProcessSteps,
 } from "@/lib/content/cms-defaults";
 import { getPageSection } from "@/lib/content/get-page-section";
@@ -15,16 +13,13 @@ import { getPageSection } from "@/lib/content/get-page-section";
 export const metadata: Metadata = {
   title: "About",
   description:
-    "Learn about QTM Detailing — Malta's premium automotive detailing studio. Our story, process, equipment, and service area.",
+    "Learn about QTM Detailing — Malta's premium automotive detailing studio. Our story and process.",
 };
 
-const equipmentIcons = [Wrench, Sparkles, Shield, MapPin];
-
 export default async function AboutPage() {
-  const [intro, processSteps, equipment, cta] = await Promise.all([
+  const [intro, processSteps, cta] = await Promise.all([
     getPageSection("about", "intro", defaultAboutIntro),
     getPageSection("about", "process-steps", defaultProcessSteps),
-    getPageSection("about", "equipment", defaultEquipment),
     getPageSection("home", "cta-band", defaultCtaBand),
   ]);
 
@@ -94,32 +89,6 @@ export default async function AboutPage() {
                 </div>
               </StaggerItem>
             ))}
-          </StaggerContainer>
-        </div>
-      </section>
-
-      <section className="section-padding">
-        <div className="container-narrow">
-          <FadeIn>
-            <SectionHeading
-              eyebrow={equipment.eyebrow}
-              title={equipment.title}
-              description={equipment.description}
-            />
-          </FadeIn>
-
-          <StaggerContainer className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {equipment.items.map((title, index) => {
-              const Icon = equipmentIcons[index % equipmentIcons.length];
-              return (
-                <StaggerItem key={title}>
-                  <div className="glass-panel flex items-center gap-4 rounded-xl p-5">
-                    <Icon className="h-8 w-8 shrink-0 text-brand-cyan-400" />
-                    <span className="font-medium">{title}</span>
-                  </div>
-                </StaggerItem>
-              );
-            })}
           </StaggerContainer>
         </div>
       </section>

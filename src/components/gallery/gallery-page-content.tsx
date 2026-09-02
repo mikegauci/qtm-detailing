@@ -7,6 +7,12 @@ import {
   galleryCategories,
   getGalleryPhotoLabel,
 } from "@/lib/content/gallery-categories";
+import {
+  clampLightboxIndex,
+  filterPhotosByType,
+  sortPhotosForDisplay,
+  type GalleryPhotoTypeFilter,
+} from "@/lib/content/gallery-photo-utils";
 import type { GalleryCategory, GalleryPhoto } from "@/types/content";
 import type { CtaBandContent, SectionHeadingContent } from "@/types/page-sections";
 import { SectionHeading } from "@/components/ui/section-heading";
@@ -120,9 +126,18 @@ function PhotoGridItem({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-base/80 via-transparent to-transparent" />
         {photo.carName && (
-          <div className="absolute right-3 bottom-3 left-3">
+          <div className="absolute right-3 bottom-3 left-3 flex items-end justify-between gap-3">
             <p className="font-semibold text-white">{photo.carName}</p>
-            <p className="text-xs text-white/70 capitalize">{photo.photoType}</p>
+            <span
+              className={cn(
+                "shrink-0 rounded-full px-2.5 py-1 text-xs font-medium capitalize backdrop-blur-sm",
+                photo.photoType === "before"
+                  ? "bg-white/15 text-white/90"
+                  : "bg-brand-cyan-600/90 text-white",
+              )}
+            >
+              {photo.photoType}
+            </span>
           </div>
         )}
       </div>
@@ -143,6 +158,8 @@ export function GalleryPageContent({
 }: GalleryPageContentProps) {
   const [category, setCategory] = useState<GalleryCategory>("all");
   const [selectedCar, setSelectedCar] = useState("all");
+  const [photoTypeFilter, setPhotoTypeFilter] =
+    useState<GalleryPhotoTypeFilter>("all");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -163,11 +180,23 @@ export function GalleryPageContent({
   );
 
   const filteredPhotos = useMemo(() => {
-    if (selectedCar === "all") {
-      return categoryPhotos;
-    }
+    const byCar =
+      selectedCar === "all"
+        ? categoryPhotos
+        : categoryPhotos.filter((photo) => photo.carName === selectedCar);
 
-    return categoryPhotos.filter((photo) => photo.carName === selectedCar);
+    return sortPhotosForDisplay(
+      filterPhotosByType(byCar, photoTypeFilter),
+    );
+  }, [categoryPhotos, selectedCar, photoTypeFilter]);
+
+  const comparisonPhotos = useMemo(() => {
+    const byCar =
+      selectedCar === "all"
+        ? categoryPhotos
+        : categoryPhotos.filter((photo) => photo.carName === selectedCar);
+
+    return sortPhotosForDisplay(byCar);
   }, [categoryPhotos, selectedCar]);
 
   useEffect(() => {
@@ -175,6 +204,17 @@ export function GalleryPageContent({
       setSelectedCar("all");
     }
   }, [carNames, selectedCar]);
+
+  useEffect(() => {
+    if (lightboxOpen && filteredPhotos.length === 0) {
+      setLightboxOpen(false);
+      return;
+    }
+
+    setLightboxIndex((current) =>
+      clampLightboxIndex(current, filteredPhotos.length),
+    );
+  }, [filteredPhotos.length, lightboxOpen]);
 
   const openPhoto = (photo: GalleryPhoto) => {
     const index = filteredPhotos.findIndex((item) => item.id === photo.id);
@@ -185,7 +225,14 @@ export function GalleryPageContent({
   const handleCategoryChange = (nextCategory: GalleryCategory) => {
     setCategory(nextCategory);
     setSelectedCar("all");
+    setPhotoTypeFilter("all");
   };
+
+  const photoTypeOptions: { id: GalleryPhotoTypeFilter; label: string }[] = [
+    { id: "all", label: "All Photos" },
+    { id: "before", label: "Before" },
+    { id: "after", label: "After" },
+  ];
 
   return (
     <>
@@ -213,7 +260,7 @@ export function GalleryPageContent({
             </div>
 
             {carNames.length > 0 && (
-              <div className="mb-10 flex flex-col items-center gap-3">
+              <div className="mb-6 flex flex-col items-center gap-3">
                 <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
                   Vehicle
                 </p>
@@ -240,6 +287,25 @@ export function GalleryPageContent({
                 </div>
               </div>
             )}
+
+            <div className="mb-10 flex flex-col items-center gap-3">
+              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                View
+              </p>
+              <div className="flex flex-wrap justify-center gap-2">
+                {photoTypeOptions.map((option) => (
+                  <FilterPill
+                    key={option.id}
+                    active={photoTypeFilter === option.id}
+                    onClick={() => setPhotoTypeFilter(option.id)}
+                    variant="cyan"
+                    size="sm"
+                  >
+                    {option.label}
+                  </FilterPill>
+                ))}
+              </div>
+            </div>
           </FadeIn>
 
           {filteredPhotos.length === 0 ? (
@@ -250,7 +316,7 @@ export function GalleryPageContent({
             </FadeIn>
           ) : (
             <PhotoGrid
-              filterKey={`${category}-${selectedCar}`}
+              filterKey={`${category}-${selectedCar}-${photoTypeFilter}`}
               items={filteredPhotos}
               onSelect={openPhoto}
             />
@@ -260,6 +326,8 @@ export function GalleryPageContent({
 
       <GalleryLightbox
         photos={filteredPhotos}
+        comparisonPhotos={comparisonPhotos}
+        photoTypeFilter={photoTypeFilter}
         index={lightboxIndex}
         open={lightboxOpen}
         onOpenChange={setLightboxOpen}

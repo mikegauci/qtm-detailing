@@ -59,8 +59,7 @@ export type GalleryCategory =
   | "exterior"
   | "interior"
   | "correction"
-  | "coating"
-  | "car";
+  | "coating";
 
 export type GalleryPhotoCategory = Exclude<GalleryCategory, "all">;
 
@@ -70,4 +69,5 @@ export type GalleryPhoto = {
   photoType: "before" | "after";
   category: GalleryPhotoCategory;
   carName?: string;
+  sortOrder: number;
 };

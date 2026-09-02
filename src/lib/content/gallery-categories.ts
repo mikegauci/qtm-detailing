@@ -8,7 +8,6 @@ export const galleryPhotoCategoryOptions: {
   { id: "interior", label: "Interior" },
   { id: "correction", label: "Paint Correction" },
   { id: "coating", label: "Ceramic Coating" },
-  { id: "car", label: "Car" },
 ];
 
 export const galleryPhotoCategoryIds = galleryPhotoCategoryOptions.map(

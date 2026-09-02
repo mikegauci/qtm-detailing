@@ -25,6 +25,7 @@ import { getFaqs } from "@/lib/content/get-faqs";
 import { getPackages } from "@/lib/content/get-packages";
 import { getPageSection } from "@/lib/content/get-page-section";
 import { getServices } from "@/lib/content/get-services";
+import { getSiteSettings } from "@/lib/content/get-site-settings";
 
 export const metadata: Metadata = {
   title: "Services",
@@ -37,6 +38,7 @@ export default async function ServicesPage() {
     services,
     { packages, comparisonFeatures },
     faqItems,
+    settings,
     cta,
     hero,
     packagesHeading,
@@ -47,6 +49,7 @@ export default async function ServicesPage() {
     getServices(),
     getPackages(),
     getFaqs(),
+    getSiteSettings(),
     getPageSection("home", "cta-band", defaultCtaBand),
     getPageSection("services", "hero", defaultServicesHero),
     getPageSection("services", "packages-heading", defaultPackagesHeading),
@@ -245,6 +248,7 @@ export default async function ServicesPage() {
                     <FaqAnswer
                       question={item.question}
                       answer={item.answer}
+                      whatsappUrl={settings.contact.whatsappUrl}
                       className="text-muted-foreground"
                     />
                   </AccordionContent>

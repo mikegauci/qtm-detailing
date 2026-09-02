@@ -4,19 +4,25 @@ import { cn } from "@/lib/utils";
 type FaqAnswerProps = {
   question: string;
   answer: string;
+  whatsappUrl: string;
   className?: string;
 };
 
 const linkClassName =
   "font-medium text-brand-purple-400 underline-offset-2 hover:underline";
 
-export function FaqAnswer({ question, answer, className }: FaqAnswerProps) {
+export function FaqAnswer({
+  question,
+  answer,
+  whatsappUrl,
+  className,
+}: FaqAnswerProps) {
   if (question === "How do I book an appointment?") {
     return (
       <p className={className}>
         Message us on{" "}
         <a
-          href="https://wa.link/lvy8rn"
+          href={whatsappUrl}
           target="_blank"
           rel="noopener noreferrer"
           className={linkClassName}

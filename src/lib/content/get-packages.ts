@@ -1,4 +1,4 @@
-import type { Package } from "@/types/content";
+import type { Package, Service } from "@/types/content";
 import { resolvePackageFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
@@ -7,6 +7,27 @@ function parseIncludedServices(features: string[] | null): string[] {
   return (features ?? [])
     .filter((feature) => feature.startsWith("Includes: "))
     .map((feature) => feature.slice("Includes: ".length));
+}
+
+export function buildIncludedServicesBySlug(
+  services: { slug: string; features: string[] | null }[],
+): Map<string, string[]> {
+  return new Map(
+    services.map((service) => [
+      service.slug,
+      parseIncludedServices(service.features),
+    ]),
+  );
+}
+
+export function buildIncludedServicesBySlugFromServices(
+  services: Service[],
+): Map<string, string[]> {
+  return new Map(
+    services
+      .filter((service) => service.category === "bundle")
+      .map((service) => [service.slug, service.includedServices ?? []]),
+  );
 }
 
 function mapDbPackage(
@@ -41,6 +62,34 @@ function mapDbPackage(
       storedIncludes,
     ),
   };
+}
+
+export function resolvePackageRecord(
+  row: Tables<"packages">,
+  comparisonFeatures: string[],
+  includedServicesBySlug: Map<string, string[]>,
+): Tables<"packages"> {
+  const mapped = mapDbPackage(row, comparisonFeatures, includedServicesBySlug);
+
+  return {
+    ...row,
+    features: mapped.features,
+    includes: mapped.includes,
+  };
+}
+
+export function resolvePackageRecordsForAdmin(
+  packages: Tables<"packages">[],
+  features: Tables<"comparison_features">[],
+  bundleServices: Service[],
+): Tables<"packages">[] {
+  const comparisonFeatures = features.map((feature) => feature.label);
+  const includedServicesBySlug =
+    buildIncludedServicesBySlugFromServices(bundleServices);
+
+  return packages.map((pkg) =>
+    resolvePackageRecord(pkg, comparisonFeatures, includedServicesBySlug),
+  );
 }
 
 export type PackagesData = {
@@ -82,12 +131,7 @@ export async function getPackages(
   }
 
   const comparisonFeatures = features?.map((f) => f.label) ?? [];
-  const includedServicesBySlug = new Map(
-    (services ?? []).map((service) => [
-      service.slug,
-      parseIncludedServices(service.features),
-    ]),
-  );
+  const includedServicesBySlug = buildIncludedServicesBySlug(services ?? []);
 
   return {
     packages: packages.map((pkg) =>

@@ -18,6 +18,7 @@ function mapRowToPhoto(row: Tables<"job_photos">): GalleryPhoto | null {
     photoType,
     category: normalizeGalleryPhotoCategory(row.category),
     carName: folderName ? parseCarName(folderName) : undefined,
+    sortOrder: new Date(row.created_at).getTime(),
   };
 }
 

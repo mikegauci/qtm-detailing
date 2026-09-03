@@ -2,7 +2,6 @@ const PACKAGE_TO_SERVICE_SLUG: Record<string, string> = {
   "Complete Detail": "complete-detail",
   "Complete Paint Enhancement": "complete-paint-enhancement",
   "Signature Detail": "signature-detail",
-  "Signature Detail + Glass": "signature-detail-glass-protection",
 };
 
 /**

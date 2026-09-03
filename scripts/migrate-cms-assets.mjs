@@ -44,10 +44,8 @@ const SERVICE_IMAGES = [
   { slug: "complete-paint-enhancement", file: "complete-paint-enhancement.jpg" },
   { slug: "premium-wax-protection", file: "premium-wax-protection.jpg" },
   { slug: "ceramic-paint-protection", file: "ceramic-paint-protection.jpg" },
-  { slug: "exterior-glass-ceramic", file: "exterior-glass-ceramic-coating.jpg" },
   { slug: "engine-bay-detail", file: "engine-bay-detail.jpg" },
   { slug: "signature-detail", file: "signature-detail.jpg" },
-  { slug: "signature-detail-glass-protection", file: "signature-detail-glass-protection.jpg" },
 ];
 
 async function optimizeImage(buffer) {

@@ -42,8 +42,7 @@ export function Header({ settings }: { settings: SiteConfig }) {
             alt="QTM Detailing"
             width={140}
             height={48}
-            className="h-10 sm:h-12"
-            style={{ width: "auto", height: "auto" }}
+            className="h-10 w-auto sm:h-12"
             priority
           />
         </Link>

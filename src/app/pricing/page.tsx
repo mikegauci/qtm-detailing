@@ -6,12 +6,9 @@ import { PricingCard } from "@/components/pricing/pricing-card";
 import { defaultCtaBand } from "@/lib/content/cms-defaults";
 import { getPageSection } from "@/lib/content/get-page-section";
 import {
-  addonPricingItems,
-  ceramicCoatingIntro,
-  ceramicPricingItems,
-  corePricingItems,
   pricingHero,
   pricingImportantInfo,
+  pricingSections,
 } from "@/lib/content/pricing-data";
 
 export const metadata: Metadata = {
@@ -35,46 +32,34 @@ export default async function PricingPage() {
             />
           </FadeIn>
 
-          <StaggerContainer className="grid gap-8">
-            {corePricingItems.map((item) => (
-              <StaggerItem key={item.slug}>
-                <PricingCard item={item} />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
-        </div>
-      </section>
+          <div className="grid gap-16">
+            {pricingSections.map((section, sectionIndex) => (
+              <div key={section.id}>
+                {(section.heading || section.intro) && (
+                  <FadeIn>
+                    <div className={sectionIndex > 0 ? "mb-8" : "mb-8 mt-4"}>
+                      {section.heading && (
+                        <h2 className="text-xl font-bold">{section.heading}</h2>
+                      )}
+                      {section.intro && (
+                        <p className="mt-2 text-muted-foreground">
+                          {section.intro}
+                        </p>
+                      )}
+                    </div>
+                  </FadeIn>
+                )}
 
-      <section className="section-padding bg-surface-raised/30">
-        <div className="container-narrow">
-          <FadeIn>
-            <div className="mb-8">
-              <h2 className="text-xl font-bold">{ceramicCoatingIntro.heading}</h2>
-              <p className="mt-2 text-muted-foreground">
-                {ceramicCoatingIntro.intro}
-              </p>
-            </div>
-          </FadeIn>
-
-          <StaggerContainer className="grid gap-8">
-            {ceramicPricingItems.map((item) => (
-              <StaggerItem key={item.slug}>
-                <PricingCard item={item} />
-              </StaggerItem>
+                <StaggerContainer className="grid gap-8">
+                  {section.items.map((item) => (
+                    <StaggerItem key={item.slug}>
+                      <PricingCard item={item} />
+                    </StaggerItem>
+                  ))}
+                </StaggerContainer>
+              </div>
             ))}
-          </StaggerContainer>
-        </div>
-      </section>
-
-      <section className="section-padding">
-        <div className="container-narrow">
-          <StaggerContainer className="grid gap-8">
-            {addonPricingItems.map((item) => (
-              <StaggerItem key={item.slug}>
-                <PricingCard item={item} />
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          </div>
         </div>
       </section>
 

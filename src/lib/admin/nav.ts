@@ -7,7 +7,6 @@ import {
   Images,
   LayoutDashboard,
   MessageSquare,
-  Package,
   Settings,
   Star,
   Users,
@@ -29,7 +28,6 @@ export const crmNav = [
 export const contentNav = [
   { label: "Site Settings", href: "/admin/content/site-settings", icon: Settings },
   { label: "Services", href: "/admin/content/services", icon: Wrench },
-  { label: "Packages", href: "/admin/content/packages", icon: Package },
   { label: "Gallery", href: "/admin/gallery", icon: Image },
   { label: "Linked Photos", href: "/admin/gallery?view=linked", icon: Images },
   { label: "Testimonials", href: "/admin/content/testimonials", icon: Star },

@@ -19,7 +19,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type {
   AboutIntroContent,
-  PaintProtectionIntroContent,
   PricingInfoContent,
   ProcessStepsContent,
   SectionHeadingContent,
@@ -28,10 +27,8 @@ import type {
 type SitePageCopyEditorProps = {
   featuredServices: SectionHeadingContent;
   servicesHero: SectionHeadingContent;
-  packagesHeading: SectionHeadingContent;
   faqHeading: SectionHeadingContent;
   pricingInfo: PricingInfoContent;
-  paintProtectionIntro: PaintProtectionIntroContent;
   aboutIntro: AboutIntroContent;
   processSteps: ProcessStepsContent;
   contactHero: SectionHeadingContent;
@@ -78,10 +75,8 @@ function SectionHeadingFields({
 export function SitePageCopyEditor({
   featuredServices,
   servicesHero,
-  packagesHeading,
   faqHeading,
   pricingInfo,
-  paintProtectionIntro,
   aboutIntro,
   processSteps,
   contactHero,
@@ -91,13 +86,8 @@ export function SitePageCopyEditor({
   const [featuredServicesContent, setFeaturedServicesContent] =
     useState(featuredServices);
   const [servicesHeroContent, setServicesHeroContent] = useState(servicesHero);
-  const [packagesHeadingContent, setPackagesHeadingContent] =
-    useState(packagesHeading);
   const [faqHeadingContent, setFaqHeadingContent] = useState(faqHeading);
   const [pricingInfoContent, setPricingInfoContent] = useState(pricingInfo);
-  const [paintProtectionContent, setPaintProtectionContent] = useState(
-    paintProtectionIntro,
-  );
   const [aboutIntroContent, setAboutIntroContent] = useState(aboutIntro);
   const [processStepsContent, setProcessStepsContent] = useState(processSteps);
   const [contactHeroContent, setContactHeroContent] = useState(contactHero);
@@ -200,83 +190,6 @@ export function SitePageCopyEditor({
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
                     "Save hero"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Paint protection intro</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Heading</Label>
-                <Input
-                  value={paintProtectionContent.heading}
-                  onChange={(e) =>
-                    setPaintProtectionContent((p) => ({
-                      ...p,
-                      heading: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Intro</Label>
-                <Textarea
-                  rows={3}
-                  value={paintProtectionContent.intro}
-                  onChange={(e) =>
-                    setPaintProtectionContent((p) => ({
-                      ...p,
-                      intro: e.target.value,
-                    }))
-                  }
-                />
-              </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() =>
-                    save(
-                      "services",
-                      "paint-protection-intro",
-                      paintProtectionContent,
-                    )
-                  }
-                  disabled={isSaving("services", "paint-protection-intro")}
-                >
-                  {isSaving("services", "paint-protection-intro") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save intro"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Packages section</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <SectionHeadingFields
-                content={packagesHeadingContent}
-                onChange={setPackagesHeadingContent}
-              />
-              <div className="flex justify-end">
-                <Button
-                  onClick={() =>
-                    save("services", "packages-heading", packagesHeadingContent)
-                  }
-                  disabled={isSaving("services", "packages-heading")}
-                >
-                  {isSaving("services", "packages-heading") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save packages heading"
                   )}
                 </Button>
               </div>

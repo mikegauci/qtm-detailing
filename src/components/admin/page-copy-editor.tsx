@@ -38,7 +38,6 @@ export type {
   AboutIntroContent,
   ProcessStepsContent,
   PricingInfoContent,
-  PaintProtectionIntroContent,
 } from "@/types/page-sections";
 
 import type {

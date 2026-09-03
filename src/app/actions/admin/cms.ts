@@ -75,7 +75,6 @@ function revalidateContent() {
   revalidatePath("/admin");
   revalidatePath("/admin/content/site-settings");
   revalidatePath("/admin/content/services");
-  revalidatePath("/admin/content/packages");
   revalidatePath("/admin/content/testimonials");
   revalidatePath("/admin/content/faqs");
   revalidatePath("/admin/content/page-copy");
@@ -161,97 +160,6 @@ export async function deleteService(id: string): Promise<ActionResult> {
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to delete service.",
-    };
-  }
-}
-
-export async function upsertPackage(input: {
-  id?: string;
-  name: string;
-  price: number;
-  description?: string;
-  is_popular?: boolean;
-  features?: string[];
-  includes?: boolean[];
-  sort_order?: number;
-  is_active?: boolean;
-}): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-    const payload = {
-      name: input.name,
-      price: input.price,
-      description: input.description ?? null,
-      is_popular: input.is_popular ?? false,
-      features: input.features ?? [],
-      includes: input.includes ?? [],
-      sort_order: input.sort_order ?? 0,
-      is_active: input.is_active ?? true,
-    };
-
-    const { error } = input.id
-      ? await supabase.from("packages").update(payload).eq("id", input.id)
-      : await supabase.from("packages").insert(payload);
-
-    if (error) return { success: false, message: error.message };
-    revalidateContent();
-    return { success: true, message: "Package saved." };
-  } catch (err) {
-    return {
-      success: false,
-      message: err instanceof Error ? err.message : "Failed to save package.",
-    };
-  }
-}
-
-export async function upsertComparisonFeature(input: {
-  id?: string;
-  label: string;
-  sort_order?: number;
-}): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-    const payload = {
-      label: input.label,
-      sort_order: input.sort_order ?? 0,
-    };
-
-    const { error } = input.id
-      ? await supabase
-          .from("comparison_features")
-          .update(payload)
-          .eq("id", input.id)
-      : await supabase.from("comparison_features").insert(payload);
-
-    if (error) return { success: false, message: error.message };
-    revalidateContent();
-    return { success: true, message: "Comparison feature saved." };
-  } catch (err) {
-    return {
-      success: false,
-      message:
-        err instanceof Error ? err.message : "Failed to save comparison feature.",
-    };
-  }
-}
-
-export async function deleteComparisonFeature(
-  id: string,
-): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-    const { error } = await supabase
-      .from("comparison_features")
-      .delete()
-      .eq("id", id);
-    if (error) return { success: false, message: error.message };
-    revalidateContent();
-    return { success: true, message: "Comparison feature deleted." };
-  } catch (err) {
-    return {
-      success: false,
-      message:
-        err instanceof Error ? err.message : "Failed to delete comparison feature.",
     };
   }
 }
@@ -390,15 +298,6 @@ export async function getAdminServices() {
     .select("*")
     .order("sort_order", { ascending: true });
   return data ?? [];
-}
-
-export async function getAdminPackages() {
-  const { supabase } = await requireAdmin();
-  const [{ data: packages }, { data: features }] = await Promise.all([
-    supabase.from("packages").select("*").order("sort_order"),
-    supabase.from("comparison_features").select("*").order("sort_order"),
-  ]);
-  return { packages: packages ?? [], features: features ?? [] };
 }
 
 export async function getAdminFaqs() {

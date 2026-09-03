@@ -3,7 +3,6 @@ import type {
   AboutIntroContent,
   CtaBandContent,
   HeroContent,
-  PaintProtectionIntroContent,
   PricingInfoContent,
   ProcessStepsContent,
   SectionHeadingContent,
@@ -110,23 +109,10 @@ export const defaultServicesHero: SectionHeadingContent = {
     "Professional automotive detailing services tailored to your vehicle's needs.",
 };
 
-export const defaultPackagesHeading: SectionHeadingContent = {
-  eyebrow: "Packages",
-  title: "Bundle and save",
-  description:
-    "Our packages combine the most popular services at a better value.",
-};
-
 export const defaultFaqHeading: SectionHeadingContent = {
   eyebrow: "FAQ",
   title: "Common questions",
   description: "Everything you need to know before booking.",
-};
-
-export const defaultPaintProtectionIntro: PaintProtectionIntroContent = {
-  heading: "Paint Protection",
-  intro:
-    "Protection can be added to any suitable Paint Enhancement service.",
 };
 
 export const defaultPricingInfo: PricingInfoContent = {

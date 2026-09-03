@@ -16,13 +16,10 @@ import { cn } from "@/lib/utils";
 import {
   defaultCtaBand,
   defaultFaqHeading,
-  defaultPackagesHeading,
-  defaultPaintProtectionIntro,
   defaultPricingInfo,
   defaultServicesHero,
 } from "@/lib/content/cms-defaults";
 import { getFaqs } from "@/lib/content/get-faqs";
-import { getPackages } from "@/lib/content/get-packages";
 import { getPageSection } from "@/lib/content/get-page-section";
 import { getServices } from "@/lib/content/get-services";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
@@ -34,33 +31,16 @@ export const metadata: Metadata = {
 };
 
 export default async function ServicesPage() {
-  const [
-    services,
-    { packages, comparisonFeatures },
-    faqItems,
-    settings,
-    cta,
-    hero,
-    packagesHeading,
-    pricingInfo,
-    faqHeading,
-    paintProtectionIntro,
-  ] = await Promise.all([
-    getServices(),
-    getPackages(),
-    getFaqs(),
-    getSiteSettings(),
-    getPageSection("home", "cta-band", defaultCtaBand),
-    getPageSection("services", "hero", defaultServicesHero),
-    getPageSection("services", "packages-heading", defaultPackagesHeading),
-    getPageSection("services", "pricing-info", defaultPricingInfo),
-    getPageSection("services", "faq-heading", defaultFaqHeading),
-    getPageSection(
-      "services",
-      "paint-protection-intro",
-      defaultPaintProtectionIntro,
-    ),
-  ]);
+  const [services, faqItems, settings, cta, hero, pricingInfo, faqHeading] =
+    await Promise.all([
+      getServices(),
+      getFaqs(),
+      getSiteSettings(),
+      getPageSection("home", "cta-band", defaultCtaBand),
+      getPageSection("services", "hero", defaultServicesHero),
+      getPageSection("services", "pricing-info", defaultPricingInfo),
+      getPageSection("services", "faq-heading", defaultFaqHeading),
+    ]);
 
   return (
     <>
@@ -76,24 +56,8 @@ export default async function ServicesPage() {
           </FadeIn>
 
           <StaggerContainer className="grid gap-8">
-            {services.map((service, index) => {
-              const isFirstProtection =
-                service.category === "protection" &&
-                services.findIndex((s) => s.category === "protection") ===
-                  index;
-
-              return (
+            {services.map((service, index) => (
                 <StaggerItem key={service.id}>
-                  {isFirstProtection && (
-                    <div className="mb-8">
-                      <h2 className="text-xl font-bold">
-                        {paintProtectionIntro.heading}
-                      </h2>
-                      <p className="mt-2 text-muted-foreground">
-                        {paintProtectionIntro.intro}
-                      </p>
-                    </div>
-                  )}
                   <article
                     id={service.slug}
                     className={cn(
@@ -112,6 +76,11 @@ export default async function ServicesPage() {
                     </div>
                     <div className="flex flex-col justify-center p-6 lg:p-10">
                       <h2 className="text-2xl font-bold">{service.title}</h2>
+                      {service.titleSubline && (
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {service.titleSubline}
+                        </p>
+                      )}
                       <p className="mt-3 text-muted-foreground">
                         {service.description}
                       </p>
@@ -153,62 +122,8 @@ export default async function ServicesPage() {
                     </div>
                   </article>
                 </StaggerItem>
-              );
-            })}
+            ))}
           </StaggerContainer>
-        </div>
-      </section>
-
-      <section className="section-padding bg-surface-raised/30">
-        <div className="container-narrow">
-          <FadeIn>
-            <SectionHeading
-              eyebrow={packagesHeading.eyebrow}
-              title={packagesHeading.title}
-              description={packagesHeading.description}
-            />
-          </FadeIn>
-
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse">
-              <thead>
-                <tr className="border-b border-border-subtle">
-                  <th className="py-4 text-left text-sm font-semibold">
-                    Packages
-                  </th>
-                  {packages.map((pkg) => (
-                    <th
-                      key={pkg.id}
-                      className="px-4 py-4 text-center text-sm font-semibold"
-                    >
-                      {pkg.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonFeatures.map((feature, featureIndex) => (
-                  <tr
-                    key={feature}
-                    className="border-b border-border-subtle/50"
-                  >
-                    <td className="py-3 text-sm text-muted-foreground">
-                      {feature}
-                    </td>
-                    {packages.map((pkg) => (
-                      <td key={pkg.id} className="px-4 py-3 text-center">
-                        {pkg.includes[featureIndex] ? (
-                          <Check className="mx-auto h-4 w-4 text-brand-cyan-400" />
-                        ) : (
-                          <span className="text-muted-foreground/30">—</span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         </div>
       </section>
 

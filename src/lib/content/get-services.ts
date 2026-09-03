@@ -20,6 +20,7 @@ function mapDbService(row: Tables<"services">): Service {
     slug: row.slug,
     shortDescription: row.short_description ?? "",
     description: row.description ?? "",
+    titleSubline: row.title_subline ?? undefined,
     features,
     includedServices:
       includedServices.length > 0 ? includedServices : undefined,

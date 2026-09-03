@@ -594,6 +594,7 @@ export type Database = {
           short_description: string | null
           slug: string
           sort_order: number
+          title_subline: string | null
         }
         Insert: {
           category?: string | null
@@ -612,6 +613,7 @@ export type Database = {
           short_description?: string | null
           slug: string
           sort_order?: number
+          title_subline?: string | null
         }
         Update: {
           category?: string | null
@@ -630,6 +632,7 @@ export type Database = {
           short_description?: string | null
           slug?: string
           sort_order?: number
+          title_subline?: string | null
         }
         Relationships: []
       }

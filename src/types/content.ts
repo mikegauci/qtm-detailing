@@ -33,6 +33,7 @@ export type Service = {
   features: string[];
   includedServices?: string[];
   note?: string;
+  titleSubline?: string;
   image: string;
   featured?: boolean;
   category?: "interior" | "exterior" | "protection" | "bundle";

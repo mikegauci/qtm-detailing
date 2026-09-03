@@ -78,20 +78,6 @@ export function resolvePackageRecord(
   };
 }
 
-export function resolvePackageRecordsForAdmin(
-  packages: Tables<"packages">[],
-  features: Tables<"comparison_features">[],
-  bundleServices: Service[],
-): Tables<"packages">[] {
-  const comparisonFeatures = features.map((feature) => feature.label);
-  const includedServicesBySlug =
-    buildIncludedServicesBySlugFromServices(bundleServices);
-
-  return packages.map((pkg) =>
-    resolvePackageRecord(pkg, comparisonFeatures, includedServicesBySlug),
-  );
-}
-
 export type PackagesData = {
   packages: Package[];
   comparisonFeatures: string[];

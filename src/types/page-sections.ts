@@ -43,8 +43,3 @@ export type PricingInfoContent = {
   title: string;
   paragraphs: string[];
 };
-
-export type PaintProtectionIntroContent = {
-  heading: string;
-  intro: string;
-};

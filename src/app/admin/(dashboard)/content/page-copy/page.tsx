@@ -10,8 +10,6 @@ import {
   defaultFeaturedServicesHeading,
   defaultGalleryHero,
   defaultHero,
-  defaultPackagesHeading,
-  defaultPaintProtectionIntro,
   defaultPricingInfo,
   defaultProcessSteps,
   defaultServicesHero,
@@ -21,7 +19,6 @@ import type {
   AboutIntroContent,
   CtaBandContent,
   HeroContent,
-  PaintProtectionIntroContent,
   PricingInfoContent,
   ProcessStepsContent,
   SectionHeadingContent,
@@ -82,12 +79,6 @@ export default async function PageCopyAdminPage() {
           "hero",
           defaultServicesHero,
         )}
-        packagesHeading={findSection<SectionHeadingContent>(
-          sections,
-          "services",
-          "packages-heading",
-          defaultPackagesHeading,
-        )}
         faqHeading={findSection<SectionHeadingContent>(
           sections,
           "services",
@@ -99,12 +90,6 @@ export default async function PageCopyAdminPage() {
           "services",
           "pricing-info",
           defaultPricingInfo,
-        )}
-        paintProtectionIntro={findSection<PaintProtectionIntroContent>(
-          sections,
-          "services",
-          "paint-protection-intro",
-          defaultPaintProtectionIntro,
         )}
         aboutIntro={findSection<AboutIntroContent>(
           sections,

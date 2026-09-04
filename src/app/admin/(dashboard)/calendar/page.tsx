@@ -18,7 +18,7 @@ export default async function CalendarPage() {
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("id, booking_date, start_time, end_time, status, customers(full_name)")
+    .select("id, booking_date, end_date, start_time, end_time, status, customers(full_name)")
     .neq("status", "cancelled")
     .order("booking_date", { ascending: true });
 
@@ -29,7 +29,7 @@ export default async function CalendarPage() {
         id: booking.id,
         title: customer?.full_name ?? "Booking",
         start: `${booking.booking_date}T${booking.start_time}`,
-        end: `${booking.booking_date}T${booking.end_time}`,
+        end: `${booking.end_date ?? booking.booking_date}T${booking.end_time}`,
         backgroundColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
         borderColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
       };
@@ -40,7 +40,7 @@ export default async function CalendarPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Calendar</h1>
         <p className="mt-1 text-sm text-white/60">
-          Week and day views of scheduled bookings.
+          Month, week, and day views of scheduled bookings.
         </p>
       </div>
 

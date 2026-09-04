@@ -14,7 +14,8 @@ export default async function LeadsPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Leads</h1>
         <p className="mt-1 text-sm text-white/60">
-          Manage inbound enquiries from the website and other sources.
+          Manage inbound enquiries from the website, word of mouth, and other
+          sources.
         </p>
       </div>
 

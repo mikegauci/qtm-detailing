@@ -7,7 +7,7 @@ export default async function KanbanPage() {
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("id, confirmation_code, booking_date, start_time, status, customers(full_name)")
+    .select("id, confirmation_code, booking_date, end_date, status, customers(full_name)")
     .order("booking_date", { ascending: true });
 
   const kanbanBookings =
@@ -17,7 +17,7 @@ export default async function KanbanPage() {
         id: b.id,
         confirmation_code: b.confirmation_code,
         booking_date: b.booking_date,
-        start_time: b.start_time,
+        end_date: b.end_date,
         status: b.status,
         customer_name: customer?.full_name ?? "Unknown",
       };

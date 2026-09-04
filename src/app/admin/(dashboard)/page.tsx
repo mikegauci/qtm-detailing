@@ -5,6 +5,7 @@ import { getCustomerRelation } from "@/lib/admin/supabase-relations";
 import {
   BOOKING_STATUS_COLORS,
   BOOKING_STATUS_LABELS,
+  formatBookingDateRange,
   LEAD_STATUS_LABELS,
 } from "@/lib/utils/booking";
 import { Badge } from "@/components/ui/badge";
@@ -46,7 +47,7 @@ export default async function AdminDashboardPage() {
       .select("*, customers(full_name)")
       .eq("booking_date", today)
       .neq("status", "cancelled")
-      .order("start_time", { ascending: true }),
+      .order("booking_date", { ascending: true }),
   ]);
 
   const lowStockItems =
@@ -162,8 +163,10 @@ export default async function AdminDashboardPage() {
                             {customer?.full_name ?? "Unknown"}
                           </p>
                           <p className="text-sm text-white/50">
-                            {booking.start_time.slice(0, 5)} –{" "}
-                            {booking.end_time.slice(0, 5)}
+                            {formatBookingDateRange(
+                              booking.booking_date,
+                              booking.end_date,
+                            )}
                           </p>
                         </div>
                         <span

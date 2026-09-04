@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
 import {
   DndContext,
@@ -22,7 +22,7 @@ import { GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import { updateBookingStatus } from "@/app/actions/admin/bookings";
 import type { Enums, Tables } from "@/lib/supabase/types";
-import { BOOKING_STATUS_LABELS } from "@/lib/utils/booking";
+import { BOOKING_STATUS_LABELS, formatBookingDateRange } from "@/lib/utils/booking";
 
 type BookingStatus = Enums<"booking_status">;
 
@@ -30,26 +30,94 @@ type KanbanBooking = {
   id: string;
   confirmation_code: string;
   booking_date: string;
-  start_time: string;
+  end_date: string | null;
   customer_name: string;
   status: BookingStatus;
 };
 
-const COLUMNS: BookingStatus[] = [
-  "booked",
-  "in_progress",
-  "completed",
-  "paid",
-  "cancelled",
-];
+const COLUMNS = ["booked", "in_progress", "completed"] as const satisfies readonly BookingStatus[];
 
-const COLUMN_COLORS: Record<BookingStatus, string> = {
+type KanbanColumnStatus = (typeof COLUMNS)[number];
+
+const COLUMN_COLORS: Record<KanbanColumnStatus, string> = {
   booked: "border-blue-500/30 bg-blue-500/5",
   in_progress: "border-amber-500/30 bg-amber-500/5",
   completed: "border-emerald-500/30 bg-emerald-500/5",
-  paid: "border-purple-500/30 bg-purple-500/5",
-  cancelled: "border-red-500/30 bg-red-500/5",
 };
+
+function StaticBookingCard({ booking }: { booking: KanbanBooking }) {
+  return (
+    <div className="rounded-lg border border-white/10 bg-surface-raised p-3 shadow-sm">
+      <div className="flex items-start gap-2">
+        <div className="mt-0.5 text-white/30">
+          <GripVertical className="h-4 w-4" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <Link
+            href={`/admin/bookings/${booking.id}`}
+            className="block font-medium text-white hover:underline"
+          >
+            {booking.customer_name}
+          </Link>
+          <p className="mt-0.5 font-mono text-xs text-white/40">
+            {booking.confirmation_code}
+          </p>
+          <p className="mt-1 text-xs text-white/50">
+            {formatBookingDateRange(booking.booking_date, booking.end_date)}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KanbanColumnStatic({
+  status,
+  bookings,
+}: {
+  status: KanbanColumnStatus;
+  bookings: KanbanBooking[];
+}) {
+  return (
+    <div
+      className={`flex h-[calc(100vh-12rem)] w-72 shrink-0 flex-col rounded-xl border ${COLUMN_COLORS[status]}`}
+    >
+      <div className="shrink-0 border-b border-white/10 px-4 py-3">
+        <h3 className="font-semibold text-white">
+          {BOOKING_STATUS_LABELS[status]}
+        </h3>
+        <p className="text-xs text-white/50">
+          {bookings.length} booking{bookings.length !== 1 ? "s" : ""}
+        </p>
+      </div>
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
+        {bookings.map((booking) => (
+          <StaticBookingCard key={booking.id} booking={booking} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function getBookingSortDate(booking: KanbanBooking): number {
+  const date = booking.end_date ?? booking.booking_date;
+  return new Date(`${date}T12:00:00`).getTime();
+}
+
+function getBookingsByStatus(
+  bookings: KanbanBooking[],
+  status: BookingStatus,
+) {
+  const filtered = bookings.filter((b) => b.status === status);
+
+  if (status === "completed") {
+    return [...filtered].sort(
+      (a, b) => getBookingSortDate(b) - getBookingSortDate(a),
+    );
+  }
+
+  return filtered;
+}
 
 function BookingCard({
   booking,
@@ -98,7 +166,7 @@ function BookingCard({
             {booking.confirmation_code}
           </p>
           <p className="mt-1 text-xs text-white/50">
-            {booking.booking_date} · {booking.start_time.slice(0, 5)}
+            {formatBookingDateRange(booking.booking_date, booking.end_date)}
           </p>
         </div>
       </div>
@@ -110,7 +178,7 @@ function KanbanColumn({
   status,
   bookings,
 }: {
-  status: BookingStatus;
+  status: KanbanColumnStatus;
   bookings: KanbanBooking[];
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: status });
@@ -118,9 +186,9 @@ function KanbanColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-[400px] w-72 shrink-0 flex-col rounded-xl border transition-colors ${COLUMN_COLORS[status]} ${isOver ? "ring-2 ring-brand-purple-500/50" : ""}`}
+      className={`flex h-[calc(100vh-12rem)] w-72 shrink-0 flex-col rounded-xl border transition-colors ${COLUMN_COLORS[status]} ${isOver ? "ring-2 ring-brand-purple-500/50" : ""}`}
     >
-      <div className="border-b border-white/10 px-4 py-3">
+      <div className="shrink-0 border-b border-white/10 px-4 py-3">
         <h3 className="font-semibold text-white">
           {BOOKING_STATUS_LABELS[status]}
         </h3>
@@ -130,7 +198,7 @@ function KanbanColumn({
         items={bookings.map((b) => b.id)}
         strategy={verticalListSortingStrategy}
       >
-        <div className="flex flex-1 flex-col gap-2 p-3">
+        <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto p-3">
           {bookings.map((booking) => (
             <BookingCard key={booking.id} booking={booking} />
           ))}
@@ -147,7 +215,12 @@ export function BookingsKanban({
 }) {
   const [bookings, setBookings] = useState(initialBookings);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -156,14 +229,6 @@ export function BookingsKanban({
   const activeBooking = activeId
     ? bookings.find((b) => b.id === activeId)
     : null;
-
-  function getBookingsByStatus(status: BookingStatus) {
-    return bookings.filter((b) => b.status === status);
-  }
-
-  function handleDragStart(event: DragStartEvent) {
-    setActiveId(event.active.id as string);
-  }
 
   function handleDragEnd(event: DragEndEvent) {
     setActiveId(null);
@@ -176,8 +241,8 @@ export function BookingsKanban({
 
     let newStatus: BookingStatus | null = null;
 
-    if (COLUMNS.includes(over.id as BookingStatus)) {
-      newStatus = over.id as BookingStatus;
+    if (COLUMNS.includes(over.id as KanbanColumnStatus)) {
+      newStatus = over.id as KanbanColumnStatus;
     } else {
       const overBooking = bookings.find((b) => b.id === over.id);
       if (overBooking) newStatus = overBooking.status;
@@ -206,6 +271,24 @@ export function BookingsKanban({
     });
   }
 
+  function handleDragStart(event: DragStartEvent) {
+    setActiveId(event.active.id as string);
+  }
+
+  if (!mounted) {
+    return (
+      <div className="flex gap-4 overflow-x-auto pb-4">
+        {COLUMNS.map((status) => (
+          <KanbanColumnStatic
+            key={status}
+            status={status}
+            bookings={getBookingsByStatus(bookings, status)}
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <DndContext
       sensors={sensors}
@@ -217,7 +300,7 @@ export function BookingsKanban({
           <KanbanColumn
             key={status}
             status={status}
-            bookings={getBookingsByStatus(status)}
+            bookings={getBookingsByStatus(bookings, status)}
           />
         ))}
       </div>

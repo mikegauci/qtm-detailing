@@ -91,8 +91,7 @@ export function BookingForm({
         customer_id: customerId,
         vehicle_id: vehicleId || null,
         booking_date: formData.get("booking_date") as string,
-        start_time: formData.get("start_time") as string,
-        end_time: formData.get("end_time") as string,
+        end_date: (formData.get("end_date") as string) || null,
         notes: (formData.get("notes") as string) || null,
         service_ids: selectedServices,
       });
@@ -212,23 +211,19 @@ export function BookingForm({
             <CardTitle>Schedule</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="booking_date">Date</Label>
-              <Input
-                id="booking_date"
-                name="booking_date"
-                type="date"
-                required
-              />
-            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="start_time">Start time</Label>
-                <Input id="start_time" name="start_time" type="time" required />
+                <Label htmlFor="booking_date">Start date</Label>
+                <Input
+                  id="booking_date"
+                  name="booking_date"
+                  type="date"
+                  required
+                />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="end_time">End time</Label>
-                <Input id="end_time" name="end_time" type="time" required />
+                <Label htmlFor="end_date">End date</Label>
+                <Input id="end_date" name="end_date" type="date" required />
               </div>
             </div>
             <div className="space-y-2">

@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { format } from "date-fns";
 import { Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getCustomerRelation, getRelation } from "@/lib/admin/supabase-relations";
 import {
   BOOKING_STATUS_COLORS,
   BOOKING_STATUS_LABELS,
+  formatBookingDateRange,
 } from "@/lib/utils/booking";
 import { Button } from "@/components/ui/button";
 
@@ -15,8 +15,7 @@ export default async function BookingsPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select("*, customers(full_name, email), vehicles(make, model, registration)")
-    .order("booking_date", { ascending: false })
-    .order("start_time", { ascending: false });
+    .order("booking_date", { ascending: false });
 
   return (
     <div className="space-y-6">
@@ -41,8 +40,7 @@ export default async function BookingsPage() {
             <tr className="border-b border-white/10 bg-white/5 text-left text-white/60">
               <th className="px-4 py-3 font-medium">Code</th>
               <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 font-medium">Date</th>
-              <th className="px-4 py-3 font-medium">Time</th>
+              <th className="px-4 py-3 font-medium">Dates</th>
               <th className="px-4 py-3 font-medium">Vehicle</th>
               <th className="px-4 py-3 font-medium">Status</th>
               <th className="px-4 py-3 font-medium">Total</th>
@@ -70,11 +68,10 @@ export default async function BookingsPage() {
                   </p>
                 </td>
                 <td className="px-4 py-3 text-white/70">
-                  {format(new Date(booking.booking_date), "d MMM yyyy")}
-                </td>
-                <td className="px-4 py-3 text-white/70">
-                  {booking.start_time.slice(0, 5)} –{" "}
-                  {booking.end_time.slice(0, 5)}
+                  {formatBookingDateRange(
+                    booking.booking_date,
+                    booking.end_date,
+                  )}
                 </td>
                 <td className="px-4 py-3 text-white/70">
                   {vehicle

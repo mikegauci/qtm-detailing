@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
 import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -16,6 +15,7 @@ import type { Tables } from "@/lib/supabase/types";
 import {
   BOOKING_STATUS_COLORS,
   BOOKING_STATUS_LABELS,
+  formatBookingDateRange,
 } from "@/lib/utils/booking";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,6 +56,13 @@ export function BookingDetail({
 }) {
   const [isPending, startTransition] = useTransition();
   const [addServiceId, setAddServiceId] = useState("");
+  const [chargedAmount, setChargedAmount] = useState("");
+
+  useEffect(() => {
+    setChargedAmount(
+      Number(booking.total_price) > 0 ? String(Number(booking.total_price)) : "",
+    );
+  }, [booking.total_price]);
 
   const unaddedServices = availableServices.filter(
     (s) => !bookingServices.some((bs) => bs.service_id === s.id),
@@ -76,8 +83,7 @@ export function BookingDetail({
     startTransition(async () => {
       const result = await updateBooking(booking.id, {
         booking_date: formData.get("booking_date") as string,
-        start_time: formData.get("start_time") as string,
-        end_time: formData.get("end_time") as string,
+        end_date: (formData.get("end_date") as string) || null,
         notes: (formData.get("notes") as string) || null,
       });
       if (result.success) toast.success(result.message);
@@ -85,15 +91,47 @@ export function BookingDetail({
     });
   }
 
-  function handleAddService() {
-    if (!addServiceId) return;
+  function handleServicesRow() {
+    const trimmedAmount = chargedAmount.trim();
+    const parsedAmount =
+      trimmedAmount === "" ? null : Number(trimmedAmount);
+
+    if (trimmedAmount !== "" && (parsedAmount === null || parsedAmount < 0)) {
+      toast.error("Enter a valid amount.");
+      return;
+    }
+
+    if (!addServiceId && parsedAmount === null) {
+      toast.error("Select a service or enter an amount.");
+      return;
+    }
+
     startTransition(async () => {
-      const result = await addBookingService(booking.id, addServiceId);
-      if (result.success) {
-        toast.success(result.message);
+      if (addServiceId) {
+        const result = await addBookingService(
+          booking.id,
+          addServiceId,
+          parsedAmount ?? 0,
+        );
+        if (!result.success) {
+          toast.error(result.message);
+          return;
+        }
         setAddServiceId("");
-      } else {
-        toast.error(result.message);
+        toast.success(result.message);
+      }
+
+      if (parsedAmount !== null) {
+        const result = await updateBooking(booking.id, {
+          total_price: parsedAmount,
+        });
+        if (!result.success) {
+          toast.error(result.message);
+          return;
+        }
+        if (!addServiceId) {
+          toast.success("Charged customer updated.");
+        }
       }
     });
   }
@@ -135,7 +173,7 @@ export function BookingDetail({
             </h1>
             <p className="text-sm text-white/60">
               {customer.full_name} ·{" "}
-              {format(new Date(booking.booking_date), "EEEE, d MMMM yyyy")}
+              {formatBookingDateRange(booking.booking_date, booking.end_date)}
             </p>
           </div>
         </div>
@@ -206,7 +244,7 @@ export function BookingDetail({
         <CardContent>
           <form action={handleUpdate} className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="booking_date">Date</Label>
+              <Label htmlFor="booking_date">Start date</Label>
               <Input
                 id="booking_date"
                 name="booking_date"
@@ -216,22 +254,12 @@ export function BookingDetail({
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="start_time">Start</Label>
+              <Label htmlFor="end_date">End date</Label>
               <Input
-                id="start_time"
-                name="start_time"
-                type="time"
-                defaultValue={booking.start_time.slice(0, 5)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="end_time">End</Label>
-              <Input
-                id="end_time"
-                name="end_time"
-                type="time"
-                defaultValue={booking.end_time.slice(0, 5)}
+                id="end_date"
+                name="end_date"
+                type="date"
+                defaultValue={booking.end_date ?? booking.booking_date}
                 required
               />
             </div>
@@ -258,60 +286,81 @@ export function BookingDetail({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>Services</CardTitle>
-          <p className="text-lg font-semibold text-white">
-            €{Number(booking.total_price).toFixed(2)}
-          </p>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ul className="divide-y divide-white/10">
-            {bookingServices.map((bs) => (
-              <li
-                key={bs.id}
-                className="flex items-center justify-between py-3 first:pt-0"
-              >
-                <div>
-                  <p className="text-white">{bs.services?.name ?? "Service"}</p>
-                  <p className="text-sm text-white/50">
-                    €{Number(bs.price_snapshot).toFixed(2)}
-                  </p>
-                </div>
-                <Button
-                  size="icon-sm"
-                  variant="ghost"
-                  onClick={() => handleRemoveService(bs.id)}
-                  disabled={isPending}
+          {bookingServices.length > 0 ? (
+            <ul className="divide-y divide-white/10">
+              {bookingServices.map((bs) => (
+                <li
+                  key={bs.id}
+                  className="flex items-center justify-between py-3 first:pt-0"
                 >
-                  <Trash2 className="h-4 w-4 text-red-400" />
-                </Button>
-              </li>
-            ))}
-          </ul>
+                  <div>
+                    <p className="text-white">{bs.services?.name ?? "Service"}</p>
+                    {Number(bs.price_snapshot) > 0 && (
+                      <p className="text-sm text-white/50">
+                        €{Number(bs.price_snapshot).toFixed(2)}
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    size="icon-sm"
+                    variant="ghost"
+                    onClick={() => handleRemoveService(bs.id)}
+                    disabled={isPending}
+                  >
+                    <Trash2 className="h-4 w-4 text-red-400" />
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-white/50">No services listed.</p>
+          )}
 
-          {unaddedServices.length > 0 && (
-            <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+            {unaddedServices.length > 0 && (
               <Select value={addServiceId} onValueChange={setAddServiceId}>
-                <SelectTrigger className="flex-1">
+                <SelectTrigger className="min-w-[200px] flex-1">
                   <SelectValue placeholder="Add a service..." />
                 </SelectTrigger>
                 <SelectContent>
                   {unaddedServices.map((service) => (
                     <SelectItem key={service.id} value={service.id}>
-                      {service.name} (€{Number(service.price).toFixed(2)})
+                      {service.name}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                type="button"
-                onClick={handleAddService}
-                disabled={isPending || !addServiceId}
-              >
-                Add
-              </Button>
-            </div>
-          )}
+            )}
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={chargedAmount}
+              onChange={(event) => setChargedAmount(event.target.value)}
+              placeholder="Charged customer"
+              className="w-40"
+            />
+            <Button
+              type="button"
+              onClick={handleServicesRow}
+              disabled={
+                isPending ||
+                (!addServiceId && chargedAmount.trim() === "")
+              }
+            >
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : addServiceId ? (
+                "Add"
+              ) : (
+                "Save"
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

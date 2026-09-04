@@ -86,6 +86,7 @@ export type Database = {
           confirmation_code: string
           created_at: string
           customer_id: string
+          end_date: string | null
           end_time: string
           id: string
           notes: string | null
@@ -99,6 +100,7 @@ export type Database = {
           confirmation_code: string
           created_at?: string
           customer_id: string
+          end_date?: string | null
           end_time: string
           id?: string
           notes?: string | null
@@ -112,6 +114,7 @@ export type Database = {
           confirmation_code?: string
           created_at?: string
           customer_id?: string
+          end_date?: string | null
           end_time?: string
           id?: string
           notes?: string | null
@@ -158,21 +161,21 @@ export type Database = {
       customers: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           full_name: string
           id: string
           phone: string | null
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           full_name: string
           id?: string
           phone?: string | null
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -311,7 +314,7 @@ export type Database = {
       leads: {
         Row: {
           created_at: string
-          email: string
+          email: string | null
           id: string
           message: string | null
           name: string
@@ -324,7 +327,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          email: string
+          email?: string | null
           id?: string
           message?: string | null
           name: string
@@ -337,7 +340,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          email?: string
+          email?: string | null
           id?: string
           message?: string | null
           name?: string
@@ -584,7 +587,9 @@ export type Database = {
           id: string
           make: string | null
           model: string | null
+          photo_url: string | null
           registration: string | null
+          storage_path: string | null
           vehicle_type: string | null
         }
         Insert: {
@@ -593,7 +598,9 @@ export type Database = {
           id?: string
           make?: string | null
           model?: string | null
+          photo_url?: string | null
           registration?: string | null
+          storage_path?: string | null
           vehicle_type?: string | null
         }
         Update: {
@@ -602,7 +609,9 @@ export type Database = {
           id?: string
           make?: string | null
           model?: string | null
+          photo_url?: string | null
           registration?: string | null
+          storage_path?: string | null
           vehicle_type?: string | null
         }
         Relationships: [

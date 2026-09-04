@@ -30,6 +30,8 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: "#ef4444",
 };
 
+const LEGEND_STATUSES = ["booked", "in_progress", "cancelled"] as const;
+
 export function BookingsCalendar({
   events,
 }: {
@@ -50,11 +52,11 @@ export function BookingsCalendar({
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap gap-3 text-xs">
-        {Object.entries(STATUS_COLORS).map(([status, color]) => (
+        {LEGEND_STATUSES.map((status) => (
           <span key={status} className="flex items-center gap-1.5 text-white/60">
             <span
               className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: color }}
+              style={{ backgroundColor: STATUS_COLORS[status] }}
             />
             {status.replace("_", " ")}
           </span>
@@ -64,7 +66,7 @@ export function BookingsCalendar({
       <div className="rounded-xl border border-white/10 bg-surface-raised p-4 [&_.fc]:text-white [&_.fc-button]:border-white/20 [&_.fc-button]:bg-white/10 [&_.fc-button]:text-white [&_.fc-button-active]:bg-brand-purple-600/30 [&_.fc-col-header-cell]:border-white/10 [&_.fc-daygrid-day]:border-white/10 [&_.fc-scrollgrid]:border-white/10 [&_.fc-timegrid-axis]:border-white/10 [&_.fc-timegrid-slot]:border-white/5">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-          initialView="timeGridWeek"
+          initialView="dayGridMonth"
           headerToolbar={{
             left: "prev,next today",
             center: "title",

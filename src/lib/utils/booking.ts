@@ -1,3 +1,5 @@
+import { format } from "date-fns";
+
 export function generateConfirmationCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let code = "QTM-";
@@ -30,3 +32,35 @@ export const LEAD_STATUS_LABELS: Record<string, string> = {
   converted: "Converted",
   lost: "Lost",
 };
+
+export const LEAD_POTENTIAL_STATUSES = ["new", "contacted", "quoted"] as const;
+
+const DEFAULT_BOOKING_START_TIME = "00:00:00";
+const DEFAULT_BOOKING_END_TIME = "23:59:59";
+
+export { DEFAULT_BOOKING_START_TIME, DEFAULT_BOOKING_END_TIME };
+
+export function formatBookingDateRange(
+  startDate: string,
+  endDate?: string | null,
+): string {
+  const end = endDate ?? startDate;
+  const startLabel = format(new Date(`${startDate}T12:00:00`), "d MMM yyyy");
+  if (end === startDate) return startLabel;
+  const endLabel = format(new Date(`${end}T12:00:00`), "d MMM yyyy");
+  return `${startLabel} – ${endLabel}`;
+}
+
+export const LEAD_SOURCE_LABELS: Record<string, string> = {
+  website: "Website",
+  word_of_mouth: "Word of mouth",
+  friend_family: "Friend / Family",
+  phone: "Phone call",
+  referral: "Referral",
+  walk_in: "Walk-in",
+  other: "Other",
+};
+
+export const LEAD_SOURCE_OPTIONS = Object.keys(LEAD_SOURCE_LABELS).filter(
+  (source) => source !== "website",
+);

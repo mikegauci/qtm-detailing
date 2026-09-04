@@ -51,12 +51,14 @@ function FilterPill({
       aria-pressed={active}
       onClick={onClick}
       className={cn(
-        "rounded-full transition-colors",
-        size === "md" ? "px-4 py-2 text-sm font-medium" : "px-3 py-1.5 text-sm",
+        "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full transition-colors",
+        size === "md"
+          ? "min-h-10 px-4 py-2 text-sm font-medium"
+          : "min-h-9 px-3 py-1.5 text-sm",
         active
           ? variant === "purple"
             ? "bg-brand-purple-600 text-white"
-            : "bg-brand-cyan-500/20 text-brand-cyan-300 ring-1 ring-brand-cyan-400/40"
+            : "border border-brand-cyan-400/40 bg-brand-cyan-500/20 text-brand-cyan-300"
           : variant === "purple"
             ? "border border-border-subtle text-muted-foreground hover:border-brand-purple-400/50 hover:text-foreground"
             : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
@@ -64,6 +66,37 @@ function FilterPill({
     >
       {children}
     </button>
+  );
+}
+
+function FilterScrollRow({
+  children,
+  label,
+  className,
+}: {
+  children: ReactNode;
+  label?: string;
+  className?: string;
+}) {
+  return (
+    <div className={cn("flex flex-col items-center gap-3", className)}>
+      {label ? (
+        <p className="text-xs font-bold tracking-wide text-muted-foreground uppercase">
+          {label}
+        </p>
+      ) : null}
+      <div className="w-full">
+        <div className="scrollbar-hide overflow-x-auto overscroll-x-contain py-1.5 [-webkit-overflow-scrolling:touch]">
+          <div
+            role="group"
+            aria-label={label}
+            className="flex w-max min-w-full items-center justify-center gap-2 px-0.5"
+          >
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -358,7 +391,7 @@ export function GalleryPageContent({
           </FadeIn>
 
           <FadeIn delay={0.1}>
-            <div className="mb-6 flex flex-wrap justify-center gap-2">
+            <FilterScrollRow className="mb-6">
               {galleryCategories.map((cat) => (
                 <FilterPill
                   key={cat.id}
@@ -368,55 +401,45 @@ export function GalleryPageContent({
                   {cat.label}
                 </FilterPill>
               ))}
-            </div>
+            </FilterScrollRow>
 
             {carNames.length > 0 && (
-              <div className="mb-6 flex flex-col items-center gap-3">
-                <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                  Vehicle
-                </p>
-                <div className="flex flex-wrap justify-center gap-2">
+              <FilterScrollRow label="Vehicle" className="mb-6">
+                <FilterPill
+                  active={selectedCar === "all"}
+                  onClick={() => setSelectedCar("all")}
+                  variant="cyan"
+                  size="sm"
+                >
+                  All
+                </FilterPill>
+                {carNames.map((carName) => (
                   <FilterPill
-                    active={selectedCar === "all"}
-                    onClick={() => setSelectedCar("all")}
+                    key={carName}
+                    active={selectedCar === carName}
+                    onClick={() => setSelectedCar(carName)}
                     variant="cyan"
                     size="sm"
                   >
-                    All
-                  </FilterPill>
-                  {carNames.map((carName) => (
-                    <FilterPill
-                      key={carName}
-                      active={selectedCar === carName}
-                      onClick={() => setSelectedCar(carName)}
-                      variant="cyan"
-                      size="sm"
-                    >
-                      {carName}
-                    </FilterPill>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mb-10 flex flex-col items-center gap-3">
-              <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                View
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {photoTypeOptions.map((option) => (
-                  <FilterPill
-                    key={option.id}
-                    active={photoTypeFilter === option.id}
-                    onClick={() => setPhotoTypeFilter(option.id)}
-                    variant="cyan"
-                    size="sm"
-                  >
-                    {option.label}
+                    {carName}
                   </FilterPill>
                 ))}
-              </div>
-            </div>
+              </FilterScrollRow>
+            )}
+
+            <FilterScrollRow label="View" className="mb-10">
+              {photoTypeOptions.map((option) => (
+                <FilterPill
+                  key={option.id}
+                  active={photoTypeFilter === option.id}
+                  onClick={() => setPhotoTypeFilter(option.id)}
+                  variant="cyan"
+                  size="sm"
+                >
+                  {option.label}
+                </FilterPill>
+              ))}
+            </FilterScrollRow>
           </FadeIn>
 
           {filteredPhotos.length === 0 ? (

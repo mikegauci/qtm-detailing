@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
 import type { SiteConfig } from "@/types/content";
@@ -15,7 +16,16 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
+function isNavItemActive(pathname: string, href: string) {
+  if (href === "/") {
+    return pathname === "/";
+  }
+
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
+
 export function Header({ settings }: { settings: SiteConfig }) {
+  const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -48,15 +58,25 @@ export function Header({ settings }: { settings: SiteConfig }) {
         </Link>
 
         <nav className="hidden items-center gap-8 md:flex" aria-label="Main">
-          {settings.nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {item.label}
-            </Link>
-          ))}
+          {settings.nav.map((item) => {
+            const active = isNavItemActive(pathname, item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={cn(
+                  "text-sm font-medium transition-colors",
+                  active
+                    ? "text-brand-cyan-400"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {item.label}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="hidden md:block">
@@ -78,16 +98,26 @@ export function Header({ settings }: { settings: SiteConfig }) {
               <SheetTitle className="sr-only">Navigation menu</SheetTitle>
             </SheetHeader>
             <nav className="flex flex-col gap-6" aria-label="Mobile">
-              {settings.nav.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={() => setOpen(false)}
-                  className="text-lg font-medium text-foreground transition-colors hover:text-brand-purple-400"
-                >
-                  {item.label}
-                </Link>
-              ))}
+              {settings.nav.map((item) => {
+                const active = isNavItemActive(pathname, item.href);
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={cn(
+                      "text-lg font-medium transition-colors",
+                      active
+                        ? "text-brand-cyan-400"
+                        : "text-foreground hover:text-brand-purple-400",
+                    )}
+                  >
+                    {item.label}
+                  </Link>
+                );
+              })}
               <CTAButton
                 href="/contact"
                 className="mt-4 w-full"

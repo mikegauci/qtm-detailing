@@ -40,5 +40,5 @@ export function FaqAnswer({
     );
   }
 
-  return <p className={cn(className)}>{answer}</p>;
+  return <p className={cn("whitespace-pre-line", className)}>{answer}</p>;
 }

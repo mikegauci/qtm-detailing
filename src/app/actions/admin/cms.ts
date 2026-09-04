@@ -9,6 +9,7 @@ import {
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
+import { slugify } from "@/lib/utils";
 
 export type ActionResult = {
   success: boolean;
@@ -105,7 +106,6 @@ export async function upsertSiteSettings(
 export async function upsertService(input: {
   id?: string;
   name: string;
-  slug: string;
   short_description?: string;
   description?: string;
   featured?: boolean;
@@ -119,7 +119,7 @@ export async function upsertService(input: {
     const { supabase } = await requireAdmin();
     const payload = {
       name: input.name,
-      slug: input.slug,
+      slug: slugify(input.name),
       short_description: input.short_description ?? null,
       description: input.description ?? null,
       price: 0,

@@ -81,7 +81,7 @@ export default async function ServicesPage() {
                           {service.titleSubline}
                         </p>
                       )}
-                      <p className="mt-3 text-muted-foreground">
+                      <p className="mt-3 whitespace-pre-line text-muted-foreground">
                         {service.description}
                       </p>
                       {service.includedServices &&
@@ -112,7 +112,7 @@ export default async function ServicesPage() {
                         </ul>
                       )}
                       {service.note && (
-                        <p className="mt-4 text-sm text-muted-foreground/80">
+                        <p className="mt-4 whitespace-pre-line text-sm text-muted-foreground/80">
                           {service.note}
                         </p>
                       )}

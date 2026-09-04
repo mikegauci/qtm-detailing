@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { slugify } from "@/lib/utils";
 
 type ServicesEditorProps = {
   initialServices: Tables<"services">[];
@@ -19,7 +20,6 @@ type ServicesEditorProps = {
 type ServiceFormState = {
   id?: string;
   name: string;
-  slug: string;
   short_description: string;
   description: string;
   featured: boolean;
@@ -32,7 +32,6 @@ type ServiceFormState = {
 
 const emptyService: ServiceFormState = {
   name: "",
-  slug: "",
   short_description: "",
   description: "",
   featured: false,
@@ -47,6 +46,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
   const [services, setServices] = useState(initialServices);
   const [editing, setEditing] = useState<ServiceFormState>(emptyService);
   const [isPending, startTransition] = useTransition();
+  const link = slugify(editing.name);
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +54,6 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
       const result = await upsertService({
         id: editing.id,
         name: editing.name,
-        slug: editing.slug,
         short_description: editing.short_description,
         description: editing.description,
         featured: editing.featured,
@@ -112,7 +111,6 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
               setEditing({
                 id: service.id,
                 name: service.name,
-                slug: service.slug,
                 short_description: service.short_description ?? "",
                 description: service.description ?? "",
                 featured: service.featured,
@@ -127,7 +125,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
           >
             <div>
               <p className="font-medium">{service.name}</p>
-              <p className="text-sm text-white/60">{service.slug}</p>
+              <p className="text-sm text-white/60">{slugify(service.name)}</p>
             </div>
             <div className="flex items-center gap-2">
               {service.featured && <Badge>Featured</Badge>}
@@ -158,13 +156,12 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
             />
           </div>
           <div className="space-y-2">
-            <Label>Slug</Label>
+            <Label>Link</Label>
             <Input
-              value={editing.slug}
-              onChange={(e) =>
-                setEditing((p) => ({ ...p, slug: e.target.value }))
-              }
-              required
+              value={link}
+              readOnly
+              tabIndex={-1}
+              className="cursor-default bg-white/5 text-white/60"
             />
           </div>
         </div>
@@ -206,7 +203,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
           value={editing.image_url ?? ""}
           onChange={(url) => setEditing((p) => ({ ...p, image_url: url }))}
           folder="services"
-          filename={editing.slug || undefined}
+          filename={link || undefined}
         />
         <div className="space-y-2">
           <Label>Features (one per line)</Label>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
+  Check,
   ChevronLeft,
   Folder,
   HardDrive,
@@ -19,8 +20,6 @@ import {
 import {
   getDrivePickerState,
   getLinkedPhotosForPicker,
-  setVehiclePhotoFromDrive,
-  setVehiclePhotoFromLinked,
 } from "@/app/actions/admin/customers";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
@@ -38,6 +37,11 @@ import { cn } from "@/lib/utils";
 type DriveFolder = { id: string; name: string };
 type DriveImage = { id: string; name: string };
 type PickerView = "drive" | "linked";
+
+type PickerResult = {
+  success: boolean;
+  message: string;
+};
 
 function DriveThumbnail({
   fileId,
@@ -67,13 +71,63 @@ function DriveThumbnail({
   );
 }
 
+function SelectionBadge({ selected }: { selected: boolean }) {
+  if (!selected) return null;
+
+  return (
+    <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-600 text-white shadow-md">
+      <Check className="h-3.5 w-3.5" />
+    </span>
+  );
+}
+
+function DriveImageOption({
+  image,
+  disabled,
+  selected,
+  multiple,
+  onToggle,
+  onSelect,
+}: {
+  image: DriveImage;
+  disabled: boolean;
+  selected: boolean;
+  multiple: boolean;
+  onToggle: () => void;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={multiple ? onToggle : onSelect}
+      className={cn(
+        "relative overflow-hidden rounded-lg border text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        selected
+          ? "border-brand-purple-500 ring-2 ring-brand-purple-500/40"
+          : "border-white/10 hover:border-brand-purple-500/50",
+      )}
+    >
+      <DriveThumbnail fileId={image.id} name={image.name} />
+      <SelectionBadge selected={multiple && selected} />
+      <p className="truncate p-2 text-xs text-white/70">{image.name}</p>
+    </button>
+  );
+}
+
 function LinkedPhotoOption({
   photo,
   disabled,
+  selected,
+  multiple,
+  onToggle,
   onSelect,
 }: {
   photo: Tables<"gallery_photos">;
   disabled: boolean;
+  selected: boolean;
+  multiple: boolean;
+  onToggle: () => void;
   onSelect: () => void;
 }) {
   const [failed, setFailed] = useState(false);
@@ -91,8 +145,13 @@ function LinkedPhotoOption({
     <button
       type="button"
       disabled={disabled || !src}
-      onClick={onSelect}
-      className="group overflow-hidden rounded-lg border border-white/10 text-left transition-colors hover:border-brand-purple-500/50 disabled:cursor-not-allowed disabled:opacity-50"
+      onClick={multiple ? onToggle : onSelect}
+      className={cn(
+        "relative overflow-hidden rounded-lg border text-left transition-colors disabled:cursor-not-allowed disabled:opacity-50",
+        selected
+          ? "border-brand-purple-500 ring-2 ring-brand-purple-500/40"
+          : "border-white/10 hover:border-brand-purple-500/50",
+      )}
     >
       {src && !failed ? (
         <img
@@ -106,6 +165,7 @@ function LinkedPhotoOption({
           <ImageIcon className="h-8 w-8 text-white/40" />
         </div>
       )}
+      <SelectionBadge selected={multiple && selected} />
       <div className="space-y-0.5 p-2">
         <p className="truncate text-xs font-medium text-white">{label}</p>
         <p className="text-[10px] uppercase tracking-wide text-white/40">
@@ -119,15 +179,15 @@ function LinkedPhotoOption({
 export function LinkedPhotoPickerDialog({
   open,
   onOpenChange,
-  vehicleId,
-  customerId,
-  onSelected,
+  multiple = false,
+  onDriveSelect,
+  onLinkedSelect,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  vehicleId: string;
-  customerId: string;
-  onSelected?: (url: string) => void;
+  multiple?: boolean;
+  onDriveSelect: (driveFileIds: string[]) => Promise<PickerResult>;
+  onLinkedSelect: (photoIds: string[]) => Promise<PickerResult>;
 }) {
   const [view, setView] = useState<PickerView>("drive");
   const [driveConnected, setDriveConnected] = useState<boolean | null>(null);
@@ -139,10 +199,32 @@ export function LinkedPhotoPickerDialog({
   const [images, setImages] = useState<DriveImage[]>([]);
   const [folderStack, setFolderStack] = useState<DriveFolder[]>([]);
   const [loadingDrive, setLoadingDrive] = useState(false);
+  const [selectedDriveIds, setSelectedDriveIds] = useState<string[]>([]);
+  const [selectedLinkedIds, setSelectedLinkedIds] = useState<string[]>([]);
   const driveInitializedRef = useRef(false);
 
   const currentFolder = folderStack[folderStack.length - 1];
   const canGoBack = folderStack.length > 1;
+
+  const selectedCount =
+    view === "drive" ? selectedDriveIds.length : selectedLinkedIds.length;
+
+  const clearSelection = useCallback(() => {
+    setSelectedDriveIds([]);
+    setSelectedLinkedIds([]);
+  }, []);
+
+  const toggleDriveSelection = useCallback((id: string) => {
+    setSelectedDriveIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  }, []);
+
+  const toggleLinkedSelection = useCallback((id: string) => {
+    setSelectedLinkedIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  }, []);
 
   const loadFolderContents = useCallback(async (stack: DriveFolder[]) => {
     setLoadingDrive(true);
@@ -211,6 +293,7 @@ export function LinkedPhotoPickerDialog({
       driveInitializedRef.current = false;
       setSearch("");
       setView("drive");
+      clearSelection();
       return;
     }
 
@@ -229,7 +312,7 @@ export function LinkedPhotoPickerDialog({
         toast.error(linkedResult.message ?? "Failed to load linked photos.");
       }
     });
-  }, [open]);
+  }, [open, clearSelection]);
 
   useEffect(() => {
     if (
@@ -261,16 +344,14 @@ export function LinkedPhotoPickerDialog({
     });
   }, [photos, search]);
 
-  function handleLinkedSelect(photoId: string) {
+  function runSelection(
+    handler: (ids: string[]) => Promise<PickerResult>,
+    ids: string[],
+  ) {
     startTransition(async () => {
-      const result = await setVehiclePhotoFromLinked(
-        vehicleId,
-        customerId,
-        photoId,
-      );
-      if (result.success && result.url) {
+      const result = await handler(ids);
+      if (result.success) {
         toast.success(result.message);
-        onSelected?.(result.url);
         onOpenChange(false);
       } else {
         toast.error(result.message);
@@ -278,22 +359,47 @@ export function LinkedPhotoPickerDialog({
     });
   }
 
+  function handleLinkedSelect(photoId: string) {
+    runSelection(onLinkedSelect, [photoId]);
+  }
+
   function handleDriveSelect(driveFileId: string) {
-    startTransition(async () => {
-      const result = await setVehiclePhotoFromDrive(
-        vehicleId,
-        customerId,
-        driveFileId,
-      );
-      if (result.success && result.url) {
-        toast.success(result.message);
-        onSelected?.(result.url);
-        onOpenChange(false);
-      } else {
-        toast.error(result.message);
+    runSelection(onDriveSelect, [driveFileId]);
+  }
+
+  function handleConfirmSelection() {
+    if (view === "drive") {
+      if (selectedDriveIds.length === 0) return;
+      runSelection(onDriveSelect, selectedDriveIds);
+      return;
+    }
+
+    if (selectedLinkedIds.length === 0) return;
+    runSelection(onLinkedSelect, selectedLinkedIds);
+  }
+
+  function selectAllDriveImages() {
+    setSelectedDriveIds((prev) => {
+      const next = new Set(prev);
+      for (const image of images) {
+        next.add(image.id);
       }
+      return [...next];
     });
   }
+
+  function clearCurrentViewSelection() {
+    if (view === "drive") {
+      setSelectedDriveIds([]);
+    } else {
+      setSelectedLinkedIds([]);
+    }
+  }
+
+  const confirmLabel =
+    selectedCount === 1
+      ? "Add 1 photo"
+      : `Add ${selectedCount} photos`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -301,7 +407,9 @@ export function LinkedPhotoPickerDialog({
         <DialogHeader>
           <DialogTitle>Choose from Google Drive</DialogTitle>
           <DialogDescription>
-            Browse your Drive folders or pick from previously linked photos.
+            {multiple
+              ? "Select one or more photos, then add them."
+              : "Browse your Drive folders or pick from previously linked photos."}
           </DialogDescription>
         </DialogHeader>
 
@@ -348,6 +456,21 @@ export function LinkedPhotoPickerDialog({
               placeholder="Search by vehicle or type..."
               className="pl-9"
             />
+          </div>
+        )}
+
+        {multiple && selectedCount > 0 && (
+          <div className="flex items-center justify-between rounded-lg border border-brand-purple-500/30 bg-brand-purple-600/10 px-3 py-2 text-sm">
+            <span className="text-white/80">
+              {selectedCount} photo{selectedCount !== 1 ? "s" : ""} selected
+            </span>
+            <button
+              type="button"
+              onClick={clearCurrentViewSelection}
+              className="text-brand-purple-300 hover:text-white"
+            >
+              Clear
+            </button>
           </div>
         )}
 
@@ -399,22 +522,33 @@ export function LinkedPhotoPickerDialog({
                 ))}
 
                 {currentFolder && images.length > 0 && (
-                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                    {images.map((image) => (
-                      <button
-                        key={image.id}
-                        type="button"
-                        disabled={isPending}
-                        onClick={() => handleDriveSelect(image.id)}
-                        className="overflow-hidden rounded-lg border border-white/10 transition-colors hover:border-brand-purple-500/50 disabled:opacity-50"
-                      >
-                        <DriveThumbnail fileId={image.id} name={image.name} />
-                        <p className="truncate p-2 text-xs text-white/70">
-                          {image.name}
-                        </p>
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    {multiple && (
+                      <div className="flex justify-end">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="ghost"
+                          onClick={selectAllDriveImages}
+                        >
+                          Select all in folder
+                        </Button>
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                      {images.map((image) => (
+                        <DriveImageOption
+                          key={image.id}
+                          image={image}
+                          disabled={isPending}
+                          selected={selectedDriveIds.includes(image.id)}
+                          multiple={multiple}
+                          onToggle={() => toggleDriveSelection(image.id)}
+                          onSelect={() => handleDriveSelect(image.id)}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
 
                 {folders.length === 0 && images.length === 0 && (
@@ -435,6 +569,9 @@ export function LinkedPhotoPickerDialog({
                   key={photo.id}
                   photo={photo}
                   disabled={isPending}
+                  selected={selectedLinkedIds.includes(photo.id)}
+                  multiple={multiple}
+                  onToggle={() => toggleLinkedSelection(photo.id)}
                   onSelect={() => handleLinkedSelect(photo.id)}
                 />
               ))}
@@ -447,7 +584,7 @@ export function LinkedPhotoPickerDialog({
           )}
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex items-center justify-end gap-2">
           <Button
             type="button"
             variant="outline"
@@ -456,6 +593,19 @@ export function LinkedPhotoPickerDialog({
           >
             Cancel
           </Button>
+          {multiple && (
+            <Button
+              type="button"
+              onClick={handleConfirmSelection}
+              disabled={isPending || selectedCount === 0}
+            >
+              {isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                confirmLabel
+              )}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>

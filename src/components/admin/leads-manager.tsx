@@ -3,11 +3,12 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Loader2, Plus, UserPlus } from "lucide-react";
+import { Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
   convertLeadToCustomer,
   createLead,
+  deleteLead,
   updateLeadStatus,
 } from "@/app/actions/admin/leads";
 import type { Tables } from "@/lib/supabase/types";
@@ -80,6 +81,28 @@ export function LeadsManager({ leads }: { leads: Lead[] }) {
       setPendingId(null);
       if (result.success) {
         toast.success(result.message);
+      } else {
+        toast.error(result.message);
+      }
+    });
+  }
+
+  function handleDelete(lead: Lead) {
+    if (
+      !confirm(
+        `Permanently delete ${lead.name}?\n\nThis cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+
+    setPendingId(lead.id);
+    startTransition(async () => {
+      const result = await deleteLead(lead.id);
+      setPendingId(null);
+      if (result.success) {
+        toast.success(result.message);
+        router.refresh();
       } else {
         toast.error(result.message);
       }
@@ -273,25 +296,41 @@ export function LeadsManager({ leads }: { leads: Lead[] }) {
                   {format(new Date(lead.created_at), "d MMM yyyy")}
                 </td>
                 <td className="px-4 py-3">
-                  {lead.status !== "converted" ? (
+                  <div className="flex items-center gap-2">
+                    {lead.status !== "converted" ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleConvert(lead.id)}
+                        disabled={isPending && pendingId === lead.id}
+                      >
+                        {isPending && pendingId === lead.id ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <>
+                            <UserPlus className="h-4 w-4" />
+                            Convert
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <Badge variant="success">Converted</Badge>
+                    )}
                     <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleConvert(lead.id)}
+                      size="icon-sm"
+                      variant="ghost"
+                      onClick={() => handleDelete(lead)}
                       disabled={isPending && pendingId === lead.id}
+                      aria-label={`Delete ${lead.name}`}
+                      className="text-white/50 hover:text-destructive"
                     >
                       {isPending && pendingId === lead.id ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        <>
-                          <UserPlus className="h-4 w-4" />
-                          Convert
-                        </>
+                        <Trash2 className="h-4 w-4" />
                       )}
                     </Button>
-                  ) : (
-                    <Badge variant="success">Converted</Badge>
-                  )}
+                  </div>
                 </td>
               </tr>
             ))}

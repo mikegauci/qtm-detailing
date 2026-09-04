@@ -19,7 +19,13 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
-import { uploadCmsAsset } from "@/app/actions/admin/cms";
+import {
+  uploadCmsAsset,
+  uploadServiceImageFromDrive,
+  uploadServiceImageFromLinked,
+} from "@/app/actions/admin/cms";
+import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
+import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { serviceImageObjectPosition } from "@/lib/content/service-images";
 import { useMounted } from "@/hooks/use-mounted";
 import type { ServiceImage } from "@/types/content";
@@ -191,6 +197,8 @@ export function ServiceImagesField({
   const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
   const [uploadCount, setUploadCount] = useState(0);
+  const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
+  const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
   const mounted = useMounted();
 
   const sensors = useSensors(
@@ -226,7 +234,7 @@ export function ServiceImagesField({
       }
 
       if (uploaded.length > 0) {
-        onChange([...value, ...uploaded]);
+        addUploadedImages(uploaded);
         toast.success(
           uploaded.length === 1
             ? "Photo uploaded."
@@ -253,7 +261,27 @@ export function ServiceImagesField({
     );
   };
 
+  function openSourceDialog() {
+    setSourceDialogOpen(true);
+  }
+
+  function chooseDeviceUpload() {
+    setSourceDialogOpen(false);
+    inputRef.current?.click();
+  }
+
+  function chooseLinkedPhoto() {
+    setSourceDialogOpen(false);
+    setLinkedPickerOpen(true);
+  }
+
+  function addUploadedImages(uploaded: ServiceImage[]) {
+    if (uploaded.length === 0) return;
+    onChange([...value, ...uploaded]);
+  }
+
   return (
+    <>
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <Label>{label}</Label>
@@ -262,7 +290,7 @@ export function ServiceImagesField({
           size="sm"
           variant="secondary"
           disabled={isPending}
-          onClick={() => inputRef.current?.click()}
+          onClick={openSourceDialog}
         >
           {isPending ? (
             <>
@@ -282,7 +310,7 @@ export function ServiceImagesField({
         <button
           type="button"
           disabled={isPending}
-          onClick={() => inputRef.current?.click()}
+          onClick={openSourceDialog}
           className="flex min-h-[140px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-white/10 bg-white/[0.02] p-4 text-white/50 transition-colors hover:bg-white/[0.04] hover:text-white/70 disabled:opacity-50"
         >
           {isPending ? (
@@ -290,9 +318,9 @@ export function ServiceImagesField({
           ) : (
             <>
               <ImageIcon className="h-8 w-8" />
-              <span className="text-sm">Click to upload photos</span>
+              <span className="text-sm">Click to add photos</span>
               <span className="text-xs text-white/40">
-                Multiple photos will appear as a slider on the services page
+                Upload from device or browse Google Drive
               </span>
             </>
           )}
@@ -350,5 +378,70 @@ export function ServiceImagesField({
         }}
       />
     </div>
+
+    <PhotoSourceDialog
+      open={sourceDialogOpen}
+      onOpenChange={setSourceDialogOpen}
+      title="Add service photo"
+      description="Upload one or more images, or browse Google Drive to select multiple photos."
+      onChooseDevice={chooseDeviceUpload}
+      onChooseDrive={chooseLinkedPhoto}
+      disabled={isPending}
+    />
+
+    <LinkedPhotoPickerDialog
+      open={linkedPickerOpen}
+      onOpenChange={setLinkedPickerOpen}
+      multiple
+      onDriveSelect={async (driveFileIds) => {
+        const uploaded: ServiceImage[] = [];
+
+        for (const driveFileId of driveFileIds) {
+          const result = await uploadServiceImageFromDrive(driveFileId, slug);
+          if (result.success && result.url) {
+            uploaded.push({ url: result.url, focalY: 50 });
+          } else {
+            toast.error(result.message);
+          }
+        }
+
+        if (uploaded.length > 0) {
+          addUploadedImages(uploaded);
+        }
+
+        return {
+          success: uploaded.length > 0,
+          message:
+            uploaded.length === 1
+              ? "Photo added."
+              : `${uploaded.length} photos added.`,
+        };
+      }}
+      onLinkedSelect={async (photoIds) => {
+        const uploaded: ServiceImage[] = [];
+
+        for (const photoId of photoIds) {
+          const result = await uploadServiceImageFromLinked(photoId, slug);
+          if (result.success && result.url) {
+            uploaded.push({ url: result.url, focalY: 50 });
+          } else {
+            toast.error(result.message);
+          }
+        }
+
+        if (uploaded.length > 0) {
+          addUploadedImages(uploaded);
+        }
+
+        return {
+          success: uploaded.length > 0,
+          message:
+            uploaded.length === 1
+              ? "Photo added."
+              : `${uploaded.length} photos added.`,
+        };
+      }}
+    />
+    </>
   );
 }

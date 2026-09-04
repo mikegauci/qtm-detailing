@@ -2,21 +2,17 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
-import { ImageIcon, Images, Loader2, Upload } from "lucide-react";
+import { ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   removeVehiclePhoto,
+  setVehiclePhotoFromDrive,
+  setVehiclePhotoFromLinked,
   uploadVehiclePhoto,
 } from "@/app/actions/admin/customers";
 import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
+import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 export function VehiclePhotoField({
@@ -116,11 +112,11 @@ export function VehiclePhotoField({
                   disabled={isPending}
                   onClick={openSourceDialog}
                 >
-                  {isPending ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                  ) : (
-                    <Upload className="h-3 w-3" />
-                  )}
+              {isPending ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                "Replace"
+              )}
                 </Button>
                 <Button
                   type="button"
@@ -165,58 +161,43 @@ export function VehiclePhotoField({
         />
       </div>
 
-      <Dialog open={sourceDialogOpen} onOpenChange={setSourceDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Add vehicle photo</DialogTitle>
-            <DialogDescription>
-              Upload a new image or browse Google Drive.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3">
-            <Button
-              type="button"
-              variant="outline"
-              className="h-auto justify-start gap-3 py-4"
-              disabled={isPending}
-              onClick={chooseDeviceUpload}
-            >
-              <Upload className="h-5 w-5 shrink-0" />
-              <span className="text-left">
-                <span className="block font-medium">Upload from device</span>
-                <span className="block text-xs text-white/50">
-                  Choose a photo from your computer or phone
-                </span>
-              </span>
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              className="h-auto justify-start gap-3 py-4"
-              disabled={isPending}
-              onClick={chooseLinkedPhoto}
-            >
-              <Images className="h-5 w-5 shrink-0" />
-              <span className="text-left">
-                <span className="block font-medium">Browse Google Drive</span>
-                <span className="block text-xs text-white/50">
-                  Pick a photo directly from your Drive folders
-                </span>
-              </span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PhotoSourceDialog
+        open={sourceDialogOpen}
+        onOpenChange={setSourceDialogOpen}
+        title="Add vehicle photo"
+        onChooseDevice={chooseDeviceUpload}
+        onChooseDrive={chooseLinkedPhoto}
+        disabled={isPending}
+      />
 
       <LinkedPhotoPickerDialog
         open={linkedPickerOpen}
         onOpenChange={setLinkedPickerOpen}
-        vehicleId={vehicleId}
-        customerId={customerId}
-        onSelected={(url) => {
-          setPreviewError(false);
-          setCurrentUrl(url);
-          onUpdated?.();
+        onDriveSelect={async (driveFileIds) => {
+          const result = await setVehiclePhotoFromDrive(
+            vehicleId,
+            customerId,
+            driveFileIds[0],
+          );
+          if (result.success && result.url) {
+            setPreviewError(false);
+            setCurrentUrl(result.url);
+            onUpdated?.();
+          }
+          return result;
+        }}
+        onLinkedSelect={async (photoIds) => {
+          const result = await setVehiclePhotoFromLinked(
+            vehicleId,
+            customerId,
+            photoIds[0],
+          );
+          if (result.success && result.url) {
+            setPreviewError(false);
+            setCurrentUrl(result.url);
+            onUpdated?.();
+          }
+          return result;
         }}
       />
     </>

@@ -116,6 +116,34 @@ export async function updateLeadStatus(
   return { success: true, message: "Lead status updated." };
 }
 
+export async function deleteLead(leadId: string): Promise<ActionResult> {
+  const { supabase } = await requireAdmin();
+
+  const { data: lead, error: fetchError } = await supabase
+    .from("leads")
+    .select("id, name")
+    .eq("id", leadId)
+    .maybeSingle();
+
+  if (fetchError) {
+    return { success: false, message: fetchError.message };
+  }
+
+  if (!lead) {
+    return { success: false, message: "Lead not found." };
+  }
+
+  const { error } = await supabase.from("leads").delete().eq("id", leadId);
+
+  if (error) {
+    return { success: false, message: error.message };
+  }
+
+  revalidatePath("/admin/leads");
+  revalidatePath("/admin");
+  return { success: true, message: `${lead.name} deleted.` };
+}
+
 export async function convertLeadToCustomer(
   leadId: string,
   options?: { createVehicle?: boolean },

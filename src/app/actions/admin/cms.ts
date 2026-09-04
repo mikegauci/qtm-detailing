@@ -7,6 +7,7 @@ import {
   optimizeCmsImage,
 } from "@/lib/cms/upload-cms-asset";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
+import { downloadFile } from "@/lib/google-drive";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import type { ServiceImage } from "@/types/content";
@@ -64,6 +65,97 @@ export async function uploadCmsAsset(formData: FormData): Promise<UploadCmsAsset
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to upload image.",
+    };
+  }
+}
+
+async function saveServiceImageBuffer(
+  slug: string,
+  buffer: Buffer,
+): Promise<UploadCmsAssetResult> {
+  try {
+    const { supabase } = await requireAdmin();
+    const filename = `${slug || "service"}-${crypto.randomUUID().slice(0, 8)}.jpg`;
+    const storagePath = cmsAssetStoragePath("services", filename);
+    const optimized = await optimizeCmsImage(buffer);
+
+    const { error: uploadError } = await supabase.storage
+      .from(CMS_ASSETS_BUCKET)
+      .upload(storagePath, optimized, {
+        contentType: "image/jpeg",
+        upsert: true,
+      });
+
+    if (uploadError) {
+      return { success: false, message: uploadError.message };
+    }
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from(CMS_ASSETS_BUCKET).getPublicUrl(storagePath);
+
+    return { success: true, message: "Photo added.", url: publicUrl };
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to add photo.",
+    };
+  }
+}
+
+export async function uploadServiceImageFromDrive(
+  driveFileId: string,
+  slug: string,
+): Promise<UploadCmsAssetResult> {
+  try {
+    await requireAdmin();
+    const buffer = await downloadFile(driveFileId);
+    return saveServiceImageBuffer(slug, buffer);
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to use Google Drive photo.",
+    };
+  }
+}
+
+export async function uploadServiceImageFromLinked(
+  galleryPhotoId: string,
+  slug: string,
+): Promise<UploadCmsAssetResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const { data: photo, error: fetchError } = await supabase
+      .from("gallery_photos")
+      .select("*")
+      .eq("id", galleryPhotoId)
+      .single();
+
+    if (fetchError || !photo) {
+      return { success: false, message: "Linked photo not found." };
+    }
+
+    let buffer: Buffer;
+    if (photo.photo_url) {
+      const response = await fetch(photo.photo_url);
+      if (!response.ok) {
+        return { success: false, message: "Failed to load linked photo." };
+      }
+      buffer = Buffer.from(await response.arrayBuffer());
+    } else if (photo.drive_file_id) {
+      buffer = await downloadFile(photo.drive_file_id);
+    } else {
+      return { success: false, message: "Linked photo has no image source." };
+    }
+
+    return saveServiceImageBuffer(slug, buffer);
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to use linked photo.",
     };
   }
 }

@@ -1,5 +1,6 @@
 "use server";
 
+import type { ActionResult } from "@/types/action-result";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { revalidateBookings } from "@/lib/content/revalidate-cms";
 import type { Enums } from "@/lib/supabase/types";
@@ -11,11 +12,7 @@ import {
   validateBookingDateRange,
 } from "@/lib/utils/booking";
 
-export type ActionResult = {
-  success: boolean;
-  message: string;
-  id?: string;
-};
+type BookingActionResult = ActionResult<{ id?: string }>;
 
 type BookingInput = {
   customer_id: string;
@@ -27,7 +24,7 @@ type BookingInput = {
   service_ids: string[];
 };
 
-export async function createBooking(data: BookingInput): Promise<ActionResult> {
+export async function createBooking(data: BookingInput): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: services, error: servicesError } = await supabase
@@ -96,7 +93,7 @@ export async function updateBooking(
     notes?: string | null;
     total_price?: number;
   },
-): Promise<ActionResult> {
+): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
   if (data.booking_date !== undefined || data.end_date !== undefined) {
@@ -155,7 +152,7 @@ export async function createReferenceBooking(data: {
   end_date?: string | null;
   notes?: string | null;
   total_price?: number | null;
-}): Promise<ActionResult> {
+}): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
   const endDate = getBookingEndDate(data.booking_date, data.end_date);
   const dateError = validateBookingDateRange(data.booking_date, endDate);
@@ -194,7 +191,7 @@ export async function createReferenceBooking(data: {
 export async function updateBookingStatus(
   id: string,
   status: Enums<"booking_status">,
-): Promise<ActionResult> {
+): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -210,7 +207,7 @@ export async function updateBookingStatus(
   return { success: true, message: "Booking status updated." };
 }
 
-export async function deleteBooking(id: string): Promise<ActionResult> {
+export async function deleteBooking(id: string): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
   await supabase.from("booking_services").delete().eq("booking_id", id);
@@ -229,7 +226,7 @@ export async function addBookingService(
   bookingId: string,
   serviceId: string,
   priceSnapshot?: number,
-): Promise<ActionResult> {
+): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: service, error: serviceError } = await supabase
@@ -277,7 +274,7 @@ export async function addBookingService(
 export async function removeBookingService(
   bookingServiceId: string,
   bookingId: string,
-): Promise<ActionResult> {
+): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase

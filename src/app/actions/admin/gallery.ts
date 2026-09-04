@@ -6,13 +6,10 @@ import { queryGalleryPhotoRows, type GalleryQueryClient } from "@/lib/content/ga
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
 import { downloadFile } from "@/lib/google-drive";
+import type { ActionResult } from "@/types/action-result";
 import { requireAdmin } from "@/lib/supabase/admin";
 
-export type ActionResult = {
-  success: boolean;
-  message: string;
-  photoId?: string;
-};
+type GalleryActionResult = ActionResult<{ photoId?: string }>;
 
 export async function linkDrivePhoto(input: {
   driveFileId: string;
@@ -20,7 +17,7 @@ export async function linkDrivePhoto(input: {
   driveFolderName: string;
   photoType: "before" | "after";
   category?: string;
-}): Promise<ActionResult> {
+}): Promise<GalleryActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -60,7 +57,7 @@ export async function linkAndPublishDrivePhotos(input: {
   category?: string;
   enhance?: boolean;
   blankPlate?: boolean;
-}): Promise<ActionResult> {
+}): Promise<GalleryActionResult> {
   if (input.driveFileIds.length === 0) {
     return { success: false, message: "No photos selected." };
   }
@@ -123,7 +120,7 @@ export async function linkAndPublishDrivePhotos(input: {
 export async function publishAllPhotos(
   photoIds: string[],
   options?: ImageProcessingOptions,
-): Promise<ActionResult> {
+): Promise<GalleryActionResult> {
   if (photoIds.length === 0) {
     return { success: false, message: "No photos to publish." };
   }
@@ -166,7 +163,7 @@ export async function publishAllPhotos(
 export async function publishPhoto(
   photoId: string,
   options?: ImageProcessingOptions,
-): Promise<ActionResult> {
+): Promise<GalleryActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -235,7 +232,7 @@ export async function updatePhotoMetadata(input: {
   photoId: string;
   photoType: "before" | "after";
   category: string;
-}): Promise<ActionResult> {
+}): Promise<GalleryActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -262,7 +259,7 @@ export async function updatePhotoMetadata(input: {
   }
 }
 
-export async function unpublishPhoto(photoId: string): Promise<ActionResult> {
+export async function unpublishPhoto(photoId: string): Promise<GalleryActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -286,7 +283,7 @@ export async function unpublishPhoto(photoId: string): Promise<ActionResult> {
   }
 }
 
-export async function deletePhoto(photoId: string): Promise<ActionResult> {
+export async function deletePhoto(photoId: string): Promise<GalleryActionResult> {
   try {
     const { supabase } = await requireAdmin();
 

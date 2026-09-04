@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import {
   DndContext,
   PointerSensor,
@@ -27,6 +26,7 @@ import {
 import { ServiceImagesField } from "@/components/admin/service-images-field";
 import { parseServiceImages } from "@/lib/content/service-images";
 import { useMounted } from "@/hooks/use-mounted";
+import { useServerAction } from "@/hooks/use-server-action";
 import type { ServiceImage } from "@/types/content";
 import type { Tables } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -157,10 +157,9 @@ function SortableServiceRow({
 }
 
 export function ServicesEditor({ initialServices }: ServicesEditorProps) {
-  const router = useRouter();
+  const { run, isPending, startTransition } = useServerAction();
   const [services, setServices] = useState(initialServices);
   const [editing, setEditing] = useState<ServiceFormState>(emptyService);
-  const [isPending, startTransition] = useTransition();
   const mounted = useMounted();
   const link = slugify(editing.name);
 
@@ -194,40 +193,29 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    startTransition(async () => {
-      const result = await upsertService({
-        id: editing.id,
-        name: editing.name,
-        short_description: editing.short_description,
-        description: editing.description,
-        features: editing.featuresText
-          .split("\n")
-          .map((f) => f.trim())
-          .filter(Boolean),
-        images: editing.images,
-        category: editing.category,
-        is_active: editing.is_active,
-      });
-
-      if (result.success) {
-        toast.success(result.message);
-        router.refresh();
-      } else {
-        toast.error(result.message);
-      }
-    });
+    run(
+      () =>
+        upsertService({
+          id: editing.id,
+          name: editing.name,
+          short_description: editing.short_description,
+          description: editing.description,
+          features: editing.featuresText
+            .split("\n")
+            .map((f) => f.trim())
+            .filter(Boolean),
+          images: editing.images,
+          category: editing.category,
+          is_active: editing.is_active,
+        }),
+      { refresh: true },
+    );
   };
 
   const handleDelete = (id: string) => {
     if (!confirm("Delete this service?")) return;
-    startTransition(async () => {
-      const result = await deleteService(id);
-      if (result.success) {
-        toast.success(result.message);
-        setServices((prev) => prev.filter((s) => s.id !== id));
-      } else {
-        toast.error(result.message);
-      }
+    run(() => deleteService(id), {
+      onSuccess: () => setServices((prev) => prev.filter((s) => s.id !== id)),
     });
   };
 

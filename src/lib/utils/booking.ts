@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { formatDisplayDate } from "@/lib/utils/dates";
 
 export function generateConfirmationCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -72,9 +72,9 @@ export function formatBookingDateRange(
   endDate?: string | null,
 ): string {
   const end = endDate ?? startDate;
-  const startLabel = format(new Date(`${startDate}T12:00:00`), "d MMM yyyy");
+  const startLabel = formatDisplayDate(new Date(`${startDate}T12:00:00`));
   if (end === startDate) return startLabel;
-  const endLabel = format(new Date(`${end}T12:00:00`), "d MMM yyyy");
+  const endLabel = formatDisplayDate(new Date(`${end}T12:00:00`));
   return `${startLabel} – ${endLabel}`;
 }
 

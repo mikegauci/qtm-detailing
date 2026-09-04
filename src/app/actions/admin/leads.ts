@@ -1,17 +1,13 @@
 "use server";
 
+import type { ActionResult } from "@/types/action-result";
 import { z } from "zod";
 import { revalidateLeads } from "@/lib/content/revalidate-cms";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Enums } from "@/lib/supabase/types";
 import { LEAD_SOURCE_LABELS } from "@/lib/utils/booking";
 
-export type ActionResult = {
-  success: boolean;
-  message: string;
-  customerId?: string;
-  id?: string;
-};
+type LeadActionResult = ActionResult<{ customerId?: string; id?: string }>;
 
 const leadSourceSchema = z.enum(
   Object.keys(LEAD_SOURCE_LABELS) as [string, ...string[]],
@@ -53,7 +49,7 @@ export async function createLead(data: {
   vehicle?: string | null;
   notes?: string | null;
   source: string;
-}): Promise<ActionResult> {
+}): Promise<LeadActionResult> {
   const { supabase } = await requireAdmin();
 
   const parsed = createLeadSchema.safeParse({
@@ -98,7 +94,7 @@ export async function createLead(data: {
 export async function updateLeadStatus(
   leadId: string,
   status: Enums<"lead_status">,
-): Promise<ActionResult> {
+): Promise<LeadActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -114,7 +110,7 @@ export async function updateLeadStatus(
   return { success: true, message: "Lead status updated." };
 }
 
-export async function deleteLead(leadId: string): Promise<ActionResult> {
+export async function deleteLead(leadId: string): Promise<LeadActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: lead, error: fetchError } = await supabase
@@ -144,7 +140,7 @@ export async function deleteLead(leadId: string): Promise<ActionResult> {
 export async function convertLeadToCustomer(
   leadId: string,
   options?: { createVehicle?: boolean },
-): Promise<ActionResult> {
+): Promise<LeadActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: lead, error: fetchError } = await supabase

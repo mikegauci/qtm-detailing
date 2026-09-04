@@ -20,20 +20,13 @@ import { slugify } from "@/lib/utils";
 
 const MAX_SERVICE_IMAGE_BYTES = 10 * 1024 * 1024;
 
-export type ActionResult = {
-  success: boolean;
-  message: string;
-};
-
-export type UploadCmsAssetResult = ActionResult & {
-  url?: string;
-};
+import type { ActionResult, UploadActionResult } from "@/types/action-result";
 
 async function saveCmsAssetBuffer(
   folder: string,
   filename: string,
   buffer: Buffer,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   const { supabase } = await requireAdmin();
   const baseName = filename || `asset-${Date.now()}`;
   const storagePath = cmsAssetStoragePath(folder, `${baseName}.jpg`);
@@ -61,7 +54,7 @@ async function saveCmsAssetBuffer(
   };
 }
 
-export async function uploadCmsAsset(formData: FormData): Promise<UploadCmsAssetResult> {
+export async function uploadCmsAsset(formData: FormData): Promise<UploadActionResult> {
   try {
     await requireAdmin();
 
@@ -99,7 +92,7 @@ export async function uploadCmsAssetFromDrive(
   driveFileId: string,
   folder: string,
   filename?: string,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   try {
     await requireAdmin();
     const buffer = await downloadFile(driveFileId);
@@ -117,7 +110,7 @@ export async function uploadCmsAssetFromLinked(
   galleryPhotoId: string,
   folder: string,
   filename?: string,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -151,7 +144,7 @@ async function saveServiceImageBuffer(
   slug: string,
   buffer: Buffer,
   processing?: ImageProcessingOptions,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
     const filename = `${slug || "service"}-${crypto.randomUUID().slice(0, 8)}.jpg`;
@@ -186,7 +179,7 @@ export async function uploadServiceImage(
   formData: FormData,
   slug: string,
   processing?: ImageProcessingOptions,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   try {
     await requireAdmin();
 
@@ -223,7 +216,7 @@ export async function uploadServiceImageFromDrive(
   driveFileId: string,
   slug: string,
   processing?: ImageProcessingOptions,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   try {
     await requireAdmin();
     const buffer = await downloadFile(driveFileId);
@@ -241,7 +234,7 @@ export async function uploadServiceImageFromLinked(
   galleryPhotoId: string,
   slug: string,
   processing?: ImageProcessingOptions,
-): Promise<UploadCmsAssetResult> {
+): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
 

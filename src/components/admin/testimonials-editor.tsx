@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { deleteTestimonial, upsertTestimonial } from "@/app/actions/admin/cms";
 import type { Tables } from "@/lib/supabase/types";
+import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -36,37 +35,30 @@ const empty: TestimonialFormState = {
 export function TestimonialsEditor({
   initialTestimonials,
 }: TestimonialsEditorProps) {
-  const router = useRouter();
+  const { run, isPending } = useServerAction();
   const [items, setItems] = useState(initialTestimonials);
   const [editing, setEditing] = useState<TestimonialFormState>(empty);
-  const [isPending, startTransition] = useTransition();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    startTransition(async () => {
-      const result = await upsertTestimonial({
-        id: editing.id,
-        customer_name: editing.customer_name,
-        vehicle: editing.vehicle,
-        comment: editing.comment,
-        rating: Number(editing.rating),
-        is_published: editing.is_published,
-      });
-      if (result.success) {
-        toast.success(result.message);
-        router.refresh();
-      } else toast.error(result.message);
-    });
+    run(
+      () =>
+        upsertTestimonial({
+          id: editing.id,
+          customer_name: editing.customer_name,
+          vehicle: editing.vehicle,
+          comment: editing.comment,
+          rating: Number(editing.rating),
+          is_published: editing.is_published,
+        }),
+      { refresh: true },
+    );
   };
 
   const handleDelete = (id: string) => {
     if (!confirm("Delete this testimonial?")) return;
-    startTransition(async () => {
-      const result = await deleteTestimonial(id);
-      if (result.success) {
-        toast.success(result.message);
-        setItems((prev) => prev.filter((t) => t.id !== id));
-      } else toast.error(result.message);
+    run(() => deleteTestimonial(id), {
+      onSuccess: () => setItems((prev) => prev.filter((t) => t.id !== id)),
     });
   };
 

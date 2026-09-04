@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { formatDisplayDate } from "@/lib/utils/dates";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createCustomer } from "@/app/actions/admin/customers";
@@ -146,7 +146,7 @@ export function CustomersManager({ customers }: { customers: Customer[] }) {
                   {totalPrice > 0 ? `€${totalPrice.toFixed(2)}` : "—"}
                 </td>
                 <td className="px-4 py-3 text-white/50">
-                  {format(new Date(customer.created_at), "d MMM yyyy")}
+                  {formatDisplayDate(customer.created_at)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">

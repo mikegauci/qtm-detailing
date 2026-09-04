@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { Loader2, Plus, Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { deleteFaq, upsertFaq } from "@/app/actions/admin/cms";
 import type { Tables } from "@/lib/supabase/types";
+import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -34,37 +33,30 @@ const empty: FaqFormState = {
 };
 
 export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
-  const router = useRouter();
+  const { run, isPending } = useServerAction();
   const [faqs, setFaqs] = useState(initialFaqs);
   const [editing, setEditing] = useState<FaqFormState>(empty);
-  const [isPending, startTransition] = useTransition();
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
-    startTransition(async () => {
-      const result = await upsertFaq({
-        id: editing.id,
-        question: editing.question,
-        answer: editing.answer,
-        category: editing.category || undefined,
-        sort_order: Number(editing.sort_order),
-        is_active: editing.is_active,
-      });
-      if (result.success) {
-        toast.success(result.message);
-        router.refresh();
-      } else toast.error(result.message);
-    });
+    run(
+      () =>
+        upsertFaq({
+          id: editing.id,
+          question: editing.question,
+          answer: editing.answer,
+          category: editing.category || undefined,
+          sort_order: Number(editing.sort_order),
+          is_active: editing.is_active,
+        }),
+      { refresh: true },
+    );
   };
 
   const handleDelete = (id: string) => {
     if (!confirm("Delete this FAQ?")) return;
-    startTransition(async () => {
-      const result = await deleteFaq(id);
-      if (result.success) {
-        toast.success(result.message);
-        setFaqs((prev) => prev.filter((f) => f.id !== id));
-      } else toast.error(result.message);
+    run(() => deleteFaq(id), {
+      onSuccess: () => setFaqs((prev) => prev.filter((f) => f.id !== id)),
     });
   };
 

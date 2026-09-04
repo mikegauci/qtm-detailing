@@ -1,13 +1,10 @@
 "use server";
 
+import type { ActionResult } from "@/types/action-result";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { revalidateInventory } from "@/lib/content/revalidate-cms";
 
-export type ActionResult = {
-  success: boolean;
-  message: string;
-  id?: string;
-};
+type InventoryActionResult = ActionResult<{ id?: string }>;
 
 export async function createInventoryItem(data: {
   name: string;
@@ -15,7 +12,7 @@ export async function createInventoryItem(data: {
   unit?: string | null;
   category?: string | null;
   low_stock_threshold?: number | null;
-}): Promise<ActionResult> {
+}): Promise<InventoryActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: item, error } = await supabase
@@ -47,7 +44,7 @@ export async function updateInventoryItem(
     category?: string | null;
     low_stock_threshold?: number | null;
   },
-): Promise<ActionResult> {
+): Promise<InventoryActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -63,7 +60,7 @@ export async function updateInventoryItem(
   return { success: true, message: "Inventory item updated." };
 }
 
-export async function deleteInventoryItem(id: string): Promise<ActionResult> {
+export async function deleteInventoryItem(id: string): Promise<InventoryActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase
@@ -82,7 +79,7 @@ export async function deleteInventoryItem(id: string): Promise<ActionResult> {
 export async function restockInventoryItem(
   id: string,
   quantity: number,
-): Promise<ActionResult> {
+): Promise<InventoryActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: item, error: fetchError } = await supabase

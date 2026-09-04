@@ -7,15 +7,12 @@ import {
   optimizeCmsImage,
 } from "@/lib/cms/upload-cms-asset";
 import { downloadFile, isDriveConnected } from "@/lib/google-drive";
+import type { ActionResult, UploadActionResult } from "@/types/action-result";
 import { revalidateCustomers } from "@/lib/content/revalidate-cms";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Tables } from "@/lib/supabase/types";
 
-export type ActionResult = {
-  success: boolean;
-  message: string;
-  id?: string;
-};
+type CustomerActionResult = ActionResult<{ id?: string }>;
 
 const createCustomerSchema = z
   .object({
@@ -49,7 +46,7 @@ export async function createCustomer(data: {
   full_name: string;
   email?: string | null;
   phone?: string | null;
-}): Promise<ActionResult> {
+}): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const parsed = createCustomerSchema.safeParse({
@@ -91,7 +88,7 @@ export async function updateCustomer(
     email?: string | null;
     phone?: string | null;
   },
-): Promise<ActionResult> {
+): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: existing, error: fetchError } = await supabase
@@ -144,7 +141,7 @@ export async function updateCustomer(
   return { success: true, message: "Customer updated." };
 }
 
-export async function deleteCustomer(id: string): Promise<ActionResult> {
+export async function deleteCustomer(id: string): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: customer, error: fetchError } = await supabase
@@ -210,7 +207,7 @@ export async function createVehicle(data: {
   model?: string | null;
   registration?: string | null;
   vehicle_type?: string | null;
-}): Promise<ActionResult> {
+}): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: vehicle, error } = await supabase
@@ -236,7 +233,7 @@ export async function updateVehicle(
     registration?: string | null;
     vehicle_type?: string | null;
   },
-): Promise<ActionResult> {
+): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase.from("vehicles").update(data).eq("id", id);
@@ -252,7 +249,7 @@ export async function updateVehicle(
 export async function deleteVehicle(
   id: string,
   customerId: string,
-): Promise<ActionResult> {
+): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const { error } = await supabase.from("vehicles").delete().eq("id", id);
@@ -270,7 +267,7 @@ async function saveVehiclePhotoBuffer(
   vehicleId: string,
   customerId: string,
   buffer: Buffer,
-): Promise<ActionResult & { url?: string }> {
+): Promise<UploadActionResult> {
   const { data: vehicle, error: fetchError } = await supabase
     .from("vehicles")
     .select("storage_path")
@@ -352,7 +349,7 @@ export async function setVehiclePhotoFromDrive(
   vehicleId: string,
   customerId: string,
   driveFileId: string,
-): Promise<ActionResult & { url?: string }> {
+): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
     const buffer = await downloadFile(driveFileId);
@@ -370,7 +367,7 @@ export async function setVehiclePhotoFromLinked(
   vehicleId: string,
   customerId: string,
   galleryPhotoId: string,
-): Promise<ActionResult & { url?: string }> {
+): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -411,7 +408,7 @@ export async function uploadVehiclePhoto(
   vehicleId: string,
   customerId: string,
   formData: FormData,
-): Promise<ActionResult & { url?: string }> {
+): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -448,7 +445,7 @@ export async function uploadVehiclePhoto(
 export async function removeVehiclePhoto(
   vehicleId: string,
   customerId: string,
-): Promise<ActionResult> {
+): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
 
   const { data: vehicle, error: fetchError } = await supabase

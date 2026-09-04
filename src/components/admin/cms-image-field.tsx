@@ -13,6 +13,7 @@ import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-
 import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import { cn } from "@/lib/utils";
 
 type CmsImageFieldProps = {
@@ -36,7 +37,8 @@ export function CmsImageField({
 }: CmsImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
-  const [previewError, setPreviewError] = useState(false);
+  const { hasError: previewError, onError: onPreviewError, reset: resetPreviewError } =
+    useImageLoadError();
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
   const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
 
@@ -46,7 +48,7 @@ export function CmsImageField({
     url?: string;
   }) => {
     if (result.success && result.url) {
-      setPreviewError(false);
+      resetPreviewError();
       onChange(result.url);
       toast.success("Image uploaded.");
     } else {
@@ -105,7 +107,7 @@ export function CmsImageField({
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 400px"
-                onError={() => setPreviewError(true)}
+                onError={onPreviewError}
               />
               <div className="absolute inset-x-0 bottom-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
                 <Button
@@ -130,7 +132,7 @@ export function CmsImageField({
                   variant="outline"
                   disabled={isPending}
                   onClick={() => {
-                    setPreviewError(false);
+                    resetPreviewError();
                     onChange("");
                   }}
                 >
@@ -192,7 +194,7 @@ export function CmsImageField({
             filename,
           );
           if (result.success && result.url) {
-            setPreviewError(false);
+            resetPreviewError();
             onChange(result.url);
           }
           return result;
@@ -204,7 +206,7 @@ export function CmsImageField({
             filename,
           );
           if (result.success && result.url) {
-            setPreviewError(false);
+            resetPreviewError();
             onChange(result.url);
           }
           return result;

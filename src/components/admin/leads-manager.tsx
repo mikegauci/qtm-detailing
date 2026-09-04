@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { format } from "date-fns";
+import { formatDisplayDate } from "@/lib/utils/dates";
 import { Loader2, Plus, Trash2, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -293,7 +293,7 @@ export function LeadsManager({ leads }: { leads: Lead[] }) {
                   </Select>
                 </td>
                 <td className="px-4 py-3 text-white/50">
-                  {format(new Date(lead.created_at), "d MMM yyyy")}
+                  {formatDisplayDate(lead.created_at)}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">

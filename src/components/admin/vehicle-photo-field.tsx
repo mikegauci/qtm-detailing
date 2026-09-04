@@ -13,6 +13,7 @@ import {
 import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
 import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { Button } from "@/components/ui/button";
+import { useImageLoadError } from "@/hooks/use-image-load-error";
 import { cn } from "@/lib/utils";
 
 export function VehiclePhotoField({
@@ -30,15 +31,16 @@ export function VehiclePhotoField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
-  const [previewError, setPreviewError] = useState(false);
+  const { hasError: previewError, onError: onPreviewError, reset: resetPreviewError } =
+    useImageLoadError();
   const [currentUrl, setCurrentUrl] = useState(photoUrl);
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
   const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
 
   useEffect(() => {
     setCurrentUrl(photoUrl);
-    setPreviewError(false);
-  }, [photoUrl]);
+    resetPreviewError();
+  }, [photoUrl, resetPreviewError]);
 
   function handleUpload(file: File) {
     const formData = new FormData();
@@ -47,7 +49,7 @@ export function VehiclePhotoField({
     startTransition(async () => {
       const result = await uploadVehiclePhoto(vehicleId, customerId, formData);
       if (result.success && result.url) {
-        setPreviewError(false);
+        resetPreviewError();
         setCurrentUrl(result.url);
         toast.success(result.message);
         onUpdated?.();
@@ -61,7 +63,7 @@ export function VehiclePhotoField({
     startTransition(async () => {
       const result = await removeVehiclePhoto(vehicleId, customerId);
       if (result.success) {
-        setPreviewError(false);
+        resetPreviewError();
         setCurrentUrl(null);
         toast.success(result.message);
         onUpdated?.();
@@ -101,7 +103,7 @@ export function VehiclePhotoField({
                 fill
                 className="object-cover"
                 sizes="128px"
-                onError={() => setPreviewError(true)}
+                onError={onPreviewError}
               />
               <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 pt-6">
                 <Button
@@ -180,7 +182,7 @@ export function VehiclePhotoField({
             driveFileIds[0],
           );
           if (result.success && result.url) {
-            setPreviewError(false);
+            resetPreviewError();
             setCurrentUrl(result.url);
             onUpdated?.();
           }
@@ -193,7 +195,7 @@ export function VehiclePhotoField({
             photoIds[0],
           );
           if (result.success && result.url) {
-            setPreviewError(false);
+            resetPreviewError();
             setCurrentUrl(result.url);
             onUpdated?.();
           }

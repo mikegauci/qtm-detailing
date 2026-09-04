@@ -412,6 +412,10 @@ export function GalleryHub({
         }
       }
 
+      setPublishQueue((current) => current.filter((entry) => entry.status === "error"));
+      setPublishProgress({ current: 0, total: 0 });
+      setIsAiProcessing(false);
+
       if (successCount > 0) {
         const isEnhance = enhanceDialogConfig.successMessage === "enhanced";
         toast.success(
@@ -429,10 +433,6 @@ export function GalleryHub({
           setGalleryView("linked");
         }
       }
-
-      setPublishQueue((current) => current.filter((entry) => entry.status === "error"));
-      setPublishProgress({ current: 0, total: 0 });
-      setIsAiProcessing(false);
     });
   };
 

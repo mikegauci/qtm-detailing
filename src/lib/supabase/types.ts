@@ -214,6 +214,7 @@ export type Database = {
       }
       gallery_photos: {
         Row: {
+          ai_enhanced_at: string | null
           category: string | null
           created_at: string
           drive_file_id: string | null
@@ -226,6 +227,7 @@ export type Database = {
           storage_path: string | null
         }
         Insert: {
+          ai_enhanced_at?: string | null
           category?: string | null
           created_at?: string
           drive_file_id?: string | null
@@ -238,6 +240,7 @@ export type Database = {
           storage_path?: string | null
         }
         Update: {
+          ai_enhanced_at?: string | null
           category?: string | null
           created_at?: string
           drive_file_id?: string | null

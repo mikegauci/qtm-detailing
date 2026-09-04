@@ -8,7 +8,7 @@ export const COMBINED_PROMPT = `${ENHANCE_PROMPT} ${BLANK_PLATE_PROMPT}`;
 
 export const openAiImageConfig = {
   model: "gpt-image-2",
-  quality: "medium" as "high" | "medium" | "low",
+  quality: "low" as "high" | "medium" | "low",
   /** Fixed square output — cheaper than portrait/landscape 1536px sides; Sharp upscales after. */
   outputSize: "1024x1024" as "auto" | "1024x1024" | "1536x1024" | "1024x1536",
   maxInputWidth: 1024,

@@ -1,5 +1,6 @@
 import type { GalleryPhoto } from "@/types/content";
 import { normalizeGalleryPhotoCategory } from "@/lib/content/gallery-categories";
+import { galleryPhotoDisplayUrl } from "@/lib/cms/gallery-photo-url";
 import { parseCarName } from "@/lib/content/parse-car-name";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
@@ -14,7 +15,7 @@ function mapRowToPhoto(row: Tables<"gallery_photos">): GalleryPhoto | null {
 
   return {
     id: row.id,
-    imageUrl: row.photo_url,
+    imageUrl: galleryPhotoDisplayUrl(row.photo_url, row.ai_enhanced_at),
     photoType,
     category: normalizeGalleryPhotoCategory(row.category),
     carName: folderName ? parseCarName(folderName) : undefined,

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { EyeOff, ImageIcon, Pencil, Search, Sparkles, Trash2, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
+import { galleryPhotoDisplayUrl } from "@/lib/cms/gallery-photo-url";
 import {
   galleryPhotoCategoryIds,
   galleryPhotoCategoryOptions,
@@ -40,6 +41,14 @@ type LinkedPhotosPanelProps = {
 type StatusFilter = "all" | "published" | "draft";
 type TypeFilter = "all" | "before" | "after";
 
+function getPhotoActivityTime(photo: Tables<"gallery_photos">): number {
+  const created = new Date(photo.created_at).getTime();
+  const enhanced = photo.ai_enhanced_at
+    ? new Date(photo.ai_enhanced_at).getTime()
+    : 0;
+  return Math.max(created, enhanced);
+}
+
 function LinkedPhotoThumbnail({
   photo,
   className,
@@ -53,7 +62,7 @@ function LinkedPhotoThumbnail({
     : "Linked photo";
   const src =
     photo.publish_to_gallery && photo.photo_url
-      ? photo.photo_url
+      ? galleryPhotoDisplayUrl(photo.photo_url, photo.ai_enhanced_at)
       : photo.drive_file_id
         ? `/api/google-drive/thumbnail/${photo.drive_file_id}`
         : null;
@@ -73,6 +82,7 @@ function LinkedPhotoThumbnail({
 
   return (
     <img
+      key={src}
       src={src}
       alt={carName}
       loading="lazy"
@@ -207,6 +217,14 @@ function LinkedPhotoCard({
               >
                 {photo.publish_to_gallery ? "Published" : "Draft"}
               </Badge>
+              {photo.ai_enhanced_at ? (
+                <Badge
+                  variant="outline"
+                  className="border-brand-purple-400/40 text-brand-purple-300"
+                >
+                  AI Enhanced
+                </Badge>
+              ) : null}
             </div>
             <div className="flex flex-wrap gap-2">
               <Button
@@ -241,7 +259,9 @@ function LinkedPhotoCard({
                   Unpublish
                 </Button>
               )}
-              {photo.publish_to_gallery && photo.drive_file_id && (
+              {photo.publish_to_gallery &&
+                photo.drive_file_id &&
+                !photo.ai_enhanced_at && (
                 <Button
                   size="sm"
                   className="bg-brand-purple-600 text-white hover:bg-brand-purple-500"
@@ -365,14 +385,26 @@ export function LinkedPhotosPanel({
     }
 
     return Array.from(groups.entries())
-      .map(([carName, items]) => ({
-        carName,
-        items,
-        draftIds: items
-          .filter((item) => !item.publish_to_gallery && item.drive_file_id)
-          .map((item) => item.id),
-      }))
-      .sort((a, b) => a.carName.localeCompare(b.carName));
+      .map(([carName, items]) => {
+        const sortedItems = [...items].sort(
+          (a, b) => getPhotoActivityTime(b) - getPhotoActivityTime(a),
+        );
+
+        return {
+          carName,
+          items: sortedItems,
+          latestActivity: Math.max(...sortedItems.map(getPhotoActivityTime)),
+          draftIds: sortedItems
+            .filter((item) => !item.publish_to_gallery && item.drive_file_id)
+            .map((item) => item.id),
+        };
+      })
+      .sort((a, b) => {
+        if (b.latestActivity !== a.latestActivity) {
+          return b.latestActivity - a.latestActivity;
+        }
+        return a.carName.localeCompare(b.carName);
+      });
   }, [filteredPhotos]);
 
   const draftCount = photos.filter(

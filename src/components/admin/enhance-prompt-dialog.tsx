@@ -87,9 +87,9 @@ export function EnhancePromptDialog({
             <div className="space-y-1 text-xs text-white/50">
               <p>AI processing may take up to a minute per photo.</p>
               <p>
-                Each AI generation costs about $0.15 per image
+                Each AI generation costs about $0.02 per image
                 {photoCount > 1
-                  ? ` (~$${(0.15 * photoCount).toFixed(2)} for ${photoCount} photos)`
+                  ? ` (~$${(0.02 * photoCount).toFixed(2)} for ${photoCount} photos)`
                   : ""}
                 .
               </p>

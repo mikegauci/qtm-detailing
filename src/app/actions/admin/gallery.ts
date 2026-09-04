@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
+import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
 import { downloadFile } from "@/lib/google-drive";
 import { requireAdmin } from "@/lib/supabase/admin";
 
@@ -200,12 +201,16 @@ export async function publishPhoto(
       data: { publicUrl },
     } = supabase.storage.from("gallery-photos").getPublicUrl(storagePath);
 
+    const usesAi =
+      options?.enhance === true || options?.blankPlate === true;
+
     const { error: updateError } = await supabase
       .from("gallery_photos")
       .update({
         storage_path: storagePath,
-        photo_url: publicUrl,
+        photo_url: withCacheBuster(publicUrl),
         publish_to_gallery: true,
+        ...(usesAi ? { ai_enhanced_at: new Date().toISOString() } : {}),
       })
       .eq("id", photoId);
 

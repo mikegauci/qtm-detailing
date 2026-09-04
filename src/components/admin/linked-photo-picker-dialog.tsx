@@ -13,16 +13,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  findDriveRootFolder,
-  listDriveFolders,
-  listDriveImages,
-} from "@/app/actions/admin/gallery";
-import {
   getDrivePickerState,
   getLinkedPhotosForPicker,
 } from "@/app/actions/admin/customers";
+import { DriveBrowser } from "@/components/admin/drive-browser";
+import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
+import { useDriveBrowser } from "@/hooks/use-drive-browser";
+import type { DriveImage } from "@/types/drive";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -34,42 +33,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-type DriveFolder = { id: string; name: string };
-type DriveImage = { id: string; name: string };
 type PickerView = "drive" | "linked";
 
 type PickerResult = {
   success: boolean;
   message: string;
 };
-
-function DriveThumbnail({
-  fileId,
-  name,
-}: {
-  fileId: string;
-  name: string;
-}) {
-  const [failed, setFailed] = useState(false);
-
-  if (failed) {
-    return (
-      <div className="flex aspect-square w-full items-center justify-center bg-white/10">
-        <ImageIcon className="h-8 w-8 text-white/40" />
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={`/api/google-drive/thumbnail/${fileId}`}
-      alt={name}
-      loading="lazy"
-      className="aspect-square w-full object-cover bg-white/10"
-      onError={() => setFailed(true)}
-    />
-  );
-}
 
 function SelectionBadge({ selected }: { selected: boolean }) {
   if (!selected) return null;
@@ -195,16 +164,21 @@ export function LinkedPhotoPickerDialog({
   const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isPending, startTransition] = useTransition();
-  const [folders, setFolders] = useState<DriveFolder[]>([]);
-  const [images, setImages] = useState<DriveImage[]>([]);
-  const [folderStack, setFolderStack] = useState<DriveFolder[]>([]);
-  const [loadingDrive, setLoadingDrive] = useState(false);
+  const {
+    folders,
+    images,
+    folderStack,
+    currentFolder,
+    loadingDrive,
+    canGoBack,
+    openFolder,
+    goBack,
+    initialize: initializeDriveBrowser,
+    reset: resetDriveBrowser,
+  } = useDriveBrowser();
   const [selectedDriveIds, setSelectedDriveIds] = useState<string[]>([]);
   const [selectedLinkedIds, setSelectedLinkedIds] = useState<string[]>([]);
   const driveInitializedRef = useRef(false);
-
-  const currentFolder = folderStack[folderStack.length - 1];
-  const canGoBack = folderStack.length > 1;
 
   const selectedCount =
     view === "drive" ? selectedDriveIds.length : selectedLinkedIds.length;
@@ -226,74 +200,13 @@ export function LinkedPhotoPickerDialog({
     );
   }, []);
 
-  const loadFolderContents = useCallback(async (stack: DriveFolder[]) => {
-    setLoadingDrive(true);
-    try {
-      const folder = stack[stack.length - 1];
-      const parentId = folder?.id;
-
-      const [childFolders, folderImages] = await Promise.all([
-        listDriveFolders(parentId),
-        parentId ? listDriveImages(parentId) : Promise.resolve([]),
-      ]);
-
-      setFolders(childFolders);
-      setImages(folderImages);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load folder");
-    } finally {
-      setLoadingDrive(false);
-    }
-  }, []);
-
-  const openFolder = useCallback(
-    async (folder: DriveFolder, stack?: DriveFolder[]) => {
-      const nextStack = stack ?? [...folderStack, folder];
-      setFolderStack(nextStack);
-      await loadFolderContents(nextStack);
-    },
-    [folderStack, loadFolderContents],
-  );
-
-  const goBack = async () => {
-    if (folderStack.length <= 1) return;
-    const nextStack = folderStack.slice(0, -1);
-    setFolderStack(nextStack);
-    await loadFolderContents(nextStack);
-  };
-
-  const initDriveBrowser = useCallback(async () => {
-    setLoadingDrive(true);
-    try {
-      const rootFolder = await findDriveRootFolder();
-      if (rootFolder) {
-        setFolderStack([rootFolder]);
-        const [childFolders, folderImages] = await Promise.all([
-          listDriveFolders(rootFolder.id),
-          listDriveImages(rootFolder.id),
-        ]);
-        setFolders(childFolders);
-        setImages(folderImages);
-      } else {
-        const rootFolders = await listDriveFolders();
-        setFolders(rootFolders);
-        setImages([]);
-      }
-    } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : "Failed to load Google Drive",
-      );
-    } finally {
-      setLoadingDrive(false);
-    }
-  }, []);
-
   useEffect(() => {
     if (!open) {
       driveInitializedRef.current = false;
       setSearch("");
       setView("drive");
       clearSelection();
+      resetDriveBrowser();
       return;
     }
 
@@ -325,8 +238,8 @@ export function LinkedPhotoPickerDialog({
     }
 
     driveInitializedRef.current = true;
-    void initDriveBrowser();
-  }, [open, view, driveConnected, initDriveBrowser]);
+    void initializeDriveBrowser();
+  }, [open, view, driveConnected, initializeDriveBrowser]);
 
   const filteredPhotos = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -497,68 +410,42 @@ export function LinkedPhotoPickerDialog({
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : (
-              <div className="space-y-4">
-                {canGoBack && (
-                  <Button variant="outline" size="sm" onClick={goBack}>
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Back
-                  </Button>
-                )}
-
-                {folderStack.length > 0 && (
-                  <p className="truncate text-sm text-white/60">
-                    {folderStack.map((folder) => folder.name).join(" / ")}
-                  </p>
-                )}
-
-                {folders.map((folder) => (
-                  <button
-                    key={folder.id}
-                    type="button"
-                    onClick={() => openFolder(folder)}
-                    className="flex min-h-12 w-full items-center gap-3 rounded-lg border border-white/10 px-4 py-3 text-left text-sm transition-colors hover:bg-white/5"
-                  >
-                    <Folder className="h-5 w-5 shrink-0 text-brand-cyan-400" />
-                    <span className="truncate">{folder.name}</span>
-                  </button>
-                ))}
-
-                {currentFolder && images.length > 0 && (
-                  <>
-                    {multiple && (
-                      <div className="flex justify-end">
-                        <Button
-                          type="button"
-                          size="sm"
-                          variant="ghost"
-                          onClick={selectAllDriveImages}
-                        >
-                          Select all in folder
-                        </Button>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                      {images.map((image) => (
-                        <DriveImageOption
-                          key={image.id}
-                          image={image}
-                          disabled={isPending}
-                          selected={selectedDriveIds.includes(image.id)}
-                          multiple={multiple}
-                          onToggle={() => toggleDriveSelection(image.id)}
-                          onSelect={() => handleDriveSelect(image.id)}
-                        />
-                      ))}
+              <DriveBrowser
+                folders={folders}
+                images={images}
+                folderStack={folderStack}
+                currentFolder={currentFolder}
+                loadingDrive={loadingDrive}
+                canGoBack={canGoBack}
+                onOpenFolder={openFolder}
+                onGoBack={goBack}
+                scrollClassName="space-y-4"
+                toolbar={
+                  multiple && currentFolder && images.length > 0 ? (
+                    <div className="flex justify-end">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={selectAllDriveImages}
+                      >
+                        Select all in folder
+                      </Button>
                     </div>
-                  </>
+                  ) : undefined
+                }
+                renderImage={(image) => (
+                  <DriveImageOption
+                    key={image.id}
+                    image={image}
+                    disabled={isPending}
+                    selected={selectedDriveIds.includes(image.id)}
+                    multiple={multiple}
+                    onToggle={() => toggleDriveSelection(image.id)}
+                    onSelect={() => handleDriveSelect(image.id)}
+                  />
                 )}
-
-                {folders.length === 0 && images.length === 0 && (
-                  <p className="py-16 text-center text-sm text-white/50">
-                    This folder is empty.
-                  </p>
-                )}
-              </div>
+              />
             )
           ) : isLoading ? (
             <div className="flex items-center justify-center py-16 text-white/50">

@@ -4,10 +4,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import {
   DndContext,
-  PointerSensor,
   closestCenter,
-  useSensor,
-  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -38,6 +35,7 @@ import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-
 import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { serviceImageObjectPosition } from "@/lib/content/service-images";
 import { useMounted } from "@/hooks/use-mounted";
+import { useSortableSensors } from "@/hooks/use-sortable-sensors";
 import type { ServiceImage } from "@/types/content";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -229,11 +227,7 @@ export function ServiceImagesField({
     // eslint-disable-next-line react-hooks/exhaustive-deps -- revoke blob URLs on unmount only
   }, []);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-  );
+  const sensors = useSortableSensors();
 
   const openEnhanceDialog = (upload: PendingServiceUpload) => {
     pendingUploadRef.current = upload;

@@ -14,11 +14,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import {
-  findDriveRootFolder,
   getGalleryPhotos,
   linkDrivePhoto,
-  listDriveFolders,
-  listDriveImages,
   publishPhoto,
   deletePhoto,
   updatePhotoMetadata,
@@ -35,6 +32,8 @@ import {
 import type { Tables } from "@/lib/supabase/types";
 import { galleryPhotoCategoryOptions } from "@/lib/content/gallery-categories";
 import { LinkedPhotosPanel } from "@/components/admin/linked-photos-panel";
+import { DriveBrowser } from "@/components/admin/drive-browser";
+import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
@@ -45,63 +44,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { useDriveBrowser } from "@/hooks/use-drive-browser";
+import type { DriveFolder } from "@/types/drive";
 
-type DriveFolder = { id: string; name: string };
-type DriveImage = {
-  id: string;
-  name: string;
-  mimeType: string;
-  thumbnailLink?: string;
-};
 type GalleryView = "drive" | "linked";
 
 type PendingPublishAction =
   | { type: "single"; photoId: string }
   | { type: "bulk"; photoIds: string[] }
   | { type: "drive"; driveFileIds: string[] };
-
-function DriveThumbnail({
-  fileId,
-  name,
-  size = "sm",
-}: {
-  fileId: string;
-  name: string;
-  size?: "sm" | "lg";
-}) {
-  const [failed, setFailed] = useState(false);
-
-  if (failed) {
-    return (
-      <div
-        className={cn(
-          "flex w-full items-center justify-center rounded-lg bg-white/10",
-          size === "lg" ? "aspect-square" : "h-12 w-12",
-        )}
-      >
-        <ImageIcon
-          className={cn(
-            "text-white/40",
-            size === "lg" ? "h-8 w-8" : "h-5 w-5",
-          )}
-        />
-      </div>
-    );
-  }
-
-  return (
-    <img
-      src={`/api/google-drive/thumbnail/${fileId}`}
-      alt={name}
-      loading="lazy"
-      className={cn(
-        "rounded-lg object-cover bg-white/10",
-        size === "lg" ? "aspect-square w-full" : "h-12 w-12 shrink-0",
-      )}
-      onError={() => setFailed(true)}
-    />
-  );
-}
 
 type GalleryHubProps = {
   initialPhotos: Tables<"gallery_photos">[];
@@ -120,16 +71,23 @@ export function GalleryHub({
   const searchParams = useSearchParams();
   const [photos, setPhotos] = useState(initialPhotos);
   const [view, setView] = useState<GalleryView>(initialView);
-  const [folders, setFolders] = useState<DriveFolder[]>([]);
-  const [images, setImages] = useState<DriveImage[]>([]);
-  const [folderStack, setFolderStack] = useState<DriveFolder[]>([]);
+  const {
+    folders,
+    images,
+    folderStack,
+    currentFolder,
+    loadingDrive,
+    canGoBack,
+    openFolder: openDriveFolder,
+    goBack: goBackDrive,
+    initialize: initializeDriveBrowser,
+  } = useDriveBrowser({ rootFolderName });
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(
     new Set(),
   );
   const [category, setCategory] = useState("exterior");
   const [photoType, setPhotoType] = useState<"before" | "after">("before");
   const [isPending, startTransition] = useTransition();
-  const [loadingDrive, setLoadingDrive] = useState(false);
   const [enhanceDialogOpen, setEnhanceDialogOpen] = useState(false);
   const [enhanceDialogConfig, setEnhanceDialogConfig] = useState({
     title: "Publish to gallery",
@@ -143,7 +101,6 @@ export function GalleryHub({
   const initializedRef = useRef(false);
   const pendingPublishRef = useRef<PendingPublishAction | null>(null);
 
-  const currentFolder = folderStack[folderStack.length - 1];
   const selectedCount = selectedImageIds.size;
   const isPublishing = publishQueue.length > 0;
   const draftCount = photos.filter(
@@ -177,78 +134,25 @@ export function GalleryHub({
     });
   };
 
-  const loadFolderContents = useCallback(async (stack: DriveFolder[]) => {
-    setLoadingDrive(true);
-    try {
-      const folder = stack[stack.length - 1];
-      const parentId = folder?.id;
-
-      const [childFolders, folderImages] = await Promise.all([
-        listDriveFolders(parentId),
-        parentId ? listDriveImages(parentId) : Promise.resolve([]),
-      ]);
-
-      setFolders(childFolders);
-      setImages(folderImages);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load folder");
-    } finally {
-      setLoadingDrive(false);
-    }
-  }, []);
-
   const openFolder = useCallback(
-    async (folder: DriveFolder, stack?: DriveFolder[]) => {
-      const nextStack = stack ?? [...folderStack, folder];
-      setFolderStack(nextStack);
+    async (folder: DriveFolder) => {
       clearSelection();
-      await loadFolderContents(nextStack);
+      await openDriveFolder(folder);
     },
-    [folderStack, loadFolderContents],
+    [openDriveFolder],
   );
 
   const goBack = async () => {
-    if (folderStack.length <= 1) return;
-    const nextStack = folderStack.slice(0, -1);
-    setFolderStack(nextStack);
     clearSelection();
-    await loadFolderContents(nextStack);
+    await goBackDrive();
   };
-
-  const canGoBack = folderStack.length > 1;
 
   useEffect(() => {
     if (!driveConnected || initializedRef.current || view !== "drive") return;
 
     initializedRef.current = true;
-
-    void (async () => {
-      setLoadingDrive(true);
-      try {
-        const rootFolder = await findDriveRootFolder();
-        if (rootFolder) {
-          setFolderStack([rootFolder]);
-          const [childFolders, folderImages] = await Promise.all([
-            listDriveFolders(rootFolder.id),
-            listDriveImages(rootFolder.id),
-          ]);
-          setFolders(childFolders);
-          setImages(folderImages);
-        } else {
-          const rootFolders = await listDriveFolders();
-          setFolders(rootFolders);
-          setImages([]);
-          toast.message(`"${rootFolderName}" folder not found — showing Drive root.`);
-        }
-      } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to load Google Drive",
-        );
-      } finally {
-        setLoadingDrive(false);
-      }
-    })();
-  }, [driveConnected, rootFolderName, view]);
+    void initializeDriveBrowser();
+  }, [driveConnected, initializeDriveBrowser, view]);
 
   const refreshPhotos = () => {
     startTransition(async () => {
@@ -563,21 +467,6 @@ export function GalleryHub({
             </p>
           ) : (
             <>
-              {canGoBack && !isPublishing && (
-                <div className="mb-4">
-                  <Button variant="outline" size="sm" onClick={goBack}>
-                    <ChevronLeft className="mr-1 h-4 w-4" />
-                    Back
-                  </Button>
-                </div>
-              )}
-
-              {folderStack.length > 0 && !isPublishing && (
-                <p className="mb-4 truncate text-sm text-white/60">
-                  {folderStack.map((folder) => folder.name).join(" / ")}
-                </p>
-              )}
-
               {isPublishing ? (
                 <UploadQueuePanel
                   queue={publishQueue}
@@ -586,62 +475,46 @@ export function GalleryHub({
                   compact
                   activeOnly
                 />
-              ) : loadingDrive ? (
-                <div className="flex items-center gap-2 py-6 text-sm text-white/60">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Loading...
-                </div>
               ) : (
-                <div className="max-h-[min(32rem,70vh)] space-y-4 overflow-y-auto pr-1">
-                  {folders.map((folder) => (
-                    <button
-                      key={folder.id}
-                      type="button"
-                      onClick={() => openFolder(folder)}
-                      className="flex min-h-12 w-full items-center gap-3 rounded-lg border border-white/10 px-4 py-3 text-left text-sm transition-colors hover:bg-white/5"
-                    >
-                      <Folder className="h-5 w-5 shrink-0 text-brand-cyan-400" />
-                      <span className="truncate">{folder.name}</span>
-                    </button>
-                  ))}
-                  {currentFolder && images.length > 0 && (
-                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5">
-                      {images.map((image) => {
-                        const isSelected = selectedImageIds.has(image.id);
-                        return (
-                          <button
-                            key={image.id}
-                            type="button"
-                            aria-pressed={isSelected}
-                            onClick={() => toggleImageSelection(image.id)}
-                            className={cn(
-                              "relative min-w-0 overflow-hidden rounded-xl border-2 transition-colors",
-                              isSelected
-                                ? "border-brand-purple-400 ring-2 ring-brand-purple-400/30"
-                                : "border-white/10 hover:border-white/25",
-                            )}
-                          >
-                            <DriveThumbnail
-                              fileId={image.id}
-                              name={image.name}
-                              size="lg"
-                            />
-                            {isSelected && (
-                              <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-purple-500 text-white sm:top-2 sm:right-2 sm:h-6 sm:w-6">
-                                <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                              </span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
-                  {folders.length === 0 && images.length === 0 && (
-                    <p className="py-6 text-center text-sm text-white/50">
-                      This folder is empty.
-                    </p>
-                  )}
-                </div>
+                <DriveBrowser
+                  folders={folders}
+                  images={images}
+                  folderStack={folderStack}
+                  currentFolder={currentFolder}
+                  loadingDrive={loadingDrive}
+                  canGoBack={canGoBack}
+                  onOpenFolder={openFolder}
+                  onGoBack={goBack}
+                  imageGridClassName="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
+                  renderImage={(image) => {
+                    const isSelected = selectedImageIds.has(image.id);
+                    return (
+                      <button
+                        key={image.id}
+                        type="button"
+                        aria-pressed={isSelected}
+                        onClick={() => toggleImageSelection(image.id)}
+                        className={cn(
+                          "relative min-w-0 overflow-hidden rounded-xl border-2 transition-colors",
+                          isSelected
+                            ? "border-brand-purple-400 ring-2 ring-brand-purple-400/30"
+                            : "border-white/10 hover:border-white/25",
+                        )}
+                      >
+                        <DriveThumbnail
+                          fileId={image.id}
+                          name={image.name}
+                          size="lg"
+                        />
+                        {isSelected && (
+                          <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-purple-500 text-white sm:top-2 sm:right-2 sm:h-6 sm:w-6">
+                            <Check className="h-3 w-3 sm:h-4 sm:w-4" />
+                          </span>
+                        )}
+                      </button>
+                    );
+                  }}
+                />
               )}
 
               {selectedCount > 0 && currentFolder && !isPublishing && (

@@ -8,6 +8,13 @@ import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createCustomer } from "@/app/actions/admin/customers";
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
+import {
+  AdminDataTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+} from "@/components/admin/admin-data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,47 +115,44 @@ export function CustomersManager({ customers }: { customers: Customer[] }) {
         </form>
       )}
 
-      <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/5 text-left text-white/60">
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Email</th>
-              <th className="px-4 py-3 font-medium">Phone</th>
-              <th className="px-4 py-3 font-medium">Vehicles</th>
-              <th className="px-4 py-3 font-medium">Price</th>
-              <th className="px-4 py-3 font-medium">Since</th>
-              <th className="px-4 py-3 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {customers.map((customer) => {
-              const totalPrice = customer.lifetime_value;
+      <AdminDataTable
+        isEmpty={customers.length === 0}
+        emptyMessage="No customers yet. Add one manually, convert a lead, or create one when booking."
+      >
+        <AdminTableHead>
+          <AdminTableHeaderCell>Name</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Email</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Phone</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Vehicles</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Price</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Since</AdminTableHeaderCell>
+          <AdminTableHeaderCell aria-hidden="true">&nbsp;</AdminTableHeaderCell>
+        </AdminTableHead>
+        <tbody>
+          {customers.map((customer) => {
+            const totalPrice = customer.lifetime_value;
 
-              return (
-              <tr
-                key={customer.id}
-                className="border-b border-white/5 hover:bg-white/5"
-              >
-                <td className="px-4 py-3 font-medium text-white">
+            return (
+              <AdminTableRow key={customer.id}>
+                <AdminTableCell className="font-medium text-white">
                   {customer.full_name}
-                </td>
-                <td className="px-4 py-3 text-white/70">
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
                   {customer.email ?? "—"}
-                </td>
-                <td className="px-4 py-3 text-white/70">
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
                   {customer.phone ?? "—"}
-                </td>
-                <td className="px-4 py-3 text-white/70">
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
                   {customer.vehicles?.[0]?.count ?? 0}
-                </td>
-                <td className="px-4 py-3 text-white/70">
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
                   {totalPrice > 0 ? `€${totalPrice.toFixed(2)}` : "—"}
-                </td>
-                <td className="px-4 py-3 text-white/50">
+                </AdminTableCell>
+                <AdminTableCell className="text-white/50">
                   {formatDisplayDate(customer.created_at)}
-                </td>
-                <td className="px-4 py-3">
+                </AdminTableCell>
+                <AdminTableCell>
                   <div className="flex items-center gap-2">
                     <Button asChild size="sm" variant="outline">
                       <Link href={`/admin/customers/${customer.id}`}>View</Link>
@@ -164,20 +168,12 @@ export function CustomersManager({ customers }: { customers: Customer[] }) {
                       showLabel={false}
                     />
                   </div>
-                </td>
-              </tr>
+                </AdminTableCell>
+              </AdminTableRow>
             );
-            })}
-          </tbody>
-        </table>
-
-        {customers.length === 0 && (
-          <p className="px-4 py-12 text-center text-sm text-white/50">
-            No customers yet. Add one manually, convert a lead, or create one
-            when booking.
-          </p>
-        )}
-      </div>
+          })}
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }

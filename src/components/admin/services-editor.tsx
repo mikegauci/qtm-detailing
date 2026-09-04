@@ -3,10 +3,7 @@
 import { useState } from "react";
 import {
   DndContext,
-  PointerSensor,
   closestCenter,
-  useSensor,
-  useSensors,
   type DragEndEvent,
 } from "@dnd-kit/core";
 import {
@@ -27,6 +24,7 @@ import { ServiceImagesField } from "@/components/admin/service-images-field";
 import { parseServiceImages } from "@/lib/content/service-images";
 import { useMounted } from "@/hooks/use-mounted";
 import { useServerAction } from "@/hooks/use-server-action";
+import { useSortableSensors } from "@/hooks/use-sortable-sensors";
 import type { ServiceImage } from "@/types/content";
 import type { Tables } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/button";
@@ -163,11 +161,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
   const mounted = useMounted();
   const link = slugify(editing.name);
 
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
-    }),
-  );
+  const sensors = useSortableSensors();
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

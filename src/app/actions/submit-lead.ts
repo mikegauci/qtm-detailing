@@ -2,6 +2,7 @@
 
 import { headers } from "next/headers";
 import { z } from "zod";
+import { sendLeadNotification } from "@/lib/email/send-lead-notification";
 import { createClient } from "@/lib/supabase/server";
 
 const leadSchema = z.object({
@@ -104,6 +105,10 @@ export async function submitLead(
         message: "Something went wrong. Please try again or call us directly.",
       };
     }
+
+    void sendLeadNotification(leadData).catch((err) => {
+      console.error("Lead notification email failed:", err);
+    });
 
     return {
       success: true,

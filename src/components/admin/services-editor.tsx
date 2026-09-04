@@ -23,7 +23,10 @@ import {
   reorderServices,
   upsertService,
 } from "@/app/actions/admin/cms";
-import { CmsImageField } from "@/components/admin/cms-image-field";
+import { ServiceImagesField } from "@/components/admin/service-images-field";
+import { parseServiceImages } from "@/lib/content/service-images";
+import { useMounted } from "@/hooks/use-mounted";
+import type { ServiceImage } from "@/types/content";
 import type { Tables } from "@/lib/supabase/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +45,7 @@ type ServiceFormState = {
   short_description: string;
   description: string;
   featuresText: string;
-  image_url: string;
+  images: ServiceImage[];
   category: string;
   is_active: boolean;
 };
@@ -52,10 +55,46 @@ const emptyService: ServiceFormState = {
   short_description: "",
   description: "",
   featuresText: "",
-  image_url: "",
+  images: [],
   category: "standard",
   is_active: true,
 };
+
+function ServiceRow({
+  service,
+  isSelected,
+  onSelect,
+}: {
+  service: Tables<"services">;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-2 rounded-lg border border-white/10 bg-surface-base",
+        isSelected && "border-brand-purple-400/40 bg-white/5",
+      )}
+    >
+      <div className="px-2 py-3 text-white/20">
+        <GripVertical className="h-4 w-4" />
+      </div>
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex min-w-0 flex-1 items-center justify-between py-3 pr-3 text-left hover:bg-white/5"
+      >
+        <div className="min-w-0">
+          <p className="truncate font-medium">{service.name}</p>
+          <p className="truncate text-sm text-white/60">
+            {slugify(service.name)}
+          </p>
+        </div>
+        {!service.is_active && <Badge variant="outline">Inactive</Badge>}
+      </button>
+    </div>
+  );
+}
 
 function SortableServiceRow({
   service,
@@ -120,6 +159,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
   const [services, setServices] = useState(initialServices);
   const [editing, setEditing] = useState<ServiceFormState>(emptyService);
   const [isPending, startTransition] = useTransition();
+  const mounted = useMounted();
   const link = slugify(editing.name);
 
   const sensors = useSensors(
@@ -162,7 +202,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
           .split("\n")
           .map((f) => f.trim())
           .filter(Boolean),
-        image_url: editing.image_url,
+        images: editing.images,
         category: editing.category,
         is_active: editing.is_active,
       });
@@ -196,7 +236,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
       short_description: service.short_description ?? "",
       description: service.description ?? "",
       featuresText: (service.features ?? []).join("\n"),
-      image_url: service.image_url ?? "",
+      images: parseServiceImages(service.images, service.image_url),
       category: service.category ?? "standard",
       is_active: service.is_active,
     });
@@ -219,27 +259,41 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
             New
           </Button>
         </div>
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={services.map((service) => service.id)}
-            strategy={verticalListSortingStrategy}
+        {mounted ? (
+          <DndContext
+            id="services-editor-list"
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            <div className="space-y-2">
-              {services.map((service) => (
-                <SortableServiceRow
-                  key={service.id}
-                  service={service}
-                  isSelected={editing.id === service.id}
-                  onSelect={() => selectService(service)}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+            <SortableContext
+              items={services.map((service) => service.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-2">
+                {services.map((service) => (
+                  <SortableServiceRow
+                    key={service.id}
+                    service={service}
+                    isSelected={editing.id === service.id}
+                    onSelect={() => selectService(service)}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="space-y-2">
+            {services.map((service) => (
+              <ServiceRow
+                key={service.id}
+                service={service}
+                isSelected={editing.id === service.id}
+                onSelect={() => selectService(service)}
+              />
+            ))}
+          </div>
+        )}
       </div>
 
       <form
@@ -290,12 +344,10 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
             rows={4}
           />
         </div>
-        <CmsImageField
-          label="Service image"
-          value={editing.image_url ?? ""}
-          onChange={(url) => setEditing((p) => ({ ...p, image_url: url }))}
-          folder="services"
-          filename={link || undefined}
+        <ServiceImagesField
+          value={editing.images}
+          onChange={(images) => setEditing((p) => ({ ...p, images }))}
+          slug={link}
         />
         <div className="space-y-2">
           <Label>Features (one per line)</Label>

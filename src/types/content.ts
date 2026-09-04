@@ -24,6 +24,11 @@ export type SiteConfig = {
   nav: { label: string; href: string }[];
 };
 
+export type ServiceImage = {
+  url: string;
+  focalY: number;
+};
+
 export type Service = {
   id: string;
   title: string;
@@ -35,6 +40,7 @@ export type Service = {
   note?: string;
   titleSubline?: string;
   image: string;
+  images: ServiceImage[];
   featured?: boolean;
   category?: "interior" | "exterior" | "protection" | "bundle";
 };

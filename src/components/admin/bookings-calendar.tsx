@@ -3,7 +3,6 @@
 import dynamic from "next/dynamic";
 import { useCallback, useState } from "react";
 import dayGridPlugin from "@fullcalendar/daygrid";
-import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg } from "@fullcalendar/core";
 import Link from "next/link";
@@ -18,6 +17,7 @@ export type CalendarEvent = {
   title: string;
   start: string;
   end: string;
+  dateLabel: string;
   backgroundColor: string;
   borderColor: string;
 };
@@ -63,20 +63,17 @@ export function BookingsCalendar({
         ))}
       </div>
 
-      <div className="rounded-xl border border-white/10 bg-surface-raised p-4 [&_.fc]:text-white [&_.fc-button]:border-white/20 [&_.fc-button]:bg-white/10 [&_.fc-button]:text-white [&_.fc-button-active]:bg-brand-purple-600/30 [&_.fc-col-header-cell]:border-white/10 [&_.fc-daygrid-day]:border-white/10 [&_.fc-scrollgrid]:border-white/10 [&_.fc-timegrid-axis]:border-white/10 [&_.fc-timegrid-slot]:border-white/5">
+      <div className="rounded-xl border border-white/10 bg-surface-raised p-4 [&_.fc]:text-white [&_.fc-button]:border-white/20 [&_.fc-button]:bg-white/10 [&_.fc-button]:text-white [&_.fc-button-active]:bg-brand-purple-600/30 [&_.fc-col-header-cell]:border-white/10 [&_.fc-daygrid-day]:border-white/10 [&_.fc-scrollgrid]:border-white/10">
         <FullCalendar
-          plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+          plugins={[dayGridPlugin, interactionPlugin]}
           initialView="dayGridMonth"
           headerToolbar={{
             left: "prev,next today",
             center: "title",
-            right: "dayGridMonth,timeGridWeek,timeGridDay",
+            right: "dayGridMonth,dayGridWeek",
           }}
           events={events}
           eventClick={handleEventClick}
-          slotMinTime="07:00:00"
-          slotMaxTime="20:00:00"
-          allDaySlot={false}
           height="auto"
           nowIndicator
         />
@@ -85,13 +82,7 @@ export function BookingsCalendar({
       {selectedEvent && (
         <div className="rounded-xl border border-white/10 bg-surface-raised p-4">
           <p className="font-medium text-white">{selectedEvent.title}</p>
-          <p className="mt-1 text-sm text-white/60">
-            {new Date(selectedEvent.start).toLocaleString()} –{" "}
-            {new Date(selectedEvent.end).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
+          <p className="mt-1 text-sm text-white/60">{selectedEvent.dateLabel}</p>
           <Link
             href={`/admin/bookings/${selectedEvent.id}`}
             className="mt-2 inline-block text-sm text-brand-purple-400 hover:underline"

@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { createBooking } from "@/app/actions/admin/bookings";
 import { createCustomer } from "@/app/actions/admin/customers";
 import type { Tables } from "@/lib/supabase/types";
+import { formatCustomerOptionLabel } from "@/lib/utils/booking";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -58,12 +59,27 @@ export function BookingForm({
     );
   }
 
-  function handleCreateCustomer(formData: FormData) {
+  function handleCreateCustomer() {
+    const form = document.getElementById(
+      "new-customer-fields",
+    ) as HTMLDivElement | null;
+    if (!form) return;
+
+    const fullName = (
+      form.querySelector('[name="full_name"]') as HTMLInputElement
+    ).value;
+    const email = (
+      form.querySelector('[name="email"]') as HTMLInputElement
+    ).value;
+    const phone = (
+      form.querySelector('[name="phone"]') as HTMLInputElement
+    ).value;
+
     startTransition(async () => {
       const result = await createCustomer({
-        full_name: formData.get("full_name") as string,
-        email: formData.get("email") as string,
-        phone: (formData.get("phone") as string) || null,
+        full_name: fullName,
+        email: email || null,
+        phone: phone || null,
       });
       if (result.success && result.id) {
         toast.success(result.message);
@@ -137,23 +153,34 @@ export function BookingForm({
               </div>
 
               {showNewCustomer ? (
-                <form action={handleCreateCustomer} className="space-y-3 rounded-lg border border-white/10 p-4">
+                <div
+                  id="new-customer-fields"
+                  className="space-y-3 rounded-lg border border-white/10 p-4"
+                >
                   <div className="space-y-1">
                     <Label htmlFor="new_full_name">Full name</Label>
                     <Input id="new_full_name" name="full_name" required />
                   </div>
                   <div className="space-y-1">
-                    <Label htmlFor="new_email">Email</Label>
-                    <Input id="new_email" name="email" type="email" required />
+                    <Label htmlFor="new_email">Email (optional)</Label>
+                    <Input id="new_email" name="email" type="email" />
                   </div>
                   <div className="space-y-1">
                     <Label htmlFor="new_phone">Phone</Label>
                     <Input id="new_phone" name="phone" />
                   </div>
-                  <Button type="submit" size="sm" disabled={isPending}>
+                  <p className="text-xs text-white/50">
+                    Phone or email required.
+                  </p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    disabled={isPending}
+                    onClick={handleCreateCustomer}
+                  >
                     Create customer
                   </Button>
-                </form>
+                </div>
               ) : (
                 <Select
                   value={customerId}
@@ -168,7 +195,7 @@ export function BookingForm({
                   <SelectContent>
                     {customers.map((customer) => (
                       <SelectItem key={customer.id} value={customer.id}>
-                        {customer.full_name} ({customer.email})
+                        {formatCustomerOptionLabel(customer)}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -14,7 +14,7 @@ export default async function BookingsPage() {
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("*, customers(full_name, email), vehicles(make, model, registration)")
+    .select("*, customers(full_name, email, phone), vehicles(make, model, registration)")
     .order("booking_date", { ascending: false });
 
   return (
@@ -64,7 +64,7 @@ export default async function BookingsPage() {
                     {customer?.full_name}
                   </p>
                   <p className="text-xs text-white/50">
-                    {customer?.email}
+                    {customer?.email ?? customer?.phone ?? "—"}
                   </p>
                 </td>
                 <td className="px-4 py-3 text-white/70">

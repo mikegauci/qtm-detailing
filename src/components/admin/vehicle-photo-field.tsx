@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { ImageIcon, Images, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
@@ -38,6 +38,11 @@ export function VehiclePhotoField({
   const [currentUrl, setCurrentUrl] = useState(photoUrl);
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
   const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
+
+  useEffect(() => {
+    setCurrentUrl(photoUrl);
+    setPreviewError(false);
+  }, [photoUrl]);
 
   function handleUpload(file: File) {
     const formData = new FormData();

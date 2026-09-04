@@ -38,6 +38,8 @@ const createCustomerSchema = z
     },
   );
 
+const MAX_VEHICLE_PHOTO_BYTES = 10 * 1024 * 1024;
+
 function normalizeOptionalString(value: string | null | undefined) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
@@ -93,7 +95,47 @@ export async function updateCustomer(
 ): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
 
-  const { error } = await supabase.from("customers").update(data).eq("id", id);
+  const { data: existing, error: fetchError } = await supabase
+    .from("customers")
+    .select("full_name, email, phone")
+    .eq("id", id)
+    .single();
+
+  if (fetchError || !existing) {
+    return {
+      success: false,
+      message: fetchError?.message ?? "Customer not found.",
+    };
+  }
+
+  const parsed = createCustomerSchema.safeParse({
+    full_name: data.full_name ?? existing.full_name,
+    email:
+      data.email !== undefined
+        ? normalizeOptionalString(data.email)
+        : normalizeOptionalString(existing.email),
+    phone:
+      data.phone !== undefined
+        ? normalizeOptionalString(data.phone)
+        : normalizeOptionalString(existing.phone),
+  });
+
+  if (!parsed.success) {
+    const message =
+      parsed.error.issues[0]?.message ?? "Invalid customer details.";
+    return { success: false, message };
+  }
+
+  const { full_name, email, phone } = parsed.data;
+
+  const { error } = await supabase
+    .from("customers")
+    .update({
+      full_name,
+      email: email ?? null,
+      phone: phone ?? null,
+    })
+    .eq("id", id);
 
   if (error) {
     return { success: false, message: error.message };
@@ -115,6 +157,20 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
 
   if (fetchError || !customer) {
     return { success: false, message: fetchError?.message ?? "Customer not found." };
+  }
+
+  const { data: vehicles } = await supabase
+    .from("vehicles")
+    .select("storage_path")
+    .eq("customer_id", id);
+
+  const storagePaths =
+    vehicles
+      ?.map((vehicle) => vehicle.storage_path)
+      .filter((path): path is string => Boolean(path)) ?? [];
+
+  if (storagePaths.length) {
+    await supabase.storage.from(CMS_ASSETS_BUCKET).remove(storagePaths);
   }
 
   const { error: bookingsError } = await supabase
@@ -374,6 +430,13 @@ export async function uploadVehiclePhoto(
 
     if (!file.type.startsWith("image/")) {
       return { success: false, message: "File must be an image." };
+    }
+
+    if (file.size > MAX_VEHICLE_PHOTO_BYTES) {
+      return {
+        success: false,
+        message: "Image must be 10 MB or smaller.",
+      };
     }
 
     return saveVehiclePhotoBuffer(

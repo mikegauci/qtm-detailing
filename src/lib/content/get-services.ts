@@ -1,6 +1,7 @@
 import type { Service } from "@/types/content";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
+import { parseServiceImages } from "@/lib/content/service-images";
 
 function mapDbService(row: Tables<"services">): Service {
   const includedServices: string[] = [];
@@ -14,6 +15,8 @@ function mapDbService(row: Tables<"services">): Service {
     }
   }
 
+  const images = parseServiceImages(row.images, row.image_url);
+
   return {
     id: row.id,
     title: row.name,
@@ -24,7 +27,8 @@ function mapDbService(row: Tables<"services">): Service {
     features,
     includedServices:
       includedServices.length > 0 ? includedServices : undefined,
-    image: row.image_url ?? "",
+    image: images[0]?.url ?? row.image_url ?? "",
+    images,
     featured: row.featured,
     category: (row.category as Service["category"]) ?? undefined,
   };

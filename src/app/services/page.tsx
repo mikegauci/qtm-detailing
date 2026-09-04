@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import { Check } from "lucide-react";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
@@ -12,6 +11,7 @@ import {
 import { CtaBand } from "@/components/sections/cta-band";
 import { FaqAnswer } from "@/components/faq/faq-answer";
 import { HashScroll } from "@/components/services/hash-scroll";
+import { ServiceImageSlider } from "@/components/services/service-image-slider";
 import { cn } from "@/lib/utils";
 import {
   defaultCtaBand,
@@ -65,15 +65,10 @@ export default async function ServicesPage() {
                       index % 2 === 1 && "lg:[&>*:first-child]:order-2",
                     )}
                   >
-                    <div className="relative aspect-[16/10] lg:aspect-auto lg:min-h-[320px]">
-                      <Image
-                        src={service.image}
-                        alt={service.title}
-                        fill
-                        className="object-cover"
-                        sizes="(max-width: 1024px) 100vw, 50vw"
-                      />
-                    </div>
+                    <ServiceImageSlider
+                      images={service.images}
+                      alt={service.title}
+                    />
                     <div className="flex flex-col justify-center p-6 lg:p-10">
                       <h2 className="text-2xl font-bold">{service.title}</h2>
                       {service.titleSubline && (

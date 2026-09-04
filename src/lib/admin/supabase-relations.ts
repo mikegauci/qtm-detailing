@@ -6,8 +6,8 @@ export function getRelation<T>(relation: T | T[] | null | undefined): T | null {
 
 export function getCustomerRelation(
   relation:
-    | { full_name: string; email?: string }
-    | { full_name: string; email?: string }[]
+    | { full_name: string; email?: string | null; phone?: string | null }
+    | { full_name: string; email?: string | null; phone?: string | null }[]
     | null
     | undefined,
 ) {

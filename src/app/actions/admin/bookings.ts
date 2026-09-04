@@ -7,6 +7,8 @@ import {
   DEFAULT_BOOKING_END_TIME,
   DEFAULT_BOOKING_START_TIME,
   generateConfirmationCode,
+  getBookingEndDate,
+  validateBookingDateRange,
 } from "@/lib/utils/booking";
 
 export type ActionResult = {
@@ -38,7 +40,11 @@ export async function createBooking(data: BookingInput): Promise<ActionResult> {
   }
 
   const totalPrice = services.reduce((sum, s) => sum + Number(s.price), 0);
-  const endDate = data.end_date ?? data.booking_date;
+  const endDate = getBookingEndDate(data.booking_date, data.end_date);
+  const dateError = validateBookingDateRange(data.booking_date, endDate);
+  if (dateError) {
+    return { success: false, message: dateError };
+  }
 
   const { data: booking, error } = await supabase
     .from("bookings")
@@ -96,6 +102,35 @@ export async function updateBooking(
 ): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
 
+  if (data.booking_date !== undefined || data.end_date !== undefined) {
+    const { data: existing, error: fetchError } = await supabase
+      .from("bookings")
+      .select("booking_date, end_date")
+      .eq("id", id)
+      .single();
+
+    if (fetchError || !existing) {
+      return {
+        success: false,
+        message: fetchError?.message ?? "Booking not found.",
+      };
+    }
+
+    const bookingDate = data.booking_date ?? existing.booking_date;
+    const endDate = getBookingEndDate(
+      bookingDate,
+      data.end_date !== undefined ? data.end_date : existing.end_date,
+    );
+    const dateError = validateBookingDateRange(bookingDate, endDate);
+    if (dateError) {
+      return { success: false, message: dateError };
+    }
+
+    if (data.end_date === undefined && data.booking_date !== undefined) {
+      data = { ...data, end_date: endDate };
+    }
+  }
+
   const { error } = await supabase.from("bookings").update(data).eq("id", id);
 
   if (error) {
@@ -129,7 +164,11 @@ export async function createReferenceBooking(data: {
   total_price?: number | null;
 }): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
-  const endDate = data.end_date ?? data.booking_date;
+  const endDate = getBookingEndDate(data.booking_date, data.end_date);
+  const dateError = validateBookingDateRange(data.booking_date, endDate);
+  if (dateError) {
+    return { success: false, message: dateError };
+  }
 
   const { data: booking, error } = await supabase
     .from("bookings")

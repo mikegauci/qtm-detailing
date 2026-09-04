@@ -26,7 +26,8 @@ export default async function AdminDashboardPage() {
     supabase
       .from("bookings")
       .select("*", { count: "exact", head: true })
-      .eq("booking_date", today)
+      .lte("booking_date", today)
+      .or(`end_date.gte.${today},and(end_date.is.null,booking_date.eq.${today})`)
       .neq("status", "cancelled"),
     supabase
       .from("leads")
@@ -45,7 +46,8 @@ export default async function AdminDashboardPage() {
     supabase
       .from("bookings")
       .select("*, customers(full_name)")
-      .eq("booking_date", today)
+      .lte("booking_date", today)
+      .or(`end_date.gte.${today},and(end_date.is.null,booking_date.eq.${today})`)
       .neq("status", "cancelled")
       .order("booking_date", { ascending: true }),
   ]);
@@ -123,7 +125,9 @@ export default async function AdminDashboardPage() {
                   >
                     <div>
                       <p className="font-medium text-white">{lead.name}</p>
-                      <p className="text-sm text-white/50">{lead.email}</p>
+                      <p className="text-sm text-white/50">
+                        {lead.email ?? lead.phone ?? "—"}
+                      </p>
                     </div>
                     <Badge variant="outline">
                       {LEAD_STATUS_LABELS[lead.status] ?? lead.status}

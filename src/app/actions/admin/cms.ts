@@ -9,6 +9,7 @@ import {
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
+import type { ServiceImage } from "@/types/content";
 import { slugify } from "@/lib/utils";
 
 export type ActionResult = {
@@ -109,12 +110,13 @@ export async function upsertService(input: {
   short_description?: string;
   description?: string;
   features?: string[];
-  image_url?: string;
+  images?: ServiceImage[];
   category?: string;
   is_active?: boolean;
 }): Promise<ActionResult> {
   try {
     const { supabase } = await requireAdmin();
+    const images = input.images ?? [];
     const payload = {
       name: input.name,
       slug: slugify(input.name),
@@ -125,7 +127,8 @@ export async function upsertService(input: {
       price_van: 0,
       estimated_duration_minutes: 0,
       features: input.features ?? [],
-      image_url: input.image_url ?? null,
+      images: images as unknown as Json,
+      image_url: images[0]?.url ?? null,
       category: input.category ?? null,
       is_active: input.is_active ?? true,
     };

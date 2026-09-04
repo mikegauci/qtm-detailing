@@ -30,3 +30,27 @@ export function getOptionalSiteUrl(): string | undefined {
   const url = process.env.SITE_URL?.trim();
   return url || undefined;
 }
+
+const DEFAULT_FROM_EMAIL = "QTM Detailing <hello@qtmdetailing.mt>";
+const DEFAULT_NOTIFICATION_EMAIL = "hello@qtmdetailing.mt";
+
+export type ResendConfig = {
+  apiKey: string;
+  fromEmail: string;
+  notificationEmail: string;
+};
+
+export function getResendConfig(): ResendConfig | null {
+  const apiKey = process.env.RESEND_API_KEY?.trim();
+  if (!apiKey) {
+    return null;
+  }
+
+  return {
+    apiKey,
+    fromEmail: process.env.RESEND_FROM_EMAIL?.trim() || DEFAULT_FROM_EMAIL,
+    notificationEmail:
+      process.env.LEAD_NOTIFICATION_EMAIL?.trim() ||
+      DEFAULT_NOTIFICATION_EMAIL,
+  };
+}

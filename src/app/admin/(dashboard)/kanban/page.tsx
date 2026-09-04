@@ -8,6 +8,7 @@ export default async function KanbanPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select("id, confirmation_code, booking_date, end_date, status, customers(full_name)")
+    .in("status", ["booked", "in_progress", "completed"])
     .order("booking_date", { ascending: true });
 
   const kanbanBookings =
@@ -28,7 +29,7 @@ export default async function KanbanPage() {
       <div>
         <h1 className="text-2xl font-bold text-white">Kanban Board</h1>
         <p className="mt-1 text-sm text-white/60">
-          Drag bookings between columns to update their status.
+          Update booking status from each column.
         </p>
       </div>
 

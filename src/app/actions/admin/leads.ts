@@ -144,6 +144,7 @@ export async function convertLeadToCustomer(
   }
 
   let customerId: string | undefined;
+  let createdCustomer = false;
 
   if (lead.email?.trim()) {
     const { data: existingCustomer } = await supabase
@@ -181,6 +182,7 @@ export async function convertLeadToCustomer(
     }
 
     customerId = customer.id;
+    createdCustomer = true;
   }
 
   const shouldCreateVehicle =
@@ -193,6 +195,9 @@ export async function convertLeadToCustomer(
     });
 
     if (vehicleError) {
+      if (createdCustomer) {
+        await supabase.from("customers").delete().eq("id", customerId);
+      }
       return { success: false, message: vehicleError.message };
     }
   }
@@ -203,6 +208,16 @@ export async function convertLeadToCustomer(
     .eq("id", leadId);
 
   if (leadError) {
+    if (shouldCreateVehicle && lead.vehicle) {
+      await supabase
+        .from("vehicles")
+        .delete()
+        .eq("customer_id", customerId)
+        .eq("model", lead.vehicle.trim());
+    }
+    if (createdCustomer) {
+      await supabase.from("customers").delete().eq("id", customerId);
+    }
     return { success: false, message: leadError.message };
   }
 

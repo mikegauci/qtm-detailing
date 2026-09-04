@@ -3,24 +3,39 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { Service } from "@/types/content";
 import type { SectionHeadingContent } from "@/types/page-sections";
+import { serviceImageObjectPosition } from "@/lib/content/service-images";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScrollCarousel } from "@/components/ui/scroll-carousel";
 import { FadeIn } from "@/components/motion/fade-in";
 
 function ServiceCard({ service }: { service: Service }) {
+  const primaryImage = service.images[0];
+  const imageSrc = primaryImage?.url ?? service.image;
+
   return (
     <Link
       href={`/services#${service.slug}`}
       className="group glass-panel flex h-full flex-col overflow-hidden rounded-2xl transition-all duration-300 hover:border-brand-purple-400/30 hover:glow-purple"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
-        <Image
-          src={service.image}
-          alt={service.title}
-          fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          sizes="(max-width: 640px) 82vw, (max-width: 1024px) 55vw, 25vw"
-        />
+        {imageSrc ? (
+          <Image
+            src={imageSrc}
+            alt={service.title}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            style={
+              primaryImage
+                ? {
+                    objectPosition: serviceImageObjectPosition(
+                      primaryImage.focalY,
+                    ),
+                  }
+                : undefined
+            }
+            sizes="(max-width: 640px) 82vw, (max-width: 1024px) 55vw, 25vw"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-transparent to-transparent" />
       </div>
       <div className="p-5">

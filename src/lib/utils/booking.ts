@@ -40,6 +40,33 @@ const DEFAULT_BOOKING_END_TIME = "23:59:59";
 
 export { DEFAULT_BOOKING_START_TIME, DEFAULT_BOOKING_END_TIME };
 
+export function getBookingEndDate(
+  startDate: string,
+  endDate?: string | null,
+): string {
+  return endDate ?? startDate;
+}
+
+export function validateBookingDateRange(
+  bookingDate: string,
+  endDate?: string | null,
+): string | null {
+  const end = getBookingEndDate(bookingDate, endDate);
+  if (end < bookingDate) {
+    return "End date must be on or after start date.";
+  }
+  return null;
+}
+
+export function formatCustomerOptionLabel(customer: {
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+}): string {
+  const contact = customer.email ?? customer.phone;
+  return contact ? `${customer.full_name} (${contact})` : customer.full_name;
+}
+
 export function formatBookingDateRange(
   startDate: string,
   endDate?: string | null,

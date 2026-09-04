@@ -108,17 +108,14 @@ export function BookingDetail({
 
     startTransition(async () => {
       if (addServiceId) {
-        const result = await addBookingService(
-          booking.id,
-          addServiceId,
-          parsedAmount ?? 0,
-        );
+        const result = await addBookingService(booking.id, addServiceId);
         if (!result.success) {
           toast.error(result.message);
           return;
         }
         setAddServiceId("");
         toast.success(result.message);
+        return;
       }
 
       if (parsedAmount !== null) {
@@ -129,9 +126,7 @@ export function BookingDetail({
           toast.error(result.message);
           return;
         }
-        if (!addServiceId) {
-          toast.success("Charged customer updated.");
-        }
+        toast.success("Charged customer updated.");
       }
     });
   }
@@ -205,7 +200,9 @@ export function BookingDetail({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p className="text-white">{customer.full_name}</p>
-            <p className="text-white/60">{customer.email}</p>
+            <p className="text-white/60">
+              {customer.email ?? customer.phone ?? "—"}
+            </p>
             {customer.phone && (
               <p className="text-white/60">{customer.phone}</p>
             )}

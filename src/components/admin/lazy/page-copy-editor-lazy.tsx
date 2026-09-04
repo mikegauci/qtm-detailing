@@ -1,44 +1,21 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import type { ComponentProps } from "react";
+import { createLazyComponent } from "@/lib/lazy/create-lazy-component";
+import type { PageCopyEditor } from "@/components/admin/page-copy-editor";
+import type { SitePageCopyEditor } from "@/components/admin/site-page-copy-editor";
 
-const PageCopyEditor = dynamic(
-  () =>
-    import("@/components/admin/page-copy-editor").then(
-      (mod) => mod.PageCopyEditor,
-    ),
-  {
-    loading: () => (
-      <div className="rounded-xl border border-white/10 p-8 text-center text-sm text-white/60">
-        Loading page copy editor…
-      </div>
-    ),
-  },
+export const PageCopyEditorLazy = createLazyComponent<
+  React.ComponentProps<typeof PageCopyEditor>
+>(
+  () => import("@/components/admin/page-copy-editor"),
+  "PageCopyEditor",
+  "page copy editor",
 );
 
-const SitePageCopyEditor = dynamic(
-  () =>
-    import("@/components/admin/site-page-copy-editor").then(
-      (mod) => mod.SitePageCopyEditor,
-    ),
-  {
-    loading: () => (
-      <div className="rounded-xl border border-white/10 p-8 text-center text-sm text-white/60">
-        Loading site page copy editor…
-      </div>
-    ),
-  },
+export const SitePageCopyEditorLazy = createLazyComponent<
+  React.ComponentProps<typeof SitePageCopyEditor>
+>(
+  () => import("@/components/admin/site-page-copy-editor"),
+  "SitePageCopyEditor",
+  "site page copy editor",
 );
-
-export function PageCopyEditorLazy(
-  props: ComponentProps<typeof PageCopyEditor>,
-) {
-  return <PageCopyEditor {...props} />;
-}
-
-export function SitePageCopyEditorLazy(
-  props: ComponentProps<typeof SitePageCopyEditor>,
-) {
-  return <SitePageCopyEditor {...props} />;
-}

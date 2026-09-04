@@ -1,8 +1,8 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
 import type { SiteConfig } from "@/types/content";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { createPublicClient } from "@/lib/supabase/public";
 
 async function fetchSiteSettings(): Promise<SiteConfig> {
@@ -20,10 +20,10 @@ async function fetchSiteSettings(): Promise<SiteConfig> {
   return defaultSiteConfig;
 }
 
-const getSiteSettingsCached = unstable_cache(
+const getSiteSettingsCached = createCmsCache(
+  CMS_CACHE_TAGS.settings,
+  [],
   fetchSiteSettings,
-  [CMS_CACHE_TAGS.settings],
-  { tags: [CMS_CACHE_TAGS.settings] },
 );
 
 export const getSiteSettings = cache(getSiteSettingsCached);

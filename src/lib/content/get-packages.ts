@@ -1,6 +1,6 @@
-import { unstable_cache } from "next/cache";
 import type { Package, Service } from "@/types/content";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { resolvePackageFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/supabase/types";
@@ -127,10 +127,10 @@ async function fetchPackages(includeInactive: boolean): Promise<PackagesData> {
   };
 }
 
-const getActivePackagesCached = unstable_cache(
+const getActivePackagesCached = createCmsCache(
+  CMS_CACHE_TAGS.packages,
+  ["active"],
   () => fetchPackages(false),
-  [CMS_CACHE_TAGS.packages, "active"],
-  { tags: [CMS_CACHE_TAGS.packages] },
 );
 
 export async function getPackages(

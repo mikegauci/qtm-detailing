@@ -1,5 +1,5 @@
-import { unstable_cache } from "next/cache";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { createPublicClient } from "@/lib/supabase/public";
 
 export type Testimonial = {
@@ -48,10 +48,10 @@ async function fetchTestimonials(
   return data.map(mapDbReview);
 }
 
-const getPublishedTestimonialsCached = unstable_cache(
+const getPublishedTestimonialsCached = createCmsCache(
+  CMS_CACHE_TAGS.testimonials,
+  ["published"],
   () => fetchTestimonials(false),
-  [CMS_CACHE_TAGS.testimonials, "published"],
-  { tags: [CMS_CACHE_TAGS.testimonials] },
 );
 
 export async function getTestimonials(

@@ -1,6 +1,6 @@
 import { cache } from "react";
-import { unstable_cache } from "next/cache";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Json } from "@/lib/supabase/types";
 
@@ -30,10 +30,10 @@ export const getPageSection = cache(
     sectionKey: string,
     fallback: T,
   ): Promise<T> => {
-    return unstable_cache(
+    return createCmsCache(
+      CMS_CACHE_TAGS.sections,
+      [pageKey, sectionKey],
       () => fetchPageSection(pageKey, sectionKey, fallback),
-      [CMS_CACHE_TAGS.sections, pageKey, sectionKey],
-      { tags: [CMS_CACHE_TAGS.sections] },
     )();
   },
 );
@@ -45,7 +45,9 @@ export const getPageSections = cache(
   ): Promise<{ [K in keyof T]: T[K] }> => {
     const sectionKeys = Object.keys(fallbacks);
 
-    return unstable_cache(
+    return createCmsCache(
+      CMS_CACHE_TAGS.sections,
+      [pageKey, ...sectionKeys],
       async () => {
         const supabase = createPublicClient();
         const { data } = await supabase
@@ -69,8 +71,6 @@ export const getPageSections = cache(
 
         return result;
       },
-      [CMS_CACHE_TAGS.sections, pageKey, ...sectionKeys],
-      { tags: [CMS_CACHE_TAGS.sections] },
     )();
   },
 );

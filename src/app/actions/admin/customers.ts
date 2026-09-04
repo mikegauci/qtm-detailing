@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
   CMS_ASSETS_BUCKET,
@@ -8,6 +7,7 @@ import {
   optimizeCmsImage,
 } from "@/lib/cms/upload-cms-asset";
 import { downloadFile, isDriveConnected } from "@/lib/google-drive";
+import { revalidateCustomers } from "@/lib/content/revalidate-cms";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -80,8 +80,7 @@ export async function createCustomer(data: {
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/customers");
-  revalidatePath("/admin/bookings/new");
+  revalidateCustomers({ includeBookingsNew: true });
   return { success: true, message: "Customer created.", id: customer.id };
 }
 
@@ -141,8 +140,7 @@ export async function updateCustomer(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/customers");
-  revalidatePath(`/admin/customers/${id}`);
+  revalidateCustomers({ customerId: id });
   return { success: true, message: "Customer updated." };
 }
 
@@ -202,12 +200,7 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
       .eq("status", "converted");
   }
 
-  revalidatePath("/admin/customers");
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/kanban");
-  revalidatePath("/admin/leads");
-  revalidatePath("/admin");
+  revalidateCustomers({ includeBookings: true });
   return { success: true, message: "Customer and all related data deleted." };
 }
 
@@ -230,8 +223,7 @@ export async function createVehicle(data: {
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/customers");
-  revalidatePath(`/admin/customers/${data.customer_id}`);
+  revalidateCustomers({ customerId: data.customer_id });
   return { success: true, message: "Vehicle added.", id: vehicle.id };
 }
 
@@ -253,7 +245,7 @@ export async function updateVehicle(
     return { success: false, message: error.message };
   }
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidateCustomers({ customerId });
   return { success: true, message: "Vehicle updated." };
 }
 
@@ -269,7 +261,7 @@ export async function deleteVehicle(
     return { success: false, message: error.message };
   }
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidateCustomers({ customerId });
   return { success: true, message: "Vehicle removed." };
 }
 
@@ -326,7 +318,7 @@ async function saveVehiclePhotoBuffer(
       .remove([vehicle.storage_path]);
   }
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidateCustomers({ customerId });
   return { success: true, message: "Vehicle photo updated.", url: publicUrl };
 }
 
@@ -485,6 +477,6 @@ export async function removeVehiclePhoto(
     return { success: false, message: error.message };
   }
 
-  revalidatePath(`/admin/customers/${customerId}`);
+  revalidateCustomers({ customerId });
   return { success: true, message: "Vehicle photo removed." };
 }

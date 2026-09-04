@@ -1,20 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import type { ComponentProps } from "react";
+import { createLazyComponent } from "@/lib/lazy/create-lazy-component";
+import type { GalleryHub } from "@/components/admin/gallery-hub";
 
-const GalleryHub = dynamic(
-  () =>
-    import("@/components/admin/gallery-hub").then((mod) => mod.GalleryHub),
-  {
-    loading: () => (
-      <div className="rounded-xl border border-white/10 p-8 text-center text-sm text-white/60">
-        Loading gallery…
-      </div>
-    ),
-  },
+export const GalleryHubLazy = createLazyComponent<
+  React.ComponentProps<typeof GalleryHub>
+>(
+  () => import("@/components/admin/gallery-hub"),
+  "GalleryHub",
+  "gallery",
 );
-
-export function GalleryHubLazy(props: ComponentProps<typeof GalleryHub>) {
-  return <GalleryHub {...props} />;
-}

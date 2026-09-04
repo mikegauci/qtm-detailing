@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteTestimonial, upsertTestimonial } from "@/app/actions/admin/cms";
@@ -35,6 +36,7 @@ const empty: TestimonialFormState = {
 export function TestimonialsEditor({
   initialTestimonials,
 }: TestimonialsEditorProps) {
+  const router = useRouter();
   const [items, setItems] = useState(initialTestimonials);
   const [editing, setEditing] = useState<TestimonialFormState>(empty);
   const [isPending, startTransition] = useTransition();
@@ -52,7 +54,7 @@ export function TestimonialsEditor({
       });
       if (result.success) {
         toast.success(result.message);
-        window.location.reload();
+        router.refresh();
       } else toast.error(result.message);
     });
   };

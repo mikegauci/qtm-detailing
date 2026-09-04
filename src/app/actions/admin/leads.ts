@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { revalidateLeads } from "@/lib/content/revalidate-cms";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Enums } from "@/lib/supabase/types";
 import { LEAD_SOURCE_LABELS } from "@/lib/utils/booking";
@@ -91,8 +91,7 @@ export async function createLead(data: {
     return { success: false, message: error?.message ?? "Failed to create lead." };
   }
 
-  revalidatePath("/admin/leads");
-  revalidatePath("/admin");
+  revalidateLeads();
   return { success: true, message: "Lead added.", id: lead.id };
 }
 
@@ -111,8 +110,7 @@ export async function updateLeadStatus(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/leads");
-  revalidatePath("/admin");
+  revalidateLeads();
   return { success: true, message: "Lead status updated." };
 }
 
@@ -139,8 +137,7 @@ export async function deleteLead(leadId: string): Promise<ActionResult> {
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/leads");
-  revalidatePath("/admin");
+  revalidateLeads();
   return { success: true, message: `${lead.name} deleted.` };
 }
 
@@ -249,9 +246,7 @@ export async function convertLeadToCustomer(
     return { success: false, message: leadError.message };
   }
 
-  revalidatePath("/admin/leads");
-  revalidatePath("/admin/customers");
-  revalidatePath("/admin");
+  revalidateLeads({ includeCustomers: true });
   return {
     success: true,
     message: "Lead converted to customer.",

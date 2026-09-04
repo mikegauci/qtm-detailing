@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   DndContext,
   PointerSensor,
@@ -156,6 +157,7 @@ function SortableServiceRow({
 }
 
 export function ServicesEditor({ initialServices }: ServicesEditorProps) {
+  const router = useRouter();
   const [services, setServices] = useState(initialServices);
   const [editing, setEditing] = useState<ServiceFormState>(emptyService);
   const [isPending, startTransition] = useTransition();
@@ -209,7 +211,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
 
       if (result.success) {
         toast.success(result.message);
-        window.location.reload();
+        router.refresh();
       } else {
         toast.error(result.message);
       }

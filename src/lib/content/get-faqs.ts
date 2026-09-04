@@ -1,7 +1,7 @@
-import { unstable_cache } from "next/cache";
 import type { FaqItem } from "@/types/content";
 import { sanitizeFaqAnswer } from "@/lib/content/sanitize-faq-answer";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { createPublicClient } from "@/lib/supabase/public";
 
 function mapDbFaq(row: {
@@ -36,10 +36,10 @@ async function fetchFaqs(includeInactive: boolean): Promise<FaqItem[]> {
   return data.map(mapDbFaq);
 }
 
-const getActiveFaqsCached = unstable_cache(
+const getActiveFaqsCached = createCmsCache(
+  CMS_CACHE_TAGS.faqs,
+  ["active"],
   () => fetchFaqs(false),
-  [CMS_CACHE_TAGS.faqs, "active"],
-  { tags: [CMS_CACHE_TAGS.faqs] },
 );
 
 export async function getFaqs(includeInactive = false): Promise<FaqItem[]> {

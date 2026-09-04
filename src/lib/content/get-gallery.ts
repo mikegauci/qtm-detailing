@@ -1,6 +1,6 @@
-import { unstable_cache } from "next/cache";
 import type { GalleryPhoto } from "@/types/content";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { normalizeGalleryPhotoCategory } from "@/lib/content/gallery-categories";
 import { galleryPhotoDisplayUrl } from "@/lib/cms/gallery-photo-url";
 import { parseCarName } from "@/lib/content/parse-car-name";
@@ -35,10 +35,10 @@ async function fetchPublishedPhotos(): Promise<GalleryPhoto[]> {
     .filter((photo): photo is GalleryPhoto => photo !== null);
 }
 
-const getGalleryPhotosCached = unstable_cache(
+const getGalleryPhotosCached = createCmsCache(
+  CMS_CACHE_TAGS.gallery,
+  [],
   fetchPublishedPhotos,
-  [CMS_CACHE_TAGS.gallery],
-  { tags: [CMS_CACHE_TAGS.gallery] },
 );
 
 export async function getGalleryPhotos(): Promise<GalleryPhoto[]> {

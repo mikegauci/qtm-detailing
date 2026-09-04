@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/admin";
+import { revalidateInventory } from "@/lib/content/revalidate-cms";
 
 export type ActionResult = {
   success: boolean;
@@ -34,8 +34,7 @@ export async function createInventoryItem(data: {
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/inventory");
-  revalidatePath("/admin");
+  revalidateInventory();
   return { success: true, message: "Inventory item created.", id: item.id };
 }
 
@@ -60,8 +59,7 @@ export async function updateInventoryItem(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/inventory");
-  revalidatePath("/admin");
+  revalidateInventory();
   return { success: true, message: "Inventory item updated." };
 }
 
@@ -77,8 +75,7 @@ export async function deleteInventoryItem(id: string): Promise<ActionResult> {
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/inventory");
-  revalidatePath("/admin");
+  revalidateInventory();
   return { success: true, message: "Inventory item deleted." };
 }
 
@@ -110,7 +107,6 @@ export async function restockInventoryItem(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/inventory");
-  revalidatePath("/admin");
+  revalidateInventory();
   return { success: true, message: "Stock updated." };
 }

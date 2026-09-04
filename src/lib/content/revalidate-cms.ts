@@ -32,3 +32,66 @@ export function revalidateAllContent() {
   revalidatePublicContent();
   revalidateAdminContent();
 }
+
+export function revalidateBookings(options?: {
+  bookingId?: string;
+  customerId?: string;
+  scope?: "list" | "full";
+}) {
+  const scope = options?.scope ?? "full";
+
+  revalidatePath("/admin/bookings");
+
+  if (options?.bookingId) {
+    revalidatePath(`/admin/bookings/${options.bookingId}`);
+  }
+
+  if (scope === "full") {
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/kanban");
+    revalidatePath("/admin");
+  }
+
+  if (options?.customerId) {
+    revalidatePath(`/admin/customers/${options.customerId}`);
+  }
+}
+
+export function revalidateCustomers(options?: {
+  customerId?: string;
+  includeBookings?: boolean;
+  includeBookingsNew?: boolean;
+}) {
+  revalidatePath("/admin/customers");
+  revalidatePath("/admin");
+
+  if (options?.customerId) {
+    revalidatePath(`/admin/customers/${options.customerId}`);
+  }
+
+  if (options?.includeBookingsNew) {
+    revalidatePath("/admin/bookings/new");
+  }
+
+  if (options?.includeBookings) {
+    revalidatePath("/admin/bookings");
+    revalidatePath("/admin/bookings/new");
+    revalidatePath("/admin/calendar");
+    revalidatePath("/admin/kanban");
+    revalidatePath("/admin/leads");
+  }
+}
+
+export function revalidateLeads(options?: { includeCustomers?: boolean }) {
+  revalidatePath("/admin/leads");
+  revalidatePath("/admin");
+
+  if (options?.includeCustomers) {
+    revalidatePath("/admin/customers");
+  }
+}
+
+export function revalidateInventory() {
+  revalidatePath("/admin/inventory");
+  revalidatePath("/admin");
+}

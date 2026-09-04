@@ -1,26 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import type { ComponentProps } from "react";
+import { createLazyComponent } from "@/lib/lazy/create-lazy-component";
+import type { ServicesEditor } from "@/components/admin/services-editor";
 
-const ServicesEditor = dynamic(
-  () =>
-    import("@/components/admin/services-editor").then(
-      (mod) => mod.ServicesEditor,
-    ),
-  { loading: () => <EditorLoading label="services editor" /> },
+export const ServicesEditorLazy = createLazyComponent<
+  React.ComponentProps<typeof ServicesEditor>
+>(
+  () => import("@/components/admin/services-editor"),
+  "ServicesEditor",
+  "services editor",
 );
-
-export function ServicesEditorLazy(
-  props: ComponentProps<typeof ServicesEditor>,
-) {
-  return <ServicesEditor {...props} />;
-}
-
-function EditorLoading({ label }: { label: string }) {
-  return (
-    <div className="rounded-xl border border-white/10 p-8 text-center text-sm text-white/60">
-      Loading {label}…
-    </div>
-  );
-}

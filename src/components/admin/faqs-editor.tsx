@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { deleteFaq, upsertFaq } from "@/app/actions/admin/cms";
@@ -33,6 +34,7 @@ const empty: FaqFormState = {
 };
 
 export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
+  const router = useRouter();
   const [faqs, setFaqs] = useState(initialFaqs);
   const [editing, setEditing] = useState<FaqFormState>(empty);
   const [isPending, startTransition] = useTransition();
@@ -50,7 +52,7 @@ export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
       });
       if (result.success) {
         toast.success(result.message);
-        window.location.reload();
+        router.refresh();
       } else toast.error(result.message);
     });
   };

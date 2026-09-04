@@ -1,7 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/supabase/admin";
+import { revalidateBookings } from "@/lib/content/revalidate-cms";
 import type { Enums } from "@/lib/supabase/types";
 import {
   DEFAULT_BOOKING_END_TIME,
@@ -82,10 +82,7 @@ export async function createBooking(data: BookingInput): Promise<ActionResult> {
     return { success: false, message: servicesInsertError.message };
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/kanban");
-  revalidatePath("/admin");
+  revalidateBookings();
   return { success: true, message: "Booking created.", id: booking.id };
 }
 
@@ -137,20 +134,16 @@ export async function updateBooking(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${id}`);
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/kanban");
-
   const { data: booking } = await supabase
     .from("bookings")
     .select("customer_id")
     .eq("id", id)
     .single();
 
-  if (booking?.customer_id) {
-    revalidatePath(`/admin/customers/${booking.customer_id}`);
-  }
+  revalidateBookings({
+    bookingId: id,
+    customerId: booking?.customer_id,
+  });
 
   return { success: true, message: "Booking updated." };
 }
@@ -194,11 +187,7 @@ export async function createReferenceBooking(data: {
     };
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/customers/${data.customer_id}`);
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/kanban");
-  revalidatePath("/admin");
+  revalidateBookings({ customerId: data.customer_id });
   return { success: true, message: "Past booking added.", id: booking.id };
 }
 
@@ -217,11 +206,7 @@ export async function updateBookingStatus(
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath(`/admin/bookings/${id}`);
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/kanban");
-  revalidatePath("/admin");
+  revalidateBookings({ bookingId: id });
   return { success: true, message: "Booking status updated." };
 }
 
@@ -236,10 +221,7 @@ export async function deleteBooking(id: string): Promise<ActionResult> {
     return { success: false, message: error.message };
   }
 
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/calendar");
-  revalidatePath("/admin/kanban");
-  revalidatePath("/admin");
+  revalidateBookings();
   return { success: true, message: "Booking deleted." };
 }
 
@@ -288,8 +270,7 @@ export async function addBookingService(
     .update({ total_price: totalPrice })
     .eq("id", bookingId);
 
-  revalidatePath(`/admin/bookings/${bookingId}`);
-  revalidatePath("/admin/bookings");
+  revalidateBookings({ bookingId, scope: "list" });
   return { success: true, message: "Service added to booking." };
 }
 
@@ -321,7 +302,6 @@ export async function removeBookingService(
     .update({ total_price: totalPrice })
     .eq("id", bookingId);
 
-  revalidatePath(`/admin/bookings/${bookingId}`);
-  revalidatePath("/admin/bookings");
+  revalidateBookings({ bookingId, scope: "list" });
   return { success: true, message: "Service removed from booking." };
 }

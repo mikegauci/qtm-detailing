@@ -1,20 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import type { ComponentProps } from "react";
+import { createLazyComponent } from "@/lib/lazy/create-lazy-component";
+import type { FaqsEditor } from "@/components/admin/faqs-editor";
 
-const FaqsEditor = dynamic(
-  () =>
-    import("@/components/admin/faqs-editor").then((mod) => mod.FaqsEditor),
-  {
-    loading: () => (
-      <div className="rounded-xl border border-white/10 p-8 text-center text-sm text-white/60">
-        Loading FAQ editor…
-      </div>
-    ),
-  },
+export const FaqsEditorLazy = createLazyComponent<
+  React.ComponentProps<typeof FaqsEditor>
+>(
+  () => import("@/components/admin/faqs-editor"),
+  "FaqsEditor",
+  "FAQ editor",
 );
-
-export function FaqsEditorLazy(props: ComponentProps<typeof FaqsEditor>) {
-  return <FaqsEditor {...props} />;
-}

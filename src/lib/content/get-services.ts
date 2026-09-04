@@ -1,6 +1,6 @@
-import { unstable_cache } from "next/cache";
 import type { Service } from "@/types/content";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/supabase/types";
 import { parseServiceImages } from "@/lib/content/service-images";
@@ -63,16 +63,16 @@ async function fetchServices(options?: {
   return data.map(mapDbService);
 }
 
-const getAllServicesCached = unstable_cache(
+const getAllServicesCached = createCmsCache(
+  CMS_CACHE_TAGS.services,
+  ["all"],
   () => fetchServices(),
-  [CMS_CACHE_TAGS.services, "all"],
-  { tags: [CMS_CACHE_TAGS.services] },
 );
 
-const getFeaturedServicesCached = unstable_cache(
+const getFeaturedServicesCached = createCmsCache(
+  CMS_CACHE_TAGS.services,
+  ["featured"],
   () => fetchServices({ featuredOnly: true }),
-  [CMS_CACHE_TAGS.services, "featured"],
-  { tags: [CMS_CACHE_TAGS.services] },
 );
 
 export async function getServices(options?: {

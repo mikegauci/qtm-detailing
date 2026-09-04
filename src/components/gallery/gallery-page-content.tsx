@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Image from "next/image";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import {
   galleryCategories,
@@ -10,6 +11,10 @@ import {
 import {
   clampLightboxIndex,
   filterPhotosByType,
+  getGalleryPageCount,
+  getVisiblePageNumbers,
+  GALLERY_PAGE_SIZE,
+  paginatePhotos,
   sortPhotosForDisplay,
   type GalleryPhotoTypeFilter,
 } from "@/lib/content/gallery-photo-utils";
@@ -151,6 +156,87 @@ function PhotoGridItem({
   return <StaggerItem>{content}</StaggerItem>;
 }
 
+function GalleryPagination({
+  currentPage,
+  totalPages,
+  onPageChange,
+}: {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+}) {
+  const visiblePages = useMemo(
+    () => getVisiblePageNumbers(currentPage, totalPages),
+    [currentPage, totalPages],
+  );
+
+  if (totalPages <= 1) {
+    return null;
+  }
+
+  return (
+    <nav
+      aria-label="Gallery pagination"
+      className="mt-10 flex flex-col items-center gap-3"
+    >
+      <p className="text-sm text-muted-foreground">
+        Page {currentPage} of {totalPages}
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-2">
+        <button
+          type="button"
+          aria-label="Previous page"
+          disabled={currentPage === 1}
+          onClick={() => onPageChange(currentPage - 1)}
+          className="inline-flex items-center gap-1 rounded-full border border-border-subtle px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-brand-purple-400/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+        >
+          <ChevronLeft className="h-4 w-4" />
+          Prev
+        </button>
+
+        {visiblePages.map((page, index) =>
+          page === "ellipsis" ? (
+            <span
+              key={`ellipsis-${index}`}
+              className="px-1 text-sm text-muted-foreground"
+              aria-hidden
+            >
+              …
+            </span>
+          ) : (
+            <button
+              key={page}
+              type="button"
+              aria-label={`Page ${page}`}
+              aria-current={page === currentPage ? "page" : undefined}
+              onClick={() => onPageChange(page)}
+              className={cn(
+                "min-w-9 rounded-full px-3 py-1.5 text-sm transition-colors",
+                page === currentPage
+                  ? "bg-brand-purple-600 text-white"
+                  : "border border-border-subtle text-muted-foreground hover:border-brand-purple-400/50 hover:text-foreground",
+              )}
+            >
+              {page}
+            </button>
+          ),
+        )}
+
+        <button
+          type="button"
+          aria-label="Next page"
+          disabled={currentPage === totalPages}
+          onClick={() => onPageChange(currentPage + 1)}
+          className="inline-flex items-center gap-1 rounded-full border border-border-subtle px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:border-brand-purple-400/50 hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+        >
+          Next
+          <ChevronRight className="h-4 w-4" />
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export function GalleryPageContent({
   photos,
   cta,
@@ -162,6 +248,8 @@ export function GalleryPageContent({
     useState<GalleryPhotoTypeFilter>("all");
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const gallerySectionRef = useRef<HTMLElement>(null);
 
   const categoryPhotos = useMemo(
     () =>
@@ -190,13 +278,20 @@ export function GalleryPageContent({
     );
   }, [categoryPhotos, selectedCar, photoTypeFilter]);
 
+  const totalPages = getGalleryPageCount(filteredPhotos.length);
+
+  const paginatedPhotos = useMemo(
+    () => paginatePhotos(filteredPhotos, currentPage),
+    [filteredPhotos, currentPage],
+  );
+
   const comparisonPhotos = useMemo(() => {
     const byCar =
       selectedCar === "all"
         ? categoryPhotos
         : categoryPhotos.filter((photo) => photo.carName === selectedCar);
 
-    return sortPhotosForDisplay(byCar);
+    return byCar;
   }, [categoryPhotos, selectedCar]);
 
   useEffect(() => {
@@ -204,6 +299,14 @@ export function GalleryPageContent({
       setSelectedCar("all");
     }
   }, [carNames, selectedCar]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [category, selectedCar, photoTypeFilter]);
+
+  useEffect(() => {
+    setCurrentPage((page) => Math.min(page, totalPages));
+  }, [totalPages]);
 
   useEffect(() => {
     if (lightboxOpen && filteredPhotos.length === 0) {
@@ -228,6 +331,14 @@ export function GalleryPageContent({
     setPhotoTypeFilter("all");
   };
 
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    gallerySectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
+  };
+
   const photoTypeOptions: { id: GalleryPhotoTypeFilter; label: string }[] = [
     { id: "all", label: "All Photos" },
     { id: "before", label: "Before" },
@@ -236,7 +347,7 @@ export function GalleryPageContent({
 
   return (
     <>
-      <section className="section-padding pt-32">
+      <section ref={gallerySectionRef} className="section-padding pt-32">
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
@@ -315,11 +426,21 @@ export function GalleryPageContent({
               </p>
             </FadeIn>
           ) : (
-            <PhotoGrid
-              filterKey={`${category}-${selectedCar}-${photoTypeFilter}`}
-              items={filteredPhotos}
-              onSelect={openPhoto}
-            />
+            <>
+              <PhotoGrid
+                filterKey={`${category}-${selectedCar}-${photoTypeFilter}-${currentPage}`}
+                items={paginatedPhotos}
+                onSelect={openPhoto}
+              />
+
+              {filteredPhotos.length > GALLERY_PAGE_SIZE && (
+                <GalleryPagination
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              )}
+            </>
           )}
         </div>
       </section>

@@ -1,8 +1,7 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
-import Image from "next/image";
-import { ImageIcon, Loader2, Upload, X } from "lucide-react";
+import { useRef, useTransition } from "react";
+import { ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   uploadCmsAsset,
@@ -10,10 +9,10 @@ import {
   uploadCmsAssetFromLinked,
 } from "@/app/actions/admin/cms";
 import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
+import { ImageUploadPreview } from "@/components/admin/image-upload-preview";
 import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
-import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { useImageLoadError } from "@/hooks/use-image-load-error";
+import { usePhotoSourcePicker } from "@/hooks/use-photo-source-picker";
 import { cn } from "@/lib/utils";
 
 type CmsImageFieldProps = {
@@ -37,10 +36,15 @@ export function CmsImageField({
 }: CmsImageFieldProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
-  const { hasError: previewError, onError: onPreviewError, reset: resetPreviewError } =
-    useImageLoadError();
-  const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
-  const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
+  const {
+    sourceDialogOpen,
+    linkedPickerOpen,
+    setSourceDialogOpen,
+    setLinkedPickerOpen,
+    openSourceDialog,
+    chooseDeviceUpload,
+    chooseLinkedPhoto,
+  } = usePhotoSourcePicker();
 
   const applyUploadResult = (result: {
     success: boolean;
@@ -48,7 +52,6 @@ export function CmsImageField({
     url?: string;
   }) => {
     if (result.success && result.url) {
-      resetPreviewError();
       onChange(result.url);
       toast.success("Image uploaded.");
     } else {
@@ -67,19 +70,7 @@ export function CmsImageField({
     });
   };
 
-  const openSourceDialog = () => {
-    setSourceDialogOpen(true);
-  };
-
-  const chooseDeviceUpload = () => {
-    setSourceDialogOpen(false);
-    inputRef.current?.click();
-  };
-
-  const chooseDrivePhoto = () => {
-    setSourceDialogOpen(false);
-    setLinkedPickerOpen(true);
-  };
+  const openFilePicker = () => inputRef.current?.click();
 
   const aspectClass =
     aspectRatio === "square"
@@ -98,49 +89,35 @@ export function CmsImageField({
             aspectClass,
           )}
         >
-          {value && !previewError ? (
-            <>
-              <Image
-                key={value}
-                src={value}
-                alt={label}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 400px"
-                onError={onPreviewError}
-              />
-              <div className="absolute inset-x-0 bottom-0 flex gap-2 bg-gradient-to-t from-black/80 to-transparent p-3 pt-8">
-                <Button
+          {value ? (
+            <ImageUploadPreview
+              value={value}
+              alt={label}
+              isPending={isPending}
+              aspectClass={aspectClass}
+              onReplace={openSourceDialog}
+              onRemove={() => onChange("")}
+              emptyState={
+                <button
                   type="button"
-                  size="sm"
-                  variant="secondary"
                   disabled={isPending}
                   onClick={openSourceDialog}
+                  className="flex h-full min-h-[140px] w-full flex-col items-center justify-center gap-2 p-4 text-white/50 transition-colors hover:bg-white/[0.04] hover:text-white/70 disabled:opacity-50"
                 >
                   {isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <Loader2 className="h-8 w-8 animate-spin" />
                   ) : (
                     <>
-                      <Upload className="mr-1 h-3 w-3" />
-                      Replace
+                      <ImageIcon className="h-8 w-8" />
+                      <span className="text-sm">Click to add image</span>
+                      <span className="text-xs text-white/40">
+                        Upload from device or browse Google Drive
+                      </span>
                     </>
                   )}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  disabled={isPending}
-                  onClick={() => {
-                    resetPreviewError();
-                    onChange("");
-                  }}
-                >
-                  <X className="mr-1 h-3 w-3" />
-                  Remove
-                </Button>
-              </div>
-            </>
+                </button>
+              }
+            />
           ) : (
             <button
               type="button"
@@ -179,8 +156,8 @@ export function CmsImageField({
         open={sourceDialogOpen}
         onOpenChange={setSourceDialogOpen}
         title={`Add ${label.toLowerCase()}`}
-        onChooseDevice={chooseDeviceUpload}
-        onChooseDrive={chooseDrivePhoto}
+        onChooseDevice={() => chooseDeviceUpload(openFilePicker)}
+        onChooseDrive={chooseLinkedPhoto}
         disabled={isPending}
       />
 
@@ -194,7 +171,6 @@ export function CmsImageField({
             filename,
           );
           if (result.success && result.url) {
-            resetPreviewError();
             onChange(result.url);
           }
           return result;
@@ -206,7 +182,6 @@ export function CmsImageField({
             filename,
           );
           if (result.success && result.url) {
-            resetPreviewError();
             onChange(result.url);
           }
           return result;

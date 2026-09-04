@@ -2,13 +2,13 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createBooking } from "@/app/actions/admin/bookings";
 import { createCustomer } from "@/app/actions/admin/customers";
 import type { Tables } from "@/lib/supabase/types";
 import { formatCustomerOptionLabel } from "@/lib/utils/booking";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -123,15 +123,7 @@ export function BookingForm({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/admin/bookings">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-        </Button>
-        <h1 className="text-2xl font-bold text-white">New Booking</h1>
-      </div>
+      <AdminPageHeader backHref="/admin/bookings" title="New Booking" />
 
       <form action={handleSubmit} className="grid gap-6 lg:grid-cols-2">
         <Card>

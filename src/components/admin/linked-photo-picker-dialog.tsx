@@ -18,6 +18,7 @@ import {
 } from "@/app/actions/admin/customers";
 import { DriveBrowser } from "@/components/admin/drive-browser";
 import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
+import { ViewToggle } from "@/components/admin/view-toggle";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
 import { useDriveBrowser } from "@/hooks/use-drive-browser";
@@ -328,39 +329,29 @@ export function LinkedPhotoPickerDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="inline-flex w-full rounded-xl border border-white/10 bg-black/20 p-1">
-          <button
-            type="button"
-            onClick={() => setView("drive")}
-            className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              view === "drive"
-                ? "bg-brand-purple-600 text-white"
-                : "text-white/70 hover:text-white",
-            )}
-          >
-            <HardDrive className="h-4 w-4" />
-            Google Drive
-          </button>
-          <button
-            type="button"
-            onClick={() => setView("linked")}
-            className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-              view === "linked"
-                ? "bg-brand-purple-600 text-white"
-                : "text-white/70 hover:text-white",
-            )}
-          >
-            <Images className="h-4 w-4" />
-            Linked library
-            {photos.length > 0 && (
-              <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">
-                {photos.length}
-              </span>
-            )}
-          </button>
-        </div>
+        <ViewToggle
+          value={view}
+          onChange={setView}
+          className="w-full sm:w-full"
+          options={[
+            {
+              id: "drive" as const,
+              label: "Google Drive",
+              icon: <HardDrive className="h-4 w-4" />,
+            },
+            {
+              id: "linked" as const,
+              label: "Linked library",
+              icon: <Images className="h-4 w-4" />,
+              badge:
+                photos.length > 0 ? (
+                  <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">
+                    {photos.length}
+                  </span>
+                ) : undefined,
+            },
+          ]}
+        />
 
         {view === "linked" && (
           <div className="relative">

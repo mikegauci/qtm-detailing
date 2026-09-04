@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { deleteTestimonial, upsertTestimonial } from "@/app/actions/admin/cms";
+import { CmsListEditor } from "@/components/admin/cms-list-editor";
 import type { Tables } from "@/lib/supabase/types";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
@@ -63,51 +64,43 @@ export function TestimonialsEditor({
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Testimonials</h2>
-          <Button size="sm" variant="outline" onClick={() => setEditing(empty)}>
-            <Plus className="mr-1 h-3 w-3" />
-            New
-          </Button>
-        </div>
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() =>
-              setEditing({
-                id: item.id,
-                customer_name: item.customer_name ?? "",
-                vehicle: item.vehicle ?? "",
-                comment: item.comment ?? "",
-                rating: item.rating,
-                is_published: item.is_published,
-              })
-            }
-            className="w-full rounded-lg border border-white/10 p-3 text-left hover:bg-white/5"
-          >
-            <div className="flex items-center justify-between">
-              <p className="font-medium">{item.customer_name}</p>
-              {!item.is_published && (
-                <Badge variant="outline">Draft</Badge>
-              )}
-            </div>
-            <p className="mt-1 line-clamp-2 text-sm text-white/60">
-              {item.comment}
-            </p>
-          </button>
-        ))}
-      </div>
-
-      <form
-        onSubmit={handleSave}
-        className="space-y-4 rounded-xl border border-white/10 p-5"
-      >
-        <h2 className="text-lg font-semibold">
-          {editing.id ? "Edit testimonial" : "New testimonial"}
-        </h2>
+    <CmsListEditor
+      listTitle="Testimonials"
+      formTitle={editing.id ? "Edit testimonial" : "New testimonial"}
+      onNew={() => setEditing(empty)}
+      list={
+        <>
+          {items.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() =>
+                setEditing({
+                  id: item.id,
+                  customer_name: item.customer_name ?? "",
+                  vehicle: item.vehicle ?? "",
+                  comment: item.comment ?? "",
+                  rating: item.rating,
+                  is_published: item.is_published,
+                })
+              }
+              className="w-full rounded-lg border border-white/10 p-3 text-left hover:bg-white/5"
+            >
+              <div className="flex items-center justify-between">
+                <p className="font-medium">{item.customer_name}</p>
+                {!item.is_published && (
+                  <Badge variant="outline">Draft</Badge>
+                )}
+              </div>
+              <p className="mt-1 line-clamp-2 text-sm text-white/60">
+                {item.comment}
+              </p>
+            </button>
+          ))}
+        </>
+      }
+      form={
+        <form onSubmit={handleSave} className="space-y-4">
         <div className="space-y-2">
           <Label>Customer name</Label>
           <Input
@@ -180,7 +173,8 @@ export function TestimonialsEditor({
             </Button>
           )}
         </div>
-      </form>
-    </div>
+        </form>
+      }
+    />
   );
 }

@@ -32,6 +32,7 @@ import {
 import type { Tables } from "@/lib/supabase/types";
 import { galleryPhotoCategoryOptions } from "@/lib/content/gallery-categories";
 import { LinkedPhotosPanel } from "@/components/admin/linked-photos-panel";
+import { ViewToggle } from "@/components/admin/view-toggle";
 import { DriveBrowser } from "@/components/admin/drive-browser";
 import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
 import { Button } from "@/components/ui/button";
@@ -410,44 +411,36 @@ export function GalleryHub({
     <>
       <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="inline-flex w-full rounded-xl border border-white/10 bg-black/20 p-1 sm:w-auto">
-          <button
-            type="button"
-            onClick={() => setGalleryView("drive")}
-            className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none",
-              view === "drive"
-                ? "bg-brand-purple-600 text-white"
-                : "text-white/70 hover:text-white",
-            )}
-          >
-            <HardDrive className="h-4 w-4" />
-            Import from Drive
-          </button>
-          <button
-            type="button"
-            onClick={() => setGalleryView("linked")}
-            className={cn(
-              "inline-flex flex-1 items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors sm:flex-none",
-              view === "linked"
-                ? "bg-brand-purple-600 text-white"
-                : "text-white/70 hover:text-white",
-            )}
-          >
-            <Images className="h-4 w-4" />
-            Linked Photos
-            {photos.length > 0 && (
-              <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">
-                {photos.length}
-              </span>
-            )}
-            {draftCount > 0 && (
-              <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-300">
-                {draftCount} draft{draftCount === 1 ? "" : "s"}
-              </span>
-            )}
-          </button>
-        </div>
+        <ViewToggle
+          value={view}
+          onChange={setGalleryView}
+          options={[
+            {
+              id: "drive" as const,
+              label: "Import from Drive",
+              icon: <HardDrive className="h-4 w-4" />,
+            },
+            {
+              id: "linked" as const,
+              label: "Linked Photos",
+              icon: <Images className="h-4 w-4" />,
+              badge: (
+                <>
+                  {photos.length > 0 && (
+                    <span className="rounded-full bg-white/15 px-2 py-0.5 text-xs">
+                      {photos.length}
+                    </span>
+                  )}
+                  {draftCount > 0 && (
+                    <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-xs text-amber-300">
+                      {draftCount} draft{draftCount === 1 ? "" : "s"}
+                    </span>
+                  )}
+                </>
+              ),
+            },
+          ]}
+        />
       </div>
 
       {view === "drive" ? (

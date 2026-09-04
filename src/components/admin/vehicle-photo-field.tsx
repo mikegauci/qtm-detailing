@@ -14,6 +14,7 @@ import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-
 import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { Button } from "@/components/ui/button";
 import { useImageLoadError } from "@/hooks/use-image-load-error";
+import { usePhotoSourcePicker } from "@/hooks/use-photo-source-picker";
 import { cn } from "@/lib/utils";
 
 export function VehiclePhotoField({
@@ -33,9 +34,16 @@ export function VehiclePhotoField({
   const [isPending, startTransition] = useTransition();
   const { hasError: previewError, onError: onPreviewError, reset: resetPreviewError } =
     useImageLoadError();
+  const {
+    sourceDialogOpen,
+    linkedPickerOpen,
+    setSourceDialogOpen,
+    setLinkedPickerOpen,
+    openSourceDialog,
+    chooseDeviceUpload,
+    chooseLinkedPhoto,
+  } = usePhotoSourcePicker();
   const [currentUrl, setCurrentUrl] = useState(photoUrl);
-  const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
-  const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
 
   useEffect(() => {
     setCurrentUrl(photoUrl);
@@ -73,18 +81,8 @@ export function VehiclePhotoField({
     });
   }
 
-  function openSourceDialog() {
-    setSourceDialogOpen(true);
-  }
-
-  function chooseDeviceUpload() {
-    setSourceDialogOpen(false);
+  function openFilePicker() {
     inputRef.current?.click();
-  }
-
-  function chooseLinkedPhoto() {
-    setSourceDialogOpen(false);
-    setLinkedPickerOpen(true);
   }
 
   return (
@@ -167,7 +165,7 @@ export function VehiclePhotoField({
         open={sourceDialogOpen}
         onOpenChange={setSourceDialogOpen}
         title="Add vehicle photo"
-        onChooseDevice={chooseDeviceUpload}
+        onChooseDevice={() => chooseDeviceUpload(openFilePicker)}
         onChooseDrive={chooseLinkedPhoto}
         disabled={isPending}
       />

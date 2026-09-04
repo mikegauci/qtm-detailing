@@ -5,6 +5,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { upsertPageSection } from "@/app/actions/admin/cms";
 import { CmsImageField } from "@/components/admin/cms-image-field";
+import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,41 +37,6 @@ type SitePageCopyEditorProps = {
 };
 
 type PageTab = "services" | "about" | "contact" | "gallery" | "home-extra";
-
-function SectionHeadingFields({
-  content,
-  onChange,
-}: {
-  content: SectionHeadingContent;
-  onChange: (content: SectionHeadingContent) => void;
-}) {
-  return (
-    <div className="space-y-3">
-      <div className="space-y-2">
-        <Label>Eyebrow</Label>
-        <Input
-          value={content.eyebrow}
-          onChange={(e) => onChange({ ...content, eyebrow: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Title</Label>
-        <Input
-          value={content.title}
-          onChange={(e) => onChange({ ...content, title: e.target.value })}
-        />
-      </div>
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea
-          rows={3}
-          value={content.description}
-          onChange={(e) => onChange({ ...content, description: e.target.value })}
-        />
-      </div>
-    </div>
-  );
-}
 
 export function SitePageCopyEditor({
   featuredServices,

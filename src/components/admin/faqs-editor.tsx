@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { deleteFaq, upsertFaq } from "@/app/actions/admin/cms";
+import { CmsListEditor } from "@/components/admin/cms-list-editor";
 import type { Tables } from "@/lib/supabase/types";
 import { useServerAction } from "@/hooks/use-server-action";
 import { Button } from "@/components/ui/button";
@@ -61,46 +62,38 @@ export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">FAQs</h2>
-          <Button size="sm" variant="outline" onClick={() => setEditing(empty)}>
-            <Plus className="mr-1 h-3 w-3" />
-            New
-          </Button>
-        </div>
-        {faqs.map((faq) => (
-          <button
-            key={faq.id}
-            type="button"
-            onClick={() =>
-              setEditing({
-                id: faq.id,
-                question: faq.question,
-                answer: faq.answer,
-                category: faq.category ?? "",
-                sort_order: faq.sort_order,
-                is_active: faq.is_active,
-              })
-            }
-            className="w-full rounded-lg border border-white/10 p-3 text-left hover:bg-white/5"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-medium">{faq.question}</p>
-              {!faq.is_active && <Badge variant="outline">Inactive</Badge>}
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <form
-        onSubmit={handleSave}
-        className="space-y-4 rounded-xl border border-white/10 p-5"
-      >
-        <h2 className="text-lg font-semibold">
-          {editing.id ? "Edit FAQ" : "New FAQ"}
-        </h2>
+    <CmsListEditor
+      listTitle="FAQs"
+      formTitle={editing.id ? "Edit FAQ" : "New FAQ"}
+      onNew={() => setEditing(empty)}
+      list={
+        <>
+          {faqs.map((faq) => (
+            <button
+              key={faq.id}
+              type="button"
+              onClick={() =>
+                setEditing({
+                  id: faq.id,
+                  question: faq.question,
+                  answer: faq.answer,
+                  category: faq.category ?? "",
+                  sort_order: faq.sort_order,
+                  is_active: faq.is_active,
+                })
+              }
+              className="w-full rounded-lg border border-white/10 p-3 text-left hover:bg-white/5"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="font-medium">{faq.question}</p>
+                {!faq.is_active && <Badge variant="outline">Inactive</Badge>}
+              </div>
+            </button>
+          ))}
+        </>
+      }
+      form={
+        <form onSubmit={handleSave} className="space-y-4">
         <div className="space-y-2">
           <Label>Question</Label>
           <Input
@@ -176,7 +169,8 @@ export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
             </Button>
           )}
         </div>
-      </form>
-    </div>
+        </form>
+      }
+    />
   );
 }

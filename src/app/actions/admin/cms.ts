@@ -6,12 +6,15 @@ import {
   cmsAssetStoragePath,
   optimizeCmsImage,
 } from "@/lib/cms/upload-cms-asset";
+import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { downloadFile } from "@/lib/google-drive";
 import { requireAdmin } from "@/lib/supabase/admin";
 import type { Json } from "@/lib/supabase/types";
 import type { ServiceImage } from "@/types/content";
 import { slugify } from "@/lib/utils";
+
+const MAX_SERVICE_IMAGE_BYTES = 10 * 1024 * 1024;
 
 export type ActionResult = {
   success: boolean;
@@ -72,12 +75,13 @@ export async function uploadCmsAsset(formData: FormData): Promise<UploadCmsAsset
 async function saveServiceImageBuffer(
   slug: string,
   buffer: Buffer,
+  processing?: ImageProcessingOptions,
 ): Promise<UploadCmsAssetResult> {
   try {
     const { supabase } = await requireAdmin();
     const filename = `${slug || "service"}-${crypto.randomUUID().slice(0, 8)}.jpg`;
     const storagePath = cmsAssetStoragePath("services", filename);
-    const optimized = await optimizeCmsImage(buffer);
+    const optimized = await processImageBuffer(buffer, processing);
 
     const { error: uploadError } = await supabase.storage
       .from(CMS_ASSETS_BUCKET)
@@ -103,14 +107,52 @@ async function saveServiceImageBuffer(
   }
 }
 
+export async function uploadServiceImage(
+  formData: FormData,
+  slug: string,
+  processing?: ImageProcessingOptions,
+): Promise<UploadCmsAssetResult> {
+  try {
+    await requireAdmin();
+
+    const file = formData.get("file");
+    if (!(file instanceof File) || file.size === 0) {
+      return { success: false, message: "No image file provided." };
+    }
+
+    if (!file.type.startsWith("image/")) {
+      return { success: false, message: "File must be an image." };
+    }
+
+    if (file.size > MAX_SERVICE_IMAGE_BYTES) {
+      return {
+        success: false,
+        message: "Image must be 10 MB or smaller.",
+      };
+    }
+
+    return saveServiceImageBuffer(
+      slug,
+      Buffer.from(await file.arrayBuffer()),
+      processing,
+    );
+  } catch (err) {
+    return {
+      success: false,
+      message: err instanceof Error ? err.message : "Failed to upload image.",
+    };
+  }
+}
+
 export async function uploadServiceImageFromDrive(
   driveFileId: string,
   slug: string,
+  processing?: ImageProcessingOptions,
 ): Promise<UploadCmsAssetResult> {
   try {
     await requireAdmin();
     const buffer = await downloadFile(driveFileId);
-    return saveServiceImageBuffer(slug, buffer);
+    return saveServiceImageBuffer(slug, buffer, processing);
   } catch (err) {
     return {
       success: false,
@@ -123,6 +165,7 @@ export async function uploadServiceImageFromDrive(
 export async function uploadServiceImageFromLinked(
   galleryPhotoId: string,
   slug: string,
+  processing?: ImageProcessingOptions,
 ): Promise<UploadCmsAssetResult> {
   try {
     const { supabase } = await requireAdmin();
@@ -150,7 +193,7 @@ export async function uploadServiceImageFromLinked(
       return { success: false, message: "Linked photo has no image source." };
     }
 
-    return saveServiceImageBuffer(slug, buffer);
+    return saveServiceImageBuffer(slug, buffer, processing);
   } catch (err) {
     return {
       success: false,

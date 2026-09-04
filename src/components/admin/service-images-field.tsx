@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import {
   DndContext,
@@ -20,10 +20,20 @@ import { CSS } from "@dnd-kit/utilities";
 import { GripVertical, ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
-  uploadCmsAsset,
+  uploadServiceImage,
   uploadServiceImageFromDrive,
   uploadServiceImageFromLinked,
 } from "@/app/actions/admin/cms";
+import {
+  EnhancePromptDialog,
+  type EnhancePromptResult,
+} from "@/components/admin/enhance-prompt-dialog";
+import {
+  UploadQueueImageCard,
+  buildUploadQueue,
+  revokeUploadQueueBlobUrls,
+  type UploadQueueItem,
+} from "@/components/admin/enhancement-progress-overlay";
 import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
 import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
 import { serviceImageObjectPosition } from "@/lib/content/service-images";
@@ -39,6 +49,11 @@ type ServiceImagesFieldProps = {
   onChange: (images: ServiceImage[]) => void;
   slug: string;
 };
+
+type PendingServiceUpload =
+  | { type: "device"; files: File[] }
+  | { type: "drive"; driveFileIds: string[] }
+  | { type: "linked"; photoIds: string[] };
 
 function ImageItem({
   image,
@@ -199,7 +214,20 @@ export function ServiceImagesField({
   const [uploadCount, setUploadCount] = useState(0);
   const [sourceDialogOpen, setSourceDialogOpen] = useState(false);
   const [linkedPickerOpen, setLinkedPickerOpen] = useState(false);
+  const [enhanceDialogOpen, setEnhanceDialogOpen] = useState(false);
+  const [pendingPhotoCount, setPendingPhotoCount] = useState(1);
+  const [isEnhancing, setIsEnhancing] = useState(false);
+  const [uploadQueue, setUploadQueue] = useState<UploadQueueItem[]>([]);
+  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const pendingUploadRef = useRef<PendingServiceUpload | null>(null);
   const mounted = useMounted();
+
+  useEffect(() => {
+    return () => {
+      revokeUploadQueueBlobUrls(uploadQueue);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- revoke blob URLs on unmount only
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -207,43 +235,121 @@ export function ServiceImagesField({
     }),
   );
 
-  const handleUpload = (files: FileList) => {
-    const fileArray = Array.from(files);
-    if (fileArray.length === 0) return;
+  const openEnhanceDialog = (upload: PendingServiceUpload) => {
+    pendingUploadRef.current = upload;
+    setPendingPhotoCount(
+      upload.type === "device"
+        ? upload.files.length
+        : upload.type === "drive"
+          ? upload.driveFileIds.length
+          : upload.photoIds.length,
+    );
+    setEnhanceDialogOpen(true);
+  };
 
-    setUploadCount(fileArray.length);
+  const runPendingUpload = ({ enhance, blankPlate }: EnhancePromptResult) => {
+    const pending = pendingUploadRef.current;
+    if (!pending) return;
+
+    pendingUploadRef.current = null;
+    const processing = { enhance, blankPlate };
+    setIsEnhancing(enhance || blankPlate);
+
+    const queue = buildUploadQueue(pending);
+    setUploadQueue(queue);
+    setUploadCount(queue.length);
+    setUploadProgress({ current: 0, total: queue.length });
 
     startTransition(async () => {
-      const uploaded: ServiceImage[] = [];
+      let successCount = 0;
+      let accumulatedImages = [...value];
 
-      for (const file of fileArray) {
-        const formData = new FormData();
-        formData.set("file", file);
-        formData.set("folder", "services");
-        formData.set(
-          "filename",
-          `${slug || "service"}-${crypto.randomUUID().slice(0, 8)}`,
+      const processItem = async (
+        item: UploadQueueItem,
+        upload: () => Promise<{ success: boolean; message: string; url?: string }>,
+      ) => {
+        const itemIndex = queue.findIndex((entry) => entry.id === item.id);
+        setUploadProgress({ current: itemIndex + 1, total: queue.length });
+        setUploadQueue((current) =>
+          current.map((entry) =>
+            entry.id === item.id
+              ? { ...entry, status: "processing" }
+              : entry.status === "error"
+                ? entry
+                : { ...entry, status: "queued" },
+          ),
         );
 
-        const result = await uploadCmsAsset(formData);
+        const result = await upload();
+
         if (result.success && result.url) {
-          uploaded.push({ url: result.url, focalY: 50 });
+          successCount += 1;
+          accumulatedImages = [
+            ...accumulatedImages,
+            { url: result.url, focalY: 50 },
+          ];
+          onChange(accumulatedImages);
+          setUploadQueue((current) =>
+            current.filter((entry) => entry.id !== item.id),
+          );
         } else {
+          setUploadQueue((current) =>
+            current.map((entry) =>
+              entry.id === item.id
+                ? {
+                    ...entry,
+                    status: "error",
+                    errorMessage: result.message,
+                  }
+                : entry,
+            ),
+          );
           toast.error(result.message);
+        }
+      };
+
+      if (pending.type === "device") {
+        for (const [index, file] of pending.files.entries()) {
+          const formData = new FormData();
+          formData.set("file", file);
+          await processItem(queue[index], () =>
+            uploadServiceImage(formData, slug, processing),
+          );
+        }
+      } else if (pending.type === "drive") {
+        for (const [index, driveFileId] of pending.driveFileIds.entries()) {
+          await processItem(queue[index], () =>
+            uploadServiceImageFromDrive(driveFileId, slug, processing),
+          );
+        }
+      } else {
+        for (const [index, photoId] of pending.photoIds.entries()) {
+          await processItem(queue[index], () =>
+            uploadServiceImageFromLinked(photoId, slug, processing),
+          );
         }
       }
 
-      if (uploaded.length > 0) {
-        addUploadedImages(uploaded);
+      if (successCount > 0) {
         toast.success(
-          uploaded.length === 1
+          successCount === 1
             ? "Photo uploaded."
-            : `${uploaded.length} photos uploaded.`,
+            : `${successCount} photos uploaded.`,
         );
       }
 
+      revokeUploadQueueBlobUrls(queue);
+      setUploadQueue((current) => current.filter((entry) => entry.status === "error"));
       setUploadCount(0);
+      setUploadProgress({ current: 0, total: 0 });
+      setIsEnhancing(false);
     });
+  };
+
+  const handleUpload = (files: FileList) => {
+    const fileArray = Array.from(files);
+    if (fileArray.length === 0) return;
+    openEnhanceDialog({ type: "device", files: fileArray });
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -275,11 +381,6 @@ export function ServiceImagesField({
     setLinkedPickerOpen(true);
   }
 
-  function addUploadedImages(uploaded: ServiceImage[]) {
-    if (uploaded.length === 0) return;
-    onChange([...value, ...uploaded]);
-  }
-
   return (
     <>
     <div className="space-y-3">
@@ -295,7 +396,13 @@ export function ServiceImagesField({
           {isPending ? (
             <>
               <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-              Uploading{uploadCount > 1 ? ` (${uploadCount})` : ""}…
+              {isEnhancing ? "Processing" : "Uploading"}
+              {uploadProgress.total > 0
+                ? ` ${uploadProgress.current}/${uploadProgress.total}`
+                : uploadCount > 1
+                  ? ` (${uploadCount})`
+                  : ""}
+              …
             </>
           ) : (
             <>
@@ -306,7 +413,7 @@ export function ServiceImagesField({
         </Button>
       </div>
 
-      {value.length === 0 ? (
+      {value.length === 0 && uploadQueue.length === 0 ? (
         <button
           type="button"
           disabled={isPending}
@@ -325,45 +432,66 @@ export function ServiceImagesField({
             </>
           )}
         </button>
-      ) : mounted ? (
-        <DndContext
-          id="service-images-list"
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext
-            items={value.map((img) => img.url)}
-            strategy={verticalListSortingStrategy}
+      ) : null}
+
+      {value.length > 0 ? (
+        mounted ? (
+          <DndContext
+            id="service-images-list"
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
           >
-            <div className="space-y-3">
-              {value.map((image, index) => (
-                <SortableImageItem
-                  key={image.url}
-                  image={image}
-                  index={index}
-                  onFocalChange={(focalY) => updateImage(index, { focalY })}
-                  onRemove={() =>
-                    onChange(value.filter((_, i) => i !== index))
-                  }
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
-      ) : (
+            <SortableContext
+              items={value.map((img) => img.url)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div className="space-y-3">
+                {value.map((image, index) => (
+                  <SortableImageItem
+                    key={image.url}
+                    image={image}
+                    index={index}
+                    onFocalChange={(focalY) => updateImage(index, { focalY })}
+                    onRemove={() =>
+                      onChange(value.filter((_, i) => i !== index))
+                    }
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
+        ) : (
+          <div className="space-y-3">
+            {value.map((image, index) => (
+              <ImageItem
+                key={image.url}
+                image={image}
+                index={index}
+                onFocalChange={(focalY) => updateImage(index, { focalY })}
+                onRemove={() => onChange(value.filter((_, i) => i !== index))}
+              />
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {uploadQueue.length > 0 ? (
         <div className="space-y-3">
-          {value.map((image, index) => (
-            <ImageItem
-              key={image.url}
-              image={image}
-              index={index}
-              onFocalChange={(focalY) => updateImage(index, { focalY })}
-              onRemove={() => onChange(value.filter((_, i) => i !== index))}
+          {uploadQueue.map((item, index) => (
+            <UploadQueueImageCard
+              key={item.id}
+              previewUrl={item.previewUrl}
+              label={item.label}
+              status={item.status}
+              current={uploadProgress.current || index + 1}
+              total={uploadProgress.total || uploadQueue.length}
+              isEnhancing={isEnhancing}
+              errorMessage={item.errorMessage}
             />
           ))}
         </div>
-      )}
+      ) : null}
 
       <input
         ref={inputRef}
@@ -394,53 +522,22 @@ export function ServiceImagesField({
       onOpenChange={setLinkedPickerOpen}
       multiple
       onDriveSelect={async (driveFileIds) => {
-        const uploaded: ServiceImage[] = [];
-
-        for (const driveFileId of driveFileIds) {
-          const result = await uploadServiceImageFromDrive(driveFileId, slug);
-          if (result.success && result.url) {
-            uploaded.push({ url: result.url, focalY: 50 });
-          } else {
-            toast.error(result.message);
-          }
-        }
-
-        if (uploaded.length > 0) {
-          addUploadedImages(uploaded);
-        }
-
-        return {
-          success: uploaded.length > 0,
-          message:
-            uploaded.length === 1
-              ? "Photo added."
-              : `${uploaded.length} photos added.`,
-        };
+        openEnhanceDialog({ type: "drive", driveFileIds });
+        return { success: true, message: "" };
       }}
       onLinkedSelect={async (photoIds) => {
-        const uploaded: ServiceImage[] = [];
-
-        for (const photoId of photoIds) {
-          const result = await uploadServiceImageFromLinked(photoId, slug);
-          if (result.success && result.url) {
-            uploaded.push({ url: result.url, focalY: 50 });
-          } else {
-            toast.error(result.message);
-          }
-        }
-
-        if (uploaded.length > 0) {
-          addUploadedImages(uploaded);
-        }
-
-        return {
-          success: uploaded.length > 0,
-          message:
-            uploaded.length === 1
-              ? "Photo added."
-              : `${uploaded.length} photos added.`,
-        };
+        openEnhanceDialog({ type: "linked", photoIds });
+        return { success: true, message: "" };
       }}
+    />
+
+    <EnhancePromptDialog
+      open={enhanceDialogOpen}
+      onOpenChange={setEnhanceDialogOpen}
+      title="Add service photo"
+      photoCount={pendingPhotoCount}
+      confirmLabel="Add photos"
+      onConfirm={runPendingUpload}
     />
     </>
   );

@@ -351,7 +351,9 @@ export function LinkedPhotoPickerDialog({
     startTransition(async () => {
       const result = await handler(ids);
       if (result.success) {
-        toast.success(result.message);
+        if (result.message) {
+          toast.success(result.message);
+        }
         onOpenChange(false);
       } else {
         toast.error(result.message);

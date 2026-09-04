@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import sharp from "sharp";
+import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { downloadFile } from "@/lib/google-drive";
 import { requireAdmin } from "@/lib/supabase/admin";
 
@@ -55,6 +55,8 @@ export async function linkAndPublishDrivePhotos(input: {
   driveFolderName: string;
   photoType: "before" | "after";
   category?: string;
+  enhance?: boolean;
+  blankPlate?: boolean;
 }): Promise<ActionResult> {
   if (input.driveFileIds.length === 0) {
     return { success: false, message: "No photos selected." };
@@ -77,10 +79,14 @@ export async function linkAndPublishDrivePhotos(input: {
       continue;
     }
 
-    const publishResult = await publishPhoto(linkResult.photoId);
+    const publishResult = await publishPhoto(linkResult.photoId, {
+      enhance: input.enhance,
+      blankPlate: input.blankPlate,
+    });
     if (publishResult.success) {
       published += 1;
     } else {
+      await deletePhoto(linkResult.photoId);
       errors.push(publishResult.message);
     }
   }
@@ -111,7 +117,10 @@ export async function linkAndPublishDrivePhotos(input: {
   };
 }
 
-export async function publishAllPhotos(photoIds: string[]): Promise<ActionResult> {
+export async function publishAllPhotos(
+  photoIds: string[],
+  options?: ImageProcessingOptions,
+): Promise<ActionResult> {
   if (photoIds.length === 0) {
     return { success: false, message: "No photos to publish." };
   }
@@ -120,7 +129,7 @@ export async function publishAllPhotos(photoIds: string[]): Promise<ActionResult
   const errors: string[] = [];
 
   for (const photoId of photoIds) {
-    const result = await publishPhoto(photoId);
+    const result = await publishPhoto(photoId, options);
     if (result.success) {
       published += 1;
     } else {
@@ -151,7 +160,10 @@ export async function publishAllPhotos(photoIds: string[]): Promise<ActionResult
   };
 }
 
-export async function publishPhoto(photoId: string): Promise<ActionResult> {
+export async function publishPhoto(
+  photoId: string,
+  options?: ImageProcessingOptions,
+): Promise<ActionResult> {
   try {
     const { supabase } = await requireAdmin();
 
@@ -170,11 +182,7 @@ export async function publishPhoto(photoId: string): Promise<ActionResult> {
     }
 
     const raw = await downloadFile(photo.drive_file_id);
-    const optimized = await sharp(raw)
-      .rotate()
-      .resize({ width: 1920, withoutEnlargement: true })
-      .jpeg({ quality: 85, mozjpeg: true })
-      .toBuffer();
+    const optimized = await processImageBuffer(raw, options);
 
     const storagePath = `gallery/${photoId}.jpg`;
     const { error: uploadError } = await supabase.storage

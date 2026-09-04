@@ -16,16 +16,23 @@ import { toast } from "sonner";
 import {
   findDriveRootFolder,
   getGalleryPhotos,
-  linkAndPublishDrivePhotos,
   linkDrivePhoto,
   listDriveFolders,
   listDriveImages,
-  publishAllPhotos,
   publishPhoto,
   unpublishPhoto,
   deletePhoto,
   updatePhotoMetadata,
 } from "@/app/actions/admin/gallery";
+import {
+  EnhancePromptDialog,
+  type EnhancePromptResult,
+} from "@/components/admin/enhance-prompt-dialog";
+import {
+  UploadQueuePanel,
+  buildGalleryPublishQueue,
+  type UploadQueueItem,
+} from "@/components/admin/enhancement-progress-overlay";
 import type { Tables } from "@/lib/supabase/types";
 import { galleryPhotoCategoryOptions } from "@/lib/content/gallery-categories";
 import { LinkedPhotosPanel } from "@/components/admin/linked-photos-panel";
@@ -48,6 +55,11 @@ type DriveImage = {
   thumbnailLink?: string;
 };
 type GalleryView = "drive" | "linked";
+
+type PendingPublishAction =
+  | { type: "single"; photoId: string }
+  | { type: "bulk"; photoIds: string[] }
+  | { type: "drive"; driveFileIds: string[] };
 
 function DriveThumbnail({
   fileId,
@@ -119,10 +131,22 @@ export function GalleryHub({
   const [photoType, setPhotoType] = useState<"before" | "after">("before");
   const [isPending, startTransition] = useTransition();
   const [loadingDrive, setLoadingDrive] = useState(false);
+  const [enhanceDialogOpen, setEnhanceDialogOpen] = useState(false);
+  const [enhanceDialogConfig, setEnhanceDialogConfig] = useState({
+    title: "Publish to gallery",
+    confirmLabel: "Publish",
+    successMessage: "published" as "published" | "enhanced",
+  });
+  const [pendingPhotoCount, setPendingPhotoCount] = useState(1);
+  const [publishQueue, setPublishQueue] = useState<UploadQueueItem[]>([]);
+  const [publishProgress, setPublishProgress] = useState({ current: 0, total: 0 });
+  const [isAiProcessing, setIsAiProcessing] = useState(false);
   const initializedRef = useRef(false);
+  const pendingPublishRef = useRef<PendingPublishAction | null>(null);
 
   const currentFolder = folderStack[folderStack.length - 1];
   const selectedCount = selectedImageIds.size;
+  const isPublishing = publishQueue.length > 0;
   const draftCount = photos.filter(
     (photo) => !photo.publish_to_gallery && photo.drive_file_id,
   ).length;
@@ -260,27 +284,166 @@ export function GalleryHub({
     });
   };
 
+  const openEnhanceDialog = (
+    action: PendingPublishAction,
+    config?: {
+      title: string;
+      confirmLabel: string;
+      successMessage: "published" | "enhanced";
+    },
+  ) => {
+    pendingPublishRef.current = action;
+    setEnhanceDialogConfig(
+      config ?? {
+        title: "Publish to gallery",
+        confirmLabel: "Publish",
+        successMessage: "published",
+      },
+    );
+    setPendingPhotoCount(
+      action.type === "single"
+        ? 1
+        : action.type === "bulk"
+          ? action.photoIds.length
+          : action.driveFileIds.length,
+    );
+    setEnhanceDialogOpen(true);
+  };
+
+  const runPendingPublish = ({ enhance, blankPlate }: EnhancePromptResult) => {
+    const action = pendingPublishRef.current;
+    if (!action) return;
+
+    pendingPublishRef.current = null;
+    const processing = { enhance, blankPlate };
+    setIsAiProcessing(enhance || blankPlate);
+
+    const queue = buildGalleryPublishQueue(action, photos);
+    setPublishQueue(queue);
+    setPublishProgress({ current: 0, total: queue.length });
+
+    startTransition(async () => {
+      let successCount = 0;
+
+      const processItem = async (
+        item: UploadQueueItem,
+        publish: () => Promise<{ success: boolean; message: string }>,
+      ) => {
+        const itemIndex = queue.findIndex((entry) => entry.id === item.id);
+        setPublishProgress({ current: itemIndex + 1, total: queue.length });
+        setPublishQueue((current) =>
+          current.map((entry) =>
+            entry.id === item.id
+              ? { ...entry, status: "processing" }
+              : entry.status === "error"
+                ? entry
+                : { ...entry, status: "queued" },
+          ),
+        );
+
+        const result = await publish();
+
+        if (result.success) {
+          successCount += 1;
+          setPublishQueue((current) =>
+            current.filter((entry) => entry.id !== item.id),
+          );
+        } else {
+          setPublishQueue((current) =>
+            current.map((entry) =>
+              entry.id === item.id
+                ? {
+                    ...entry,
+                    status: "error",
+                    errorMessage: result.message,
+                  }
+                : entry,
+            ),
+          );
+          toast.error(result.message);
+        }
+      };
+
+      if (action.type === "single") {
+        const item = queue[0];
+        if (!item) return;
+        await processItem(item, () =>
+          publishPhoto(action.photoId, processing),
+        );
+      } else if (action.type === "bulk") {
+        for (const [index, photoId] of action.photoIds.entries()) {
+          await processItem(queue[index], () =>
+            publishPhoto(photoId, processing),
+          );
+        }
+      } else {
+        if (!currentFolder) {
+          toast.error("No folder selected.");
+          setPublishQueue([]);
+          setIsAiProcessing(false);
+          return;
+        }
+
+        for (const [index, driveFileId] of action.driveFileIds.entries()) {
+          await processItem(queue[index], async () => {
+            const linkResult = await linkDrivePhoto({
+              driveFileId,
+              driveFolderId: currentFolder.id,
+              driveFolderName: currentFolder.name,
+              photoType,
+              category,
+            });
+
+            if (!linkResult.success || !linkResult.photoId) {
+              return linkResult;
+            }
+
+            const publishResult = await publishPhoto(
+              linkResult.photoId,
+              processing,
+            );
+
+            if (!publishResult.success) {
+              await deletePhoto(linkResult.photoId);
+            }
+
+            return publishResult;
+          });
+        }
+      }
+
+      if (successCount > 0) {
+        const isEnhance = enhanceDialogConfig.successMessage === "enhanced";
+        toast.success(
+          isEnhance
+            ? successCount === 1
+              ? "Photo enhanced."
+              : `Enhanced ${successCount} photos.`
+            : successCount === 1
+              ? "Photo published to gallery."
+              : `Published ${successCount} photos to gallery.`,
+        );
+        refreshPhotos();
+        if (action.type === "drive") {
+          clearSelection();
+          setGalleryView("linked");
+        }
+      }
+
+      setPublishQueue((current) => current.filter((entry) => entry.status === "error"));
+      setPublishProgress({ current: 0, total: 0 });
+      setIsAiProcessing(false);
+    });
+  };
+
   const handlePublishAllSelected = () => {
     if (selectedCount < 2 || !currentFolder) {
       return;
     }
 
-    startTransition(async () => {
-      const result = await linkAndPublishDrivePhotos({
-        driveFileIds: Array.from(selectedImageIds),
-        driveFolderId: currentFolder.id,
-        driveFolderName: currentFolder.name,
-        photoType,
-        category,
-      });
-      if (result.success) {
-        toast.success(result.message);
-        clearSelection();
-        refreshPhotos();
-        setGalleryView("linked");
-      } else {
-        toast.error(result.message);
-      }
+    openEnhanceDialog({
+      type: "drive",
+      driveFileIds: Array.from(selectedImageIds),
     });
   };
 
@@ -289,27 +452,22 @@ export function GalleryHub({
       return;
     }
 
-    startTransition(async () => {
-      const result = await publishAllPhotos(photoIds);
-      if (result.success) {
-        toast.success(result.message);
-        refreshPhotos();
-      } else {
-        toast.error(result.message);
-      }
-    });
+    openEnhanceDialog({ type: "bulk", photoIds });
   };
 
   const handlePublish = (photoId: string) => {
-    startTransition(async () => {
-      const result = await publishPhoto(photoId);
-      if (result.success) {
-        toast.success(result.message);
-        refreshPhotos();
-      } else {
-        toast.error(result.message);
-      }
-    });
+    openEnhanceDialog({ type: "single", photoId });
+  };
+
+  const handleEnhance = (photoId: string) => {
+    openEnhanceDialog(
+      { type: "single", photoId },
+      {
+        title: "Enhance photo",
+        confirmLabel: "Enhance",
+        successMessage: "enhanced",
+      },
+    );
   };
 
   const handleUnpublish = (photoId: string) => {
@@ -358,7 +516,8 @@ export function GalleryHub({
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="inline-flex w-full rounded-xl border border-white/10 bg-black/20 p-1 sm:w-auto">
           <button
@@ -417,7 +576,7 @@ export function GalleryHub({
             </p>
           ) : (
             <>
-              {canGoBack && (
+              {canGoBack && !isPublishing && (
                 <div className="mb-4">
                   <Button variant="outline" size="sm" onClick={goBack}>
                     <ChevronLeft className="mr-1 h-4 w-4" />
@@ -426,13 +585,21 @@ export function GalleryHub({
                 </div>
               )}
 
-              {folderStack.length > 0 && (
+              {folderStack.length > 0 && !isPublishing && (
                 <p className="mb-4 truncate text-sm text-white/60">
                   {folderStack.map((folder) => folder.name).join(" / ")}
                 </p>
               )}
 
-              {loadingDrive ? (
+              {isPublishing ? (
+                <UploadQueuePanel
+                  queue={publishQueue}
+                  progress={publishProgress}
+                  isAiProcessing={isAiProcessing}
+                  compact
+                  activeOnly
+                />
+              ) : loadingDrive ? (
                 <div className="flex items-center gap-2 py-6 text-sm text-white/60">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Loading...
@@ -490,7 +657,7 @@ export function GalleryHub({
                 </div>
               )}
 
-              {selectedCount > 0 && currentFolder && (
+              {selectedCount > 0 && currentFolder && !isPublishing && (
                 <div className="space-y-4 border-t border-white/10 pt-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm text-white/70">
@@ -558,17 +725,38 @@ export function GalleryHub({
         </div>
       ) : (
         <div className="min-w-0 rounded-xl border border-white/10 bg-surface-raised/40 p-4 sm:p-6">
-          <LinkedPhotosPanel
-            photos={photos}
-            isPending={isPending}
-            onPublish={handlePublish}
-            onUnpublish={handleUnpublish}
-            onDelete={handleDelete}
-            onPublishAllDrafts={handlePublishAllDrafts}
-            onUpdate={handleUpdate}
-          />
+          {isPublishing ? (
+            <UploadQueuePanel
+              queue={publishQueue}
+              progress={publishProgress}
+              isAiProcessing={isAiProcessing}
+              compact
+              activeOnly
+            />
+          ) : (
+            <LinkedPhotosPanel
+              photos={photos}
+              isPending={isPending}
+              onPublish={handlePublish}
+              onEnhance={handleEnhance}
+              onUnpublish={handleUnpublish}
+              onDelete={handleDelete}
+              onPublishAllDrafts={handlePublishAllDrafts}
+              onUpdate={handleUpdate}
+            />
+          )}
         </div>
       )}
-    </div>
+      </div>
+
+      <EnhancePromptDialog
+        open={enhanceDialogOpen}
+        onOpenChange={setEnhanceDialogOpen}
+        title={enhanceDialogConfig.title}
+        photoCount={pendingPhotoCount}
+        confirmLabel={enhanceDialogConfig.confirmLabel}
+        onConfirm={runPendingPublish}
+      />
+    </>
   );
 }

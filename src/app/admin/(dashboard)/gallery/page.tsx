@@ -4,6 +4,8 @@ import { getDriveRootFolderName, isDriveConnected } from "@/lib/google-drive";
 import { GalleryHub } from "@/components/admin/gallery-hub";
 import { getGalleryPhotos } from "@/app/actions/admin/gallery";
 
+export const maxDuration = 300;
+
 type AdminGalleryPageProps = {
   searchParams: Promise<{ view?: string }>;
 };

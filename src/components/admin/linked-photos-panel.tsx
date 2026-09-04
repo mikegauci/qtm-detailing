@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { EyeOff, ImageIcon, Pencil, Search, Trash2, Upload } from "lucide-react";
+import { EyeOff, ImageIcon, Pencil, Search, Sparkles, Trash2, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
 import {
@@ -26,6 +26,7 @@ type LinkedPhotosPanelProps = {
   photos: Tables<"gallery_photos">[];
   isPending: boolean;
   onPublish: (photoId: string) => void;
+  onEnhance: (photoId: string) => void;
   onUnpublish: (photoId: string) => void;
   onDelete: (photoId: string) => void;
   onPublishAllDrafts: (photoIds: string[]) => void;
@@ -88,6 +89,7 @@ function LinkedPhotoCard({
   photo,
   isPending,
   onPublish,
+  onEnhance,
   onUnpublish,
   onDelete,
   onUpdate,
@@ -95,6 +97,7 @@ function LinkedPhotoCard({
   photo: Tables<"gallery_photos">;
   isPending: boolean;
   onPublish: (photoId: string) => void;
+  onEnhance: (photoId: string) => void;
   onUnpublish: (photoId: string) => void;
   onDelete: (photoId: string) => void;
   onUpdate: (
@@ -238,9 +241,20 @@ function LinkedPhotoCard({
                   Unpublish
                 </Button>
               )}
+              {photo.publish_to_gallery && photo.drive_file_id && (
+                <Button
+                  size="sm"
+                  className="bg-brand-purple-600 text-white hover:bg-brand-purple-500"
+                  onClick={() => onEnhance(photo.id)}
+                  disabled={isPending}
+                >
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  Enhance
+                </Button>
+              )}
               <Button
                 size="sm"
-                variant="outline"
+                variant="destructive"
                 onClick={() => onDelete(photo.id)}
                 disabled={isPending}
               >
@@ -258,6 +272,7 @@ export function LinkedPhotosPanel({
   photos,
   isPending,
   onPublish,
+  onEnhance,
   onUnpublish,
   onDelete,
   onPublishAllDrafts,
@@ -536,6 +551,7 @@ export function LinkedPhotosPanel({
                       photo={photo}
                       isPending={isPending}
                       onPublish={onPublish}
+                      onEnhance={onEnhance}
                       onUnpublish={onUnpublish}
                       onDelete={onDelete}
                       onUpdate={onUpdate}
@@ -550,6 +566,7 @@ export function LinkedPhotosPanel({
                     photo={photo}
                     isPending={isPending}
                     onPublish={onPublish}
+                    onEnhance={onEnhance}
                     onUnpublish={onUnpublish}
                     onDelete={onDelete}
                     onUpdate={onUpdate}

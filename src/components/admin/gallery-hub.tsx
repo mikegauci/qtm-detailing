@@ -93,7 +93,7 @@ function DriveThumbnail({
 }
 
 type GalleryHubProps = {
-  initialPhotos: Tables<"job_photos">[];
+  initialPhotos: Tables<"gallery_photos">[];
   driveConnected: boolean;
   rootFolderName?: string;
   initialView?: GalleryView;

@@ -44,42 +44,6 @@ export type Database = {
         }
         Relationships: []
       }
-      booking_addons: {
-        Row: {
-          addon_id: string
-          booking_id: string
-          id: string
-          price_snapshot: number
-        }
-        Insert: {
-          addon_id: string
-          booking_id: string
-          id?: string
-          price_snapshot: number
-        }
-        Update: {
-          addon_id?: string
-          booking_id?: string
-          id?: string
-          price_snapshot?: number
-        }
-        Relationships: [
-          {
-            foreignKeyName: "booking_addons_addon_id_fkey"
-            columns: ["addon_id"]
-            isOneToOne: false
-            referencedRelation: "protection_addons"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "booking_addons_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: true
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       booking_services: {
         Row: {
           booking_id: string
@@ -245,6 +209,45 @@ export type Database = {
         }
         Relationships: []
       }
+      gallery_photos: {
+        Row: {
+          category: string | null
+          created_at: string
+          drive_file_id: string | null
+          drive_folder_id: string | null
+          drive_folder_name: string | null
+          id: string
+          photo_type: string
+          photo_url: string
+          publish_to_gallery: boolean
+          storage_path: string | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          drive_file_id?: string | null
+          drive_folder_id?: string | null
+          drive_folder_name?: string | null
+          id?: string
+          photo_type: string
+          photo_url: string
+          publish_to_gallery?: boolean
+          storage_path?: string | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          drive_file_id?: string | null
+          drive_folder_id?: string | null
+          drive_folder_name?: string | null
+          id?: string
+          photo_type?: string
+          photo_url?: string
+          publish_to_gallery?: boolean
+          storage_path?: string | null
+        }
+        Relationships: []
+      }
       integration_tokens: {
         Row: {
           access_token: string | null
@@ -304,62 +307,6 @@ export type Database = {
           unit?: string | null
         }
         Relationships: []
-      }
-      job_photos: {
-        Row: {
-          booking_id: string
-          category: string | null
-          created_at: string
-          description: string | null
-          drive_file_id: string | null
-          drive_folder_id: string | null
-          drive_folder_name: string | null
-          id: string
-          photo_type: string
-          photo_url: string
-          publish_to_gallery: boolean
-          storage_path: string | null
-          title: string | null
-        }
-        Insert: {
-          booking_id: string
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          drive_file_id?: string | null
-          drive_folder_id?: string | null
-          drive_folder_name?: string | null
-          id?: string
-          photo_type: string
-          photo_url: string
-          publish_to_gallery?: boolean
-          storage_path?: string | null
-          title?: string | null
-        }
-        Update: {
-          booking_id?: string
-          category?: string | null
-          created_at?: string
-          description?: string | null
-          drive_file_id?: string | null
-          drive_folder_id?: string | null
-          drive_folder_name?: string | null
-          id?: string
-          photo_type?: string
-          photo_url?: string
-          publish_to_gallery?: boolean
-          storage_path?: string | null
-          title?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "job_photos_booking_id_fkey"
-            columns: ["booking_id"]
-            isOneToOne: false
-            referencedRelation: "bookings"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       leads: {
         Row: {
@@ -487,51 +434,6 @@ export type Database = {
           route?: string
           title?: string | null
           updated_at?: string
-        }
-        Relationships: []
-      }
-      protection_addons: {
-        Row: {
-          created_at: string
-          description: string | null
-          duration_months: number | null
-          estimated_duration_minutes: number
-          id: string
-          is_active: boolean
-          name: string
-          price: number
-          price_suv: number
-          price_van: number
-          slug: string
-          sort_order: number
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          duration_months?: number | null
-          estimated_duration_minutes: number
-          id?: string
-          is_active?: boolean
-          name: string
-          price: number
-          price_suv?: number
-          price_van?: number
-          slug: string
-          sort_order?: number
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          duration_months?: number | null
-          estimated_duration_minutes?: number
-          id?: string
-          is_active?: boolean
-          name?: string
-          price?: number
-          price_suv?: number
-          price_van?: number
-          slug?: string
-          sort_order?: number
         }
         Relationships: []
       }
@@ -750,12 +652,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -779,11 +681,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -804,11 +706,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -829,11 +731,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -846,11 +748,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }

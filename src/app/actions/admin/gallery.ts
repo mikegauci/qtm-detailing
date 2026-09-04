@@ -11,81 +11,6 @@ export type ActionResult = {
   photoId?: string;
 };
 
-const GALLERY_CUSTOMER_EMAIL = "gallery@qtmdetailing.internal";
-
-const GALLERY_CONFIRMATION_CODE = "GALLERY";
-
-async function getGalleryBookingId(supabase: Awaited<
-  ReturnType<typeof requireAdmin>
->["supabase"]) {
-  const { data: existingPhoto } = await supabase
-    .from("job_photos")
-    .select("booking_id")
-    .not("booking_id", "is", null)
-    .limit(1)
-    .maybeSingle();
-
-  if (existingPhoto?.booking_id) {
-    return existingPhoto.booking_id;
-  }
-
-  const { data: existingBooking } = await supabase
-    .from("bookings")
-    .select("id")
-    .eq("confirmation_code", GALLERY_CONFIRMATION_CODE)
-    .maybeSingle();
-
-  if (existingBooking?.id) {
-    return existingBooking.id;
-  }
-
-  let customerId: string;
-  const { data: existingCustomer } = await supabase
-    .from("customers")
-    .select("id")
-    .eq("email", GALLERY_CUSTOMER_EMAIL)
-    .maybeSingle();
-
-  if (existingCustomer?.id) {
-    customerId = existingCustomer.id;
-  } else {
-    const { data: customer, error } = await supabase
-      .from("customers")
-      .insert({
-        email: GALLERY_CUSTOMER_EMAIL,
-        full_name: "Gallery Placeholder",
-      })
-      .select("id")
-      .single();
-
-    if (error || !customer) {
-      throw new Error("Could not create gallery customer.");
-    }
-    customerId = customer.id;
-  }
-
-  const today = new Date().toISOString().slice(0, 10);
-  const { data: booking, error: bookingError } = await supabase
-    .from("bookings")
-    .insert({
-      customer_id: customerId,
-      booking_date: today,
-      start_time: "09:00",
-      end_time: "17:00",
-      confirmation_code: GALLERY_CONFIRMATION_CODE,
-      status: "completed",
-      total_price: 0,
-    })
-    .select("id")
-    .single();
-
-  if (bookingError || !booking) {
-    throw new Error("Could not create gallery booking.");
-  }
-
-  return booking.id;
-}
-
 export async function linkDrivePhoto(input: {
   driveFileId: string;
   driveFolderId: string;
@@ -95,19 +20,15 @@ export async function linkDrivePhoto(input: {
 }): Promise<ActionResult> {
   try {
     const { supabase } = await requireAdmin();
-    const bookingId = await getGalleryBookingId(supabase);
 
     const { data: photo, error } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .insert({
-        booking_id: bookingId,
         drive_file_id: input.driveFileId,
         drive_folder_id: input.driveFolderId,
         drive_folder_name: input.driveFolderName,
         photo_type: input.photoType,
-        title: null,
         category: input.category ?? "exterior",
-        description: null,
         photo_url: "",
         publish_to_gallery: false,
       })
@@ -235,7 +156,7 @@ export async function publishPhoto(photoId: string): Promise<ActionResult> {
     const { supabase } = await requireAdmin();
 
     const { data: photo, error: fetchError } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .select("*")
       .eq("id", photoId)
       .single();
@@ -257,7 +178,7 @@ export async function publishPhoto(photoId: string): Promise<ActionResult> {
 
     const storagePath = `gallery/${photoId}.jpg`;
     const { error: uploadError } = await supabase.storage
-      .from("job-photos")
+      .from("gallery-photos")
       .upload(storagePath, optimized, {
         contentType: "image/jpeg",
         upsert: true,
@@ -269,10 +190,10 @@ export async function publishPhoto(photoId: string): Promise<ActionResult> {
 
     const {
       data: { publicUrl },
-    } = supabase.storage.from("job-photos").getPublicUrl(storagePath);
+    } = supabase.storage.from("gallery-photos").getPublicUrl(storagePath);
 
     const { error: updateError } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .update({
         storage_path: storagePath,
         photo_url: publicUrl,
@@ -304,7 +225,7 @@ export async function updatePhotoMetadata(input: {
     const { supabase } = await requireAdmin();
 
     const { error } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .update({
         photo_type: input.photoType,
         category: input.category,
@@ -331,7 +252,7 @@ export async function unpublishPhoto(photoId: string): Promise<ActionResult> {
     const { supabase } = await requireAdmin();
 
     const { error } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .update({ publish_to_gallery: false })
       .eq("id", photoId);
 
@@ -355,19 +276,19 @@ export async function deletePhoto(photoId: string): Promise<ActionResult> {
     const { supabase } = await requireAdmin();
 
     const { data: photo } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .select("storage_path")
       .eq("id", photoId)
       .maybeSingle();
 
     if (photo?.storage_path) {
       await supabase.storage
-        .from("job-photos")
+        .from("gallery-photos")
         .remove([photo.storage_path]);
     }
 
     const { error } = await supabase
-      .from("job_photos")
+      .from("gallery_photos")
       .delete()
       .eq("id", photoId);
 
@@ -409,7 +330,7 @@ export async function findDriveRootFolder() {
 export async function getGalleryPhotos() {
   const { supabase } = await requireAdmin();
   const { data } = await supabase
-    .from("job_photos")
+    .from("gallery_photos")
     .select("*")
     .order("created_at", { ascending: false });
   return data ?? [];

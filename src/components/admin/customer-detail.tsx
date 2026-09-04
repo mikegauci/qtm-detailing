@@ -10,6 +10,7 @@ import {
   deleteVehicle,
   updateCustomer,
 } from "@/app/actions/admin/customers";
+import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
 import type { Tables } from "@/lib/supabase/types";
 import {
   BOOKING_STATUS_COLORS,
@@ -286,6 +287,16 @@ export function CustomerDetail({
           )}
         </CardContent>
       </Card>
+
+      <div className="flex justify-end">
+        <DeleteCustomerButton
+          customerId={customer.id}
+          customerName={customer.full_name}
+          bookingCount={bookings.length}
+          vehicleCount={vehicles.length}
+          redirectTo="/admin/customers"
+        />
+      </div>
     </div>
   );
 }

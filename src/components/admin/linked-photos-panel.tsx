@@ -23,7 +23,7 @@ import { ScrollCarousel } from "@/components/ui/scroll-carousel";
 import { cn } from "@/lib/utils";
 
 type LinkedPhotosPanelProps = {
-  photos: Tables<"job_photos">[];
+  photos: Tables<"gallery_photos">[];
   isPending: boolean;
   onPublish: (photoId: string) => void;
   onUnpublish: (photoId: string) => void;
@@ -43,7 +43,7 @@ function LinkedPhotoThumbnail({
   photo,
   className,
 }: {
-  photo: Tables<"job_photos">;
+  photo: Tables<"gallery_photos">;
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
@@ -92,7 +92,7 @@ function LinkedPhotoCard({
   onDelete,
   onUpdate,
 }: {
-  photo: Tables<"job_photos">;
+  photo: Tables<"gallery_photos">;
   isPending: boolean;
   onPublish: (photoId: string) => void;
   onUnpublish: (photoId: string) => void;
@@ -338,7 +338,7 @@ export function LinkedPhotosPanel({
   }, [photos, search, vehicleFilter, statusFilter, typeFilter, categoryFilter]);
 
   const groupedPhotos = useMemo(() => {
-    const groups = new Map<string, Tables<"job_photos">[]>();
+    const groups = new Map<string, Tables<"gallery_photos">[]>();
 
     for (const photo of filteredPhotos) {
       const carName = photo.drive_folder_name

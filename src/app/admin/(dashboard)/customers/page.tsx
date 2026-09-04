@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
+import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
@@ -9,7 +10,7 @@ export default async function CustomersPage() {
 
   const { data: customers } = await supabase
     .from("customers")
-    .select("*, vehicles(count)")
+    .select("*, vehicles(count), bookings(count)")
     .order("created_at", { ascending: false });
 
   return (
@@ -55,9 +56,21 @@ export default async function CustomersPage() {
                   {format(new Date(customer.created_at), "d MMM yyyy")}
                 </td>
                 <td className="px-4 py-3">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/customers/${customer.id}`}>View</Link>
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/admin/customers/${customer.id}`}>View</Link>
+                    </Button>
+                    <DeleteCustomerButton
+                      customerId={customer.id}
+                      customerName={customer.full_name}
+                      bookingCount={customer.bookings?.[0]?.count ?? 0}
+                      vehicleCount={customer.vehicles?.[0]?.count ?? 0}
+                      redirectTo="/admin/customers"
+                      size="icon-sm"
+                      variant="ghost"
+                      showLabel={false}
+                    />
+                  </div>
                 </td>
               </tr>
             ))}

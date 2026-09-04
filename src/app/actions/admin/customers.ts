@@ -58,6 +58,15 @@ export async function updateCustomer(
 export async function deleteCustomer(id: string): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
 
+  const { error: bookingsError } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("customer_id", id);
+
+  if (bookingsError) {
+    return { success: false, message: bookingsError.message };
+  }
+
   const { error } = await supabase.from("customers").delete().eq("id", id);
 
   if (error) {
@@ -65,7 +74,11 @@ export async function deleteCustomer(id: string): Promise<ActionResult> {
   }
 
   revalidatePath("/admin/customers");
-  return { success: true, message: "Customer deleted." };
+  revalidatePath("/admin/bookings");
+  revalidatePath("/admin/calendar");
+  revalidatePath("/admin/kanban");
+  revalidatePath("/admin");
+  return { success: true, message: "Customer and all related data deleted." };
 }
 
 export async function createVehicle(data: {

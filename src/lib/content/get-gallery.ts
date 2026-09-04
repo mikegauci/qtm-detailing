@@ -4,7 +4,7 @@ import { parseCarName } from "@/lib/content/parse-car-name";
 import { createClient } from "@/lib/supabase/server";
 import type { Tables } from "@/lib/supabase/types";
 
-function mapRowToPhoto(row: Tables<"job_photos">): GalleryPhoto | null {
+function mapRowToPhoto(row: Tables<"gallery_photos">): GalleryPhoto | null {
   if (!row.photo_url) {
     return null;
   }
@@ -22,10 +22,10 @@ function mapRowToPhoto(row: Tables<"job_photos">): GalleryPhoto | null {
   };
 }
 
-async function fetchPublishedPhotos(): Promise<Tables<"job_photos">[]> {
+async function fetchPublishedPhotos(): Promise<Tables<"gallery_photos">[]> {
   const supabase = await createClient();
   const { data, error } = await supabase
-    .from("job_photos")
+    .from("gallery_photos")
     .select("*")
     .eq("publish_to_gallery", true)
     .order("created_at", { ascending: false });

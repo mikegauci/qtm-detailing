@@ -108,12 +108,10 @@ export async function upsertService(input: {
   name: string;
   short_description?: string;
   description?: string;
-  featured?: boolean;
   features?: string[];
   image_url?: string;
   category?: string;
   is_active?: boolean;
-  sort_order?: number;
 }): Promise<ActionResult> {
   try {
     const { supabase } = await requireAdmin();
@@ -126,25 +124,67 @@ export async function upsertService(input: {
       price_suv: 0,
       price_van: 0,
       estimated_duration_minutes: 0,
-      featured: input.featured ?? false,
       features: input.features ?? [],
       image_url: input.image_url ?? null,
       category: input.category ?? null,
       is_active: input.is_active ?? true,
-      sort_order: input.sort_order ?? 0,
     };
 
-    const { error } = input.id
-      ? await supabase.from("services").update(payload).eq("id", input.id)
-      : await supabase.from("services").insert(payload);
+    if (input.id) {
+      const { error } = await supabase
+        .from("services")
+        .update(payload)
+        .eq("id", input.id);
 
-    if (error) return { success: false, message: error.message };
+      if (error) return { success: false, message: error.message };
+    } else {
+      const { data: lastService } = await supabase
+        .from("services")
+        .select("sort_order")
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const { error } = await supabase.from("services").insert({
+        ...payload,
+        sort_order: (lastService?.sort_order ?? -1) + 1,
+      });
+
+      if (error) return { success: false, message: error.message };
+    }
+
     revalidateContent();
     return { success: true, message: "Service saved." };
   } catch (err) {
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to save service.",
+    };
+  }
+}
+
+export async function reorderServices(
+  orderedIds: string[],
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase.from("services").update({ sort_order: index }).eq("id", id),
+      ),
+    );
+
+    const error = results.find((result) => result.error)?.error;
+    if (error) return { success: false, message: error.message };
+
+    revalidateContent();
+    return { success: true, message: "Services reordered." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to reorder services.",
     };
   }
 }

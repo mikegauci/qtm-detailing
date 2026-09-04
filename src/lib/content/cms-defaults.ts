@@ -65,9 +65,9 @@ export const defaultWhyQtm: WhyQtmContent = {
     "We don't rush. Every vehicle gets a personalised treatment plan based on its condition, paint type, and your expectations.",
   reasons: [
     {
-      title: "Studio-grade equipment",
+      title: "Professional-grade equipment",
       description:
-        "Dual-action and rotary polishers, steam extractors, and IR curing — the same tools used in professional body shops.",
+        "We use carefully selected professional equipment, including dual-action and rotary polishers, steam and extraction equipment, and safe air blowers for touch-free drying — helping us achieve excellent results while treating every vehicle with care.",
     },
     {
       title: "OEM-safe products",

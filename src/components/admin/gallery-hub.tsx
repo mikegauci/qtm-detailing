@@ -20,7 +20,6 @@ import {
   listDriveFolders,
   listDriveImages,
   publishPhoto,
-  unpublishPhoto,
   deletePhoto,
   updatePhotoMetadata,
 } from "@/app/actions/admin/gallery";
@@ -470,18 +469,6 @@ export function GalleryHub({
     );
   };
 
-  const handleUnpublish = (photoId: string) => {
-    startTransition(async () => {
-      const result = await unpublishPhoto(photoId);
-      if (result.success) {
-        toast.success(result.message);
-        refreshPhotos();
-      } else {
-        toast.error(result.message);
-      }
-    });
-  };
-
   const handleDelete = (photoId: string) => {
     if (!confirm("Delete this photo permanently?")) return;
     startTransition(async () => {
@@ -739,7 +726,6 @@ export function GalleryHub({
               isPending={isPending}
               onPublish={handlePublish}
               onEnhance={handleEnhance}
-              onUnpublish={handleUnpublish}
               onDelete={handleDelete}
               onPublishAllDrafts={handlePublishAllDrafts}
               onUpdate={handleUpdate}

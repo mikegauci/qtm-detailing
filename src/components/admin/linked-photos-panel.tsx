@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { EyeOff, ImageIcon, Pencil, Search, Sparkles, Trash2, Upload } from "lucide-react";
+import { Eye, ImageIcon, Pencil, Search, Sparkles, Trash2, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
 import { parseCarName } from "@/lib/content/parse-car-name";
 import { galleryPhotoDisplayUrl } from "@/lib/cms/gallery-photo-url";
@@ -28,7 +28,6 @@ type LinkedPhotosPanelProps = {
   isPending: boolean;
   onPublish: (photoId: string) => void;
   onEnhance: (photoId: string) => void;
-  onUnpublish: (photoId: string) => void;
   onDelete: (photoId: string) => void;
   onPublishAllDrafts: (photoIds: string[]) => void;
   onUpdate: (
@@ -47,6 +46,18 @@ function getPhotoActivityTime(photo: Tables<"gallery_photos">): number {
     ? new Date(photo.ai_enhanced_at).getTime()
     : 0;
   return Math.max(created, enhanced);
+}
+
+function getPhotoViewUrl(photo: Tables<"gallery_photos">): string | null {
+  if (photo.publish_to_gallery && photo.photo_url) {
+    return galleryPhotoDisplayUrl(photo.photo_url, photo.ai_enhanced_at);
+  }
+
+  if (photo.drive_file_id) {
+    return `/api/google-drive/thumbnail/${photo.drive_file_id}`;
+  }
+
+  return null;
 }
 
 function LinkedPhotoThumbnail({
@@ -100,7 +111,6 @@ function LinkedPhotoCard({
   isPending,
   onPublish,
   onEnhance,
-  onUnpublish,
   onDelete,
   onUpdate,
 }: {
@@ -108,7 +118,6 @@ function LinkedPhotoCard({
   isPending: boolean;
   onPublish: (photoId: string) => void;
   onEnhance: (photoId: string) => void;
-  onUnpublish: (photoId: string) => void;
   onDelete: (photoId: string) => void;
   onUpdate: (
     photoId: string,
@@ -140,6 +149,8 @@ function LinkedPhotoCard({
     setCategory(photo.category ?? "exterior");
     setIsEditing(false);
   };
+
+  const viewUrl = getPhotoViewUrl(photo);
 
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
@@ -247,18 +258,6 @@ function LinkedPhotoCard({
                   Publish
                 </Button>
               )}
-              {photo.publish_to_gallery && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => onUnpublish(photo.id)}
-                  disabled={isPending}
-                >
-                  <EyeOff className="mr-1 h-3 w-3" />
-                  Unpublish
-                </Button>
-              )}
               {photo.publish_to_gallery &&
                 photo.drive_file_id &&
                 !photo.ai_enhanced_at && (
@@ -272,6 +271,14 @@ function LinkedPhotoCard({
                   Enhance
                 </Button>
               )}
+              {viewUrl ? (
+                <Button size="sm" variant="outline" asChild>
+                  <a href={viewUrl} target="_blank" rel="noopener noreferrer">
+                    <Eye className="mr-1 h-3 w-3" />
+                    View
+                  </a>
+                </Button>
+              ) : null}
               <Button
                 size="sm"
                 variant="destructive"
@@ -293,7 +300,6 @@ export function LinkedPhotosPanel({
   isPending,
   onPublish,
   onEnhance,
-  onUnpublish,
   onDelete,
   onPublishAllDrafts,
   onUpdate,
@@ -584,7 +590,6 @@ export function LinkedPhotosPanel({
                       isPending={isPending}
                       onPublish={onPublish}
                       onEnhance={onEnhance}
-                      onUnpublish={onUnpublish}
                       onDelete={onDelete}
                       onUpdate={onUpdate}
                     />
@@ -599,7 +604,6 @@ export function LinkedPhotosPanel({
                     isPending={isPending}
                     onPublish={onPublish}
                     onEnhance={onEnhance}
-                    onUnpublish={onUnpublish}
                     onDelete={onDelete}
                     onUpdate={onUpdate}
                   />

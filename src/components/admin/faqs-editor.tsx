@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
 import { deleteFaq, upsertFaq } from "@/app/actions/admin/cms";
+import { CmsFormActions } from "@/components/admin/cms-form-actions";
 import { CmsListEditor } from "@/components/admin/cms-list-editor";
+import { CmsListItemButton } from "@/components/admin/cms-list-item-button";
 import type { Tables } from "@/lib/supabase/types";
 import { useServerAction } from "@/hooks/use-server-action";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -69,9 +69,10 @@ export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
       list={
         <>
           {faqs.map((faq) => (
-            <button
+            <CmsListItemButton
               key={faq.id}
-              type="button"
+              title={faq.question}
+              badge={!faq.is_active ? <Badge variant="outline">Inactive</Badge> : undefined}
               onClick={() =>
                 setEditing({
                   id: faq.id,
@@ -82,13 +83,7 @@ export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
                   is_active: faq.is_active,
                 })
               }
-              className="w-full rounded-lg border border-white/10 p-3 text-left hover:bg-white/5"
-            >
-              <div className="flex items-center justify-between gap-2">
-                <p className="font-medium">{faq.question}</p>
-                {!faq.is_active && <Badge variant="outline">Inactive</Badge>}
-              </div>
-            </button>
+            />
           ))}
         </>
       }
@@ -149,26 +144,11 @@ export function FaqsEditor({ initialFaqs }: FaqsEditorProps) {
           />
           Active
         </label>
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Save FAQ"
-            )}
-          </Button>
-          {editing.id && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleDelete(editing.id!)}
-              disabled={isPending}
-            >
-              <Trash2 className="mr-1 h-4 w-4" />
-              Delete
-            </Button>
-          )}
-        </div>
+        <CmsFormActions
+          isPending={isPending}
+          saveLabel="Save FAQ"
+          onDelete={editing.id ? () => handleDelete(editing.id!) : undefined}
+        />
         </form>
       }
     />

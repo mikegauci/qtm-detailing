@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowLeft, Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   createReferenceBooking,
@@ -16,6 +16,7 @@ import {
   updateCustomer,
 } from "@/app/actions/admin/customers";
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { VehiclePhotoField } from "@/components/admin/vehicle-photo-field";
 import type { Tables } from "@/lib/supabase/types";
 import {
@@ -170,18 +171,11 @@ export function CustomerDetail({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/admin/customers">
-            <ArrowLeft className="h-4 w-4" />
-            Back
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">{customer.full_name}</h1>
-          <p className="text-sm text-white/60">{contactSubtitle}</p>
-        </div>
-      </div>
+      <AdminPageHeader
+        backHref="/admin/customers"
+        title={customer.full_name}
+        subtitle={contactSubtitle}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

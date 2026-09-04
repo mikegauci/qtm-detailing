@@ -1,23 +1,22 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import {
   CheckCircle2,
   LayoutTemplate,
-  Loader2,
   Megaphone,
   Sparkles,
 } from "lucide-react";
-import { toast } from "sonner";
-import { upsertPageSection } from "@/app/actions/admin/cms";
 import { CmsImageField } from "@/components/admin/cms-image-field";
+import { EditorTabBar } from "@/components/admin/editor-tab-bar";
+import { SaveSectionButton } from "@/components/admin/save-section-button";
+import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -28,17 +27,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
-
-export type {
-  HeroContent,
-  WhyQtmContent,
-  CtaBandContent,
-  SectionHeadingContent,
-  AboutIntroContent,
-  ProcessStepsContent,
-  PricingInfoContent,
-} from "@/types/page-sections";
+import { usePageSectionSave } from "@/hooks/use-page-section-save";
 
 import type {
   HeroContent,
@@ -247,55 +236,26 @@ export function PageCopyEditor({ hero, whyQtm, ctaBand }: PageCopyEditorProps) {
   const [heroContent, setHeroContent] = useState(hero);
   const [whyContent, setWhyContent] = useState(whyQtm);
   const [ctaContent, setCtaContent] = useState(ctaBand);
-  const [savingSection, setSavingSection] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
+  const { saveSection, isSavingSection } = usePageSectionSave("home");
 
   const activeMeta = SECTIONS.find((section) => section.id === activeSection)!;
 
-  const saveSection = (
-    sectionKey: string,
-    content: HeroContent | WhyQtmContent | CtaBandContent,
-  ) => {
-    setSavingSection(sectionKey);
-    startTransition(async () => {
-      const result = await upsertPageSection({
-        page_key: "home",
-        section_key: sectionKey,
-        content,
-      });
-      setSavingSection(null);
-      if (result.success) toast.success("Changes saved.");
-      else toast.error(result.message);
-    });
-  };
-
-  const isSaving = (sectionKey: string) =>
-    isPending && savingSection === sectionKey;
+  const sectionTabs = SECTIONS.map((section) => {
+    const Icon = section.icon;
+    return {
+      id: section.id,
+      label: section.label,
+      icon: <Icon className="h-4 w-4 shrink-0" />,
+    };
+  });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        {SECTIONS.map((section) => {
-          const Icon = section.icon;
-          const isActive = activeSection === section.id;
-          return (
-            <button
-              key={section.id}
-              type="button"
-              onClick={() => setActiveSection(section.id)}
-              className={cn(
-                "inline-flex items-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors",
-                isActive
-                  ? "border-brand-purple-500/50 bg-brand-purple-500/15 text-white"
-                  : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:text-white",
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              {section.label}
-            </button>
-          );
-        })}
-      </div>
+      <EditorTabBar
+        value={activeSection}
+        tabs={sectionTabs}
+        onChange={setActiveSection}
+      />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <Card>
@@ -411,18 +371,12 @@ export function PageCopyEditor({ hero, whyQtm, ctaBand }: PageCopyEditorProps) {
                   />
                 </FieldGroup>
 
-                <div className="flex justify-end border-t border-white/10 pt-4">
-                  <Button
-                    onClick={() => saveSection("hero", heroContent)}
-                    disabled={isSaving("hero")}
-                  >
-                    {isSaving("hero") ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Save hero"
-                    )}
-                  </Button>
-                </div>
+                <SaveSectionButton
+                  label="Save hero"
+                  isSaving={isSavingSection("hero")}
+                  onClick={() => saveSection("hero", heroContent)}
+                  className="border-t border-white/10 pt-4"
+                />
               </>
             ) : null}
 
@@ -432,43 +386,12 @@ export function PageCopyEditor({ hero, whyQtm, ctaBand }: PageCopyEditorProps) {
                   title="Section intro"
                   description="Heading and intro text above the reason cards"
                 >
-                  <div className="space-y-2">
-                    <Label>Eyebrow</Label>
-                    <Input
-                      value={whyContent.eyebrow}
-                      onChange={(e) =>
-                        setWhyContent((p) => ({
-                          ...p,
-                          eyebrow: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Title</Label>
-                    <Input
-                      value={whyContent.title}
-                      onChange={(e) =>
-                        setWhyContent((p) => ({
-                          ...p,
-                          title: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <Textarea
-                      rows={3}
-                      value={whyContent.description}
-                      onChange={(e) =>
-                        setWhyContent((p) => ({
-                          ...p,
-                          description: e.target.value,
-                        }))
-                      }
-                    />
-                  </div>
+                  <SectionHeadingFields
+                    content={whyContent}
+                    onChange={(content) =>
+                      setWhyContent({ ...whyContent, ...content })
+                    }
+                  />
                 </FieldGroup>
 
                 <FieldGroup
@@ -527,18 +450,12 @@ export function PageCopyEditor({ hero, whyQtm, ctaBand }: PageCopyEditorProps) {
                   </Accordion>
                 </FieldGroup>
 
-                <div className="flex justify-end border-t border-white/10 pt-4">
-                  <Button
-                    onClick={() => saveSection("why-qtm", whyContent)}
-                    disabled={isSaving("why-qtm")}
-                  >
-                    {isSaving("why-qtm") ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Save why QTM"
-                    )}
-                  </Button>
-                </div>
+                <SaveSectionButton
+                  label="Save why QTM"
+                  isSaving={isSavingSection("why-qtm")}
+                  onClick={() => saveSection("why-qtm", whyContent)}
+                  className="border-t border-white/10 pt-4"
+                />
               </>
             ) : null}
 
@@ -591,18 +508,12 @@ export function PageCopyEditor({ hero, whyQtm, ctaBand }: PageCopyEditorProps) {
                   />
                 </FieldGroup>
 
-                <div className="flex justify-end border-t border-white/10 pt-4">
-                  <Button
-                    onClick={() => saveSection("cta-band", ctaContent)}
-                    disabled={isSaving("cta-band")}
-                  >
-                    {isSaving("cta-band") ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      "Save CTA band"
-                    )}
-                  </Button>
-                </div>
+                <SaveSectionButton
+                  label="Save CTA band"
+                  isSaving={isSavingSection("cta-band")}
+                  onClick={() => saveSection("cta-band", ctaContent)}
+                  className="border-t border-white/10 pt-4"
+                />
               </>
             ) : null}
           </CardContent>

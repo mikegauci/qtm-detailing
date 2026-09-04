@@ -5,7 +5,9 @@ import {
   DndContext,
   closestCenter,
   type DragEndEvent,
+  type DraggableAttributes,
 } from "@dnd-kit/core";
+import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   SortableContext,
   arrayMove,
@@ -13,13 +15,15 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Loader2, Plus, Trash2 } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { toast } from "sonner";
 import {
   deleteService,
   reorderServices,
   upsertService,
 } from "@/app/actions/admin/cms";
+import { CmsFormActions } from "@/components/admin/cms-form-actions";
+import { CmsListEditor } from "@/components/admin/cms-list-editor";
 import { ServiceImagesField } from "@/components/admin/service-images-field";
 import { parseServiceImages } from "@/lib/content/service-images";
 import { useMounted } from "@/hooks/use-mounted";
@@ -27,7 +31,6 @@ import { useServerAction } from "@/hooks/use-server-action";
 import { useSortableSensors } from "@/hooks/use-sortable-sensors";
 import type { ServiceImage } from "@/types/content";
 import type { Tables } from "@/lib/supabase/types";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -59,14 +62,19 @@ const emptyService: ServiceFormState = {
   is_active: true,
 };
 
-function ServiceRow({
+function ServiceRowCard({
   service,
   isSelected,
   onSelect,
+  dragHandle,
 }: {
   service: Tables<"services">;
   isSelected: boolean;
   onSelect: () => void;
+  dragHandle?: {
+    attributes: DraggableAttributes;
+    listeners: SyntheticListenerMap | undefined;
+  };
 }) {
   return (
     <div
@@ -75,9 +83,21 @@ function ServiceRow({
         isSelected && "border-brand-purple-400/40 bg-white/5",
       )}
     >
-      <div className="px-2 py-3 text-white/20">
-        <GripVertical className="h-4 w-4" />
-      </div>
+      {dragHandle ? (
+        <button
+          type="button"
+          className="cursor-grab touch-none px-2 py-3 text-white/40 hover:text-white/70 active:cursor-grabbing"
+          aria-label={`Reorder ${service.name}`}
+          {...dragHandle.attributes}
+          {...dragHandle.listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      ) : (
+        <div className="px-2 py-3 text-white/20">
+          <GripVertical className="h-4 w-4" />
+        </div>
+      )}
       <button
         type="button"
         onClick={onSelect}
@@ -122,34 +142,14 @@ function SortableServiceRow({
     <div
       ref={setNodeRef}
       style={style}
-      className={cn(
-        "flex items-center gap-2 rounded-lg border border-white/10 bg-surface-base",
-        isSelected && "border-brand-purple-400/40 bg-white/5",
-        isDragging && "opacity-60",
-      )}
+      className={cn(isDragging && "opacity-60")}
     >
-      <button
-        type="button"
-        className="cursor-grab touch-none px-2 py-3 text-white/40 hover:text-white/70 active:cursor-grabbing"
-        aria-label={`Reorder ${service.name}`}
-        {...attributes}
-        {...listeners}
-      >
-        <GripVertical className="h-4 w-4" />
-      </button>
-      <button
-        type="button"
-        onClick={onSelect}
-        className="flex min-w-0 flex-1 items-center justify-between py-3 pr-3 text-left hover:bg-white/5"
-      >
-        <div className="min-w-0">
-          <p className="truncate font-medium">{service.name}</p>
-          <p className="truncate text-sm text-white/60">
-            {slugify(service.name)}
-          </p>
-        </div>
-        {!service.is_active && <Badge variant="outline">Inactive</Badge>}
-      </button>
+      <ServiceRowCard
+        service={service}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        dragHandle={{ attributes, listeners }}
+      />
     </div>
   );
 }
@@ -226,154 +226,127 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
     });
   };
 
-  return (
-    <div className="grid gap-8 lg:grid-cols-2">
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-lg font-semibold">Services</h2>
-            <p className="text-sm text-white/50">Drag to reorder</p>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setEditing(emptyService)}
-          >
-            <Plus className="mr-1 h-3 w-3" />
-            New
-          </Button>
-        </div>
-        {mounted ? (
-          <DndContext
-            id="services-editor-list"
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={services.map((service) => service.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <div className="space-y-2">
-                {services.map((service) => (
-                  <SortableServiceRow
-                    key={service.id}
-                    service={service}
-                    isSelected={editing.id === service.id}
-                    onSelect={() => selectService(service)}
-                  />
-                ))}
-              </div>
-            </SortableContext>
-          </DndContext>
-        ) : (
-          <div className="space-y-2">
-            {services.map((service) => (
-              <ServiceRow
-                key={service.id}
-                service={service}
-                isSelected={editing.id === service.id}
-                onSelect={() => selectService(service)}
-              />
-            ))}
-          </div>
-        )}
-      </div>
-
-      <form
-        onSubmit={handleSave}
-        className="space-y-4 rounded-xl border border-white/10 p-5"
+  const serviceList = mounted ? (
+    <DndContext
+      id="services-editor-list"
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext
+        items={services.map((service) => service.id)}
+        strategy={verticalListSortingStrategy}
       >
-        <h2 className="text-lg font-semibold">
-          {editing.id ? "Edit service" : "New service"}
-        </h2>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Name</Label>
-            <Input
-              value={editing.name}
-              onChange={(e) =>
-                setEditing((p) => ({ ...p, name: e.target.value }))
-              }
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Link</Label>
-            <Input
-              value={link}
-              readOnly
-              tabIndex={-1}
-              className="cursor-default bg-white/5 text-white/60"
-            />
-          </div>
-        </div>
         <div className="space-y-2">
-          <Label>Short description <small className="text-xs text-white/50">(shown on homepage)</small></Label>
-          <Textarea
-            value={editing.short_description ?? ""}
-            onChange={(e) =>
-              setEditing((p) => ({ ...p, short_description: e.target.value }))
-            }
-            rows={2}
-          />
+          {services.map((service) => (
+            <SortableServiceRow
+              key={service.id}
+              service={service}
+              isSelected={editing.id === service.id}
+              onSelect={() => selectService(service)}
+            />
+          ))}
         </div>
-        <div className="space-y-2">
-          <Label>Description</Label>
-          <Textarea
-            value={editing.description ?? ""}
-            onChange={(e) =>
-              setEditing((p) => ({ ...p, description: e.target.value }))
-            }
-            rows={4}
-          />
-        </div>
-        <ServiceImagesField
-          value={editing.images}
-          onChange={(images) => setEditing((p) => ({ ...p, images }))}
-          slug={link}
+      </SortableContext>
+    </DndContext>
+  ) : (
+    <div className="space-y-2">
+      {services.map((service) => (
+        <ServiceRowCard
+          key={service.id}
+          service={service}
+          isSelected={editing.id === service.id}
+          onSelect={() => selectService(service)}
         />
-        <div className="space-y-2">
-          <Label>Features (one per line)</Label>
-          <Textarea
-            value={editing.featuresText}
-            onChange={(e) =>
-              setEditing((p) => ({ ...p, featuresText: e.target.value }))
-            }
-            rows={5}
-          />
-        </div>
-        <label className="flex items-center gap-2 text-sm">
-          <input
-            type="checkbox"
-            checked={editing.is_active ?? true}
-            onChange={(e) =>
-              setEditing((p) => ({ ...p, is_active: e.target.checked }))
-            }
-          />
-          Active
-        </label>
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Save service"
-            )}
-          </Button>
-          {editing.id && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleDelete(editing.id!)}
-              disabled={isPending}
-            >
-              <Trash2 className="mr-1 h-4 w-4" />
-              Delete
-            </Button>
-          )}
-        </div>
-      </form>
+      ))}
     </div>
+  );
+
+  return (
+    <CmsListEditor
+      listTitle="Services"
+      listSubtitle="Drag to reorder"
+      formTitle={editing.id ? "Edit service" : "New service"}
+      onNew={() => setEditing(emptyService)}
+      list={serviceList}
+      form={
+        <form onSubmit={handleSave} className="space-y-4">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label>Name</Label>
+              <Input
+                value={editing.name}
+                onChange={(e) =>
+                  setEditing((p) => ({ ...p, name: e.target.value }))
+                }
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Link</Label>
+              <Input
+                value={link}
+                readOnly
+                tabIndex={-1}
+                className="cursor-default bg-white/5 text-white/60"
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>
+              Short description{" "}
+              <small className="text-xs text-white/50">(shown on homepage)</small>
+            </Label>
+            <Textarea
+              value={editing.short_description ?? ""}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, short_description: e.target.value }))
+              }
+              rows={2}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea
+              value={editing.description ?? ""}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, description: e.target.value }))
+              }
+              rows={4}
+            />
+          </div>
+          <ServiceImagesField
+            value={editing.images}
+            onChange={(images) => setEditing((p) => ({ ...p, images }))}
+            slug={link}
+          />
+          <div className="space-y-2">
+            <Label>Features (one per line)</Label>
+            <Textarea
+              value={editing.featuresText}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, featuresText: e.target.value }))
+              }
+              rows={5}
+            />
+          </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={editing.is_active ?? true}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, is_active: e.target.checked }))
+              }
+            />
+            Active
+          </label>
+          <CmsFormActions
+            isPending={isPending}
+            saveLabel="Save service"
+            onDelete={editing.id ? () => handleDelete(editing.id!) : undefined}
+          />
+        </form>
+      }
+    />
   );
 }

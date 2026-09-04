@@ -1,16 +1,15 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   uploadCmsAsset,
   uploadCmsAssetFromDrive,
   uploadCmsAssetFromLinked,
 } from "@/app/actions/admin/cms";
-import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
+import { HiddenImageFileInput } from "@/components/admin/hidden-image-file-input";
 import { ImageUploadPreview } from "@/components/admin/image-upload-preview";
-import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
+import { PhotoSourceFieldDialogs } from "@/components/admin/photo-source-field-dialogs";
 import { Label } from "@/components/ui/label";
 import { usePhotoSourcePicker } from "@/hooks/use-photo-source-picker";
 import { cn } from "@/lib/utils";
@@ -89,81 +88,32 @@ export function CmsImageField({
             aspectClass,
           )}
         >
-          {value ? (
-            <ImageUploadPreview
-              value={value}
-              alt={label}
-              isPending={isPending}
-              aspectClass={aspectClass}
-              onReplace={openSourceDialog}
-              onRemove={() => onChange("")}
-              emptyState={
-                <button
-                  type="button"
-                  disabled={isPending}
-                  onClick={openSourceDialog}
-                  className="flex h-full min-h-[140px] w-full flex-col items-center justify-center gap-2 p-4 text-white/50 transition-colors hover:bg-white/[0.04] hover:text-white/70 disabled:opacity-50"
-                >
-                  {isPending ? (
-                    <Loader2 className="h-8 w-8 animate-spin" />
-                  ) : (
-                    <>
-                      <ImageIcon className="h-8 w-8" />
-                      <span className="text-sm">Click to add image</span>
-                      <span className="text-xs text-white/40">
-                        Upload from device or browse Google Drive
-                      </span>
-                    </>
-                  )}
-                </button>
-              }
-            />
-          ) : (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={openSourceDialog}
-              className="flex h-full min-h-[140px] w-full flex-col items-center justify-center gap-2 p-4 text-white/50 transition-colors hover:bg-white/[0.04] hover:text-white/70 disabled:opacity-50"
-            >
-              {isPending ? (
-                <Loader2 className="h-8 w-8 animate-spin" />
-              ) : (
-                <>
-                  <ImageIcon className="h-8 w-8" />
-                  <span className="text-sm">Click to add image</span>
-                  <span className="text-xs text-white/40">
-                    Upload from device or browse Google Drive
-                  </span>
-                </>
-              )}
-            </button>
-          )}
+          <ImageUploadPreview
+            value={value || null}
+            alt={label}
+            isPending={isPending}
+            aspectClass={aspectClass}
+            emptySubtitle="Upload from device or browse Google Drive"
+            onReplace={openSourceDialog}
+            onRemove={() => onChange("")}
+          />
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleUpload(file);
-            e.target.value = "";
-          }}
+        <HiddenImageFileInput
+          inputRef={inputRef}
+          onSelect={(files) => handleUpload(files[0])}
         />
       </div>
 
-      <PhotoSourceDialog
-        open={sourceDialogOpen}
-        onOpenChange={setSourceDialogOpen}
+      <PhotoSourceFieldDialogs
         title={`Add ${label.toLowerCase()}`}
-        onChooseDevice={() => chooseDeviceUpload(openFilePicker)}
-        onChooseDrive={chooseLinkedPhoto}
         disabled={isPending}
-      />
-
-      <LinkedPhotoPickerDialog
-        open={linkedPickerOpen}
-        onOpenChange={setLinkedPickerOpen}
+        sourceDialogOpen={sourceDialogOpen}
+        linkedPickerOpen={linkedPickerOpen}
+        setSourceDialogOpen={setSourceDialogOpen}
+        setLinkedPickerOpen={setLinkedPickerOpen}
+        chooseDeviceUpload={chooseDeviceUpload}
+        chooseLinkedPhoto={chooseLinkedPhoto}
+        openFilePicker={openFilePicker}
         onDriveSelect={async (driveFileIds) => {
           const result = await uploadCmsAssetFromDrive(
             driveFileIds[0],

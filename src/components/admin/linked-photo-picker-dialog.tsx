@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
-  Check,
   ChevronLeft,
   Folder,
   HardDrive,
   ImageIcon,
   Images,
   Loader2,
-  Search,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -17,10 +15,15 @@ import {
   getLinkedPhotosForPicker,
 } from "@/app/actions/admin/customers";
 import { DriveBrowser } from "@/components/admin/drive-browser";
+import { DriveConnectPrompt } from "@/components/admin/drive-connect-prompt";
 import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
+import { SelectionCheckBadge } from "@/components/admin/selection-check-badge";
 import { ViewToggle } from "@/components/admin/view-toggle";
 import type { Tables } from "@/lib/supabase/types";
-import { parseCarName } from "@/lib/content/parse-car-name";
+import {
+  getLinkedPhotoDisplaySrc,
+  getLinkedPhotoLabel,
+} from "@/lib/cms/gallery-photo-url";
 import { useDriveBrowser } from "@/hooks/use-drive-browser";
 import type { DriveImage } from "@/types/drive";
 import { Button } from "@/components/ui/button";
@@ -31,7 +34,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { SearchInput } from "@/components/ui/search-input";
 import { cn } from "@/lib/utils";
 
 type PickerView = "drive" | "linked";
@@ -40,16 +43,6 @@ type PickerResult = {
   success: boolean;
   message: string;
 };
-
-function SelectionBadge({ selected }: { selected: boolean }) {
-  if (!selected) return null;
-
-  return (
-    <span className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full bg-brand-purple-600 text-white shadow-md">
-      <Check className="h-3.5 w-3.5" />
-    </span>
-  );
-}
 
 function DriveImageOption({
   image,
@@ -79,7 +72,7 @@ function DriveImageOption({
       )}
     >
       <DriveThumbnail fileId={image.id} name={image.name} />
-      <SelectionBadge selected={multiple && selected} />
+      <SelectionCheckBadge selected={multiple && selected} />
       <p className="truncate p-2 text-xs text-white/70">{image.name}</p>
     </button>
   );
@@ -101,15 +94,8 @@ function LinkedPhotoOption({
   onSelect: () => void;
 }) {
   const [failed, setFailed] = useState(false);
-  const label = photo.drive_folder_name
-    ? parseCarName(photo.drive_folder_name)
-    : "Linked photo";
-  const src =
-    photo.publish_to_gallery && photo.photo_url
-      ? photo.photo_url
-      : photo.drive_file_id
-        ? `/api/google-drive/thumbnail/${photo.drive_file_id}`
-        : null;
+  const label = getLinkedPhotoLabel(photo);
+  const src = getLinkedPhotoDisplaySrc(photo);
 
   return (
     <button
@@ -135,7 +121,7 @@ function LinkedPhotoOption({
           <ImageIcon className="h-8 w-8 text-white/40" />
         </div>
       )}
-      <SelectionBadge selected={multiple && selected} />
+      <SelectionCheckBadge selected={multiple && selected} />
       <div className="space-y-0.5 p-2">
         <p className="truncate text-xs font-medium text-white">{label}</p>
         <p className="text-[10px] uppercase tracking-wide text-white/40">
@@ -247,9 +233,7 @@ export function LinkedPhotoPickerDialog({
     if (!query) return photos;
 
     return photos.filter((photo) => {
-      const label = photo.drive_folder_name
-        ? parseCarName(photo.drive_folder_name)
-        : "";
+      const label = getLinkedPhotoLabel(photo);
       return (
         label.toLowerCase().includes(query) ||
         photo.photo_type.toLowerCase().includes(query) ||
@@ -354,15 +338,11 @@ export function LinkedPhotoPickerDialog({
         />
 
         {view === "linked" && (
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/40" />
-            <Input
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by vehicle or type..."
-              className="pl-9"
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search by vehicle or type..."
+          />
         )}
 
         {multiple && selectedCount > 0 && (
@@ -388,14 +368,7 @@ export function LinkedPhotoPickerDialog({
         >
           {view === "drive" ? (
             driveConnected === false ? (
-              <div className="space-y-4 py-8 text-center">
-                <p className="text-sm text-white/60">
-                  Connect Google Drive to browse your photo folders.
-                </p>
-                <Button asChild size="sm">
-                  <a href="/api/google-drive/auth">Connect Google Drive</a>
-                </Button>
-              </div>
+              <DriveConnectPrompt />
             ) : loadingDrive || driveConnected === null ? (
               <div className="flex items-center justify-center py-16 text-white/50">
                 <Loader2 className="h-6 w-6 animate-spin" />

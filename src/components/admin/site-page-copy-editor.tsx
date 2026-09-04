@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
-import { upsertPageSection } from "@/app/actions/admin/cms";
+import { useState } from "react";
 import { CmsImageField } from "@/components/admin/cms-image-field";
+import { EditorTabBar } from "@/components/admin/editor-tab-bar";
+import { SaveSectionButton } from "@/components/admin/save-section-button";
 import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -17,7 +15,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import { usePageSectionSave } from "@/hooks/use-page-section-save";
 import type {
   AboutIntroContent,
   PricingInfoContent,
@@ -58,23 +56,7 @@ export function SitePageCopyEditor({
   const [processStepsContent, setProcessStepsContent] = useState(processSteps);
   const [contactHeroContent, setContactHeroContent] = useState(contactHero);
   const [galleryHeroContent, setGalleryHeroContent] = useState(galleryHero);
-  const [savingKey, setSavingKey] = useState<string | null>(null);
-  const [isPending, startTransition] = useTransition();
-
-  const save = (pageKey: string, sectionKey: string, content: unknown) => {
-    const key = `${pageKey}:${sectionKey}`;
-    setSavingKey(key);
-    startTransition(async () => {
-      const result = await upsertPageSection({
-        page_key: pageKey,
-        section_key: sectionKey,
-        content: content as import("@/lib/supabase/types").Json,
-      });
-      setSavingKey(null);
-      if (result.success) toast.success("Changes saved.");
-      else toast.error(result.message);
-    });
-  };
+  const { save, isSaving } = usePageSectionSave();
 
   const tabs: { id: PageTab; label: string }[] = [
     { id: "home-extra", label: "Home" },
@@ -84,28 +66,9 @@ export function SitePageCopyEditor({
     { id: "gallery", label: "Gallery" },
   ];
 
-  const isSaving = (pageKey: string, sectionKey: string) =>
-    isPending && savingKey === `${pageKey}:${sectionKey}`;
-
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={cn(
-              "rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors",
-              activeTab === tab.id
-                ? "border-brand-purple-500/50 bg-brand-purple-500/15 text-white"
-                : "border-white/10 bg-white/[0.02] text-white/70 hover:border-white/20 hover:text-white",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <EditorTabBar value={activeTab} tabs={tabs} onChange={setActiveTab} />
 
       {activeTab === "home-extra" ? (
         <Card>
@@ -118,20 +81,13 @@ export function SitePageCopyEditor({
               content={featuredServicesContent}
               onChange={setFeaturedServicesContent}
             />
-            <div className="flex justify-end">
-              <Button
-                onClick={() =>
-                  save("home", "featured-services", featuredServicesContent)
-                }
-                disabled={isSaving("home", "featured-services")}
-              >
-                {isSaving("home", "featured-services") ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Save"
-                )}
-              </Button>
-            </div>
+            <SaveSectionButton
+              label="Save"
+              isSaving={isSaving("home", "featured-services")}
+              onClick={() =>
+                save("home", "featured-services", featuredServicesContent)
+              }
+            />
           </CardContent>
         </Card>
       ) : null}
@@ -147,18 +103,11 @@ export function SitePageCopyEditor({
                 content={servicesHeroContent}
                 onChange={setServicesHeroContent}
               />
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => save("services", "hero", servicesHeroContent)}
-                  disabled={isSaving("services", "hero")}
-                >
-                  {isSaving("services", "hero") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save hero"
-                  )}
-                </Button>
-              </div>
+              <SaveSectionButton
+                label="Save hero"
+                isSaving={isSaving("services", "hero")}
+                onClick={() => save("services", "hero", servicesHeroContent)}
+              />
             </CardContent>
           </Card>
 
@@ -195,20 +144,13 @@ export function SitePageCopyEditor({
                   }
                 />
               </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() =>
-                    save("services", "pricing-info", pricingInfoContent)
-                  }
-                  disabled={isSaving("services", "pricing-info")}
-                >
-                  {isSaving("services", "pricing-info") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save pricing info"
-                  )}
-                </Button>
-              </div>
+              <SaveSectionButton
+                label="Save pricing info"
+                isSaving={isSaving("services", "pricing-info")}
+                onClick={() =>
+                  save("services", "pricing-info", pricingInfoContent)
+                }
+              />
             </CardContent>
           </Card>
 
@@ -221,18 +163,11 @@ export function SitePageCopyEditor({
                 content={faqHeadingContent}
                 onChange={setFaqHeadingContent}
               />
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => save("services", "faq-heading", faqHeadingContent)}
-                  disabled={isSaving("services", "faq-heading")}
-                >
-                  {isSaving("services", "faq-heading") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save FAQ heading"
-                  )}
-                </Button>
-              </div>
+              <SaveSectionButton
+                label="Save FAQ heading"
+                isSaving={isSaving("services", "faq-heading")}
+                onClick={() => save("services", "faq-heading", faqHeadingContent)}
+              />
             </CardContent>
           </Card>
         </div>
@@ -290,18 +225,11 @@ export function SitePageCopyEditor({
                   filename="about-page"
                 />
               </div>
-              <div className="flex justify-end">
-                <Button
-                  onClick={() => save("about", "intro", aboutIntroContent)}
-                  disabled={isSaving("about", "intro")}
-                >
-                  {isSaving("about", "intro") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save intro"
-                  )}
-                </Button>
-              </div>
+              <SaveSectionButton
+                label="Save intro"
+                isSaving={isSaving("about", "intro")}
+                onClick={() => save("about", "intro", aboutIntroContent)}
+              />
             </CardContent>
           </Card>
 
@@ -349,20 +277,13 @@ export function SitePageCopyEditor({
                   />
                 </div>
               ))}
-              <div className="flex justify-end">
-                <Button
-                  onClick={() =>
-                    save("about", "process-steps", processStepsContent)
-                  }
-                  disabled={isSaving("about", "process-steps")}
-                >
-                  {isSaving("about", "process-steps") ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    "Save process"
-                  )}
-                </Button>
-              </div>
+              <SaveSectionButton
+                label="Save process"
+                isSaving={isSaving("about", "process-steps")}
+                onClick={() =>
+                  save("about", "process-steps", processStepsContent)
+                }
+              />
             </CardContent>
           </Card>
         </div>
@@ -378,18 +299,11 @@ export function SitePageCopyEditor({
               content={contactHeroContent}
               onChange={setContactHeroContent}
             />
-            <div className="flex justify-end">
-              <Button
-                onClick={() => save("contact", "hero", contactHeroContent)}
-                disabled={isSaving("contact", "hero")}
-              >
-                {isSaving("contact", "hero") ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Save hero"
-                )}
-              </Button>
-            </div>
+            <SaveSectionButton
+              label="Save hero"
+              isSaving={isSaving("contact", "hero")}
+              onClick={() => save("contact", "hero", contactHeroContent)}
+            />
           </CardContent>
         </Card>
       ) : null}
@@ -404,18 +318,11 @@ export function SitePageCopyEditor({
               content={galleryHeroContent}
               onChange={setGalleryHeroContent}
             />
-            <div className="flex justify-end">
-              <Button
-                onClick={() => save("gallery", "hero", galleryHeroContent)}
-                disabled={isSaving("gallery", "hero")}
-              >
-                {isSaving("gallery", "hero") ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Save hero"
-                )}
-              </Button>
-            </div>
+            <SaveSectionButton
+              label="Save hero"
+              isSaving={isSaving("gallery", "hero")}
+              onClick={() => save("gallery", "hero", galleryHeroContent)}
+            />
           </CardContent>
         </Card>
       ) : null}

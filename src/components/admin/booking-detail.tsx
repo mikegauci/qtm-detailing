@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, Loader2, Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   addBookingService,
@@ -11,6 +11,7 @@ import {
   updateBooking,
   updateBookingStatus,
 } from "@/app/actions/admin/bookings";
+import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import type { Tables } from "@/lib/supabase/types";
 import {
   BOOKING_STATUS_COLORS,
@@ -154,44 +155,37 @@ export function BookingDetail({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/admin/bookings">
-              <ArrowLeft className="h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-          <div>
-            <h1 className="text-2xl font-bold text-white">
-              {booking.confirmation_code}
-            </h1>
-            <p className="text-sm text-white/60">
-              {customer.full_name} ·{" "}
-              {formatBookingDateRange(booking.booking_date, booking.end_date)}
-            </p>
+      <AdminPageHeader
+        backHref="/admin/bookings"
+        title={booking.confirmation_code}
+        subtitle={
+          <>
+            {customer.full_name} ·{" "}
+            {formatBookingDateRange(booking.booking_date, booking.end_date)}
+          </>
+        }
+        actions={
+          <div className="flex items-center gap-3">
+            <Select value={booking.status} onValueChange={handleStatusChange}>
+              <SelectTrigger className="w-36">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUS_OPTIONS.map((status) => (
+                  <SelectItem key={status} value={status}>
+                    {BOOKING_STATUS_LABELS[status]}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span
+              className={`hidden rounded-full border px-2.5 py-0.5 text-xs font-medium sm:inline ${BOOKING_STATUS_COLORS[booking.status]}`}
+            >
+              {BOOKING_STATUS_LABELS[booking.status]}
+            </span>
           </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <Select value={booking.status} onValueChange={handleStatusChange}>
-            <SelectTrigger className="w-36">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {STATUS_OPTIONS.map((status) => (
-                <SelectItem key={status} value={status}>
-                  {BOOKING_STATUS_LABELS[status]}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span
-            className={`hidden rounded-full border px-2.5 py-0.5 text-xs font-medium sm:inline ${BOOKING_STATUS_COLORS[booking.status]}`}
-          >
-            {BOOKING_STATUS_LABELS[booking.status]}
-          </span>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

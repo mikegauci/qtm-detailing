@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
 import { deleteTestimonial, upsertTestimonial } from "@/app/actions/admin/cms";
+import { CmsFormActions } from "@/components/admin/cms-form-actions";
 import { CmsListEditor } from "@/components/admin/cms-list-editor";
+import { CmsListItemButton } from "@/components/admin/cms-list-item-button";
 import type { Tables } from "@/lib/supabase/types";
 import { useServerAction } from "@/hooks/use-server-action";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -71,9 +71,15 @@ export function TestimonialsEditor({
       list={
         <>
           {items.map((item) => (
-            <button
+            <CmsListItemButton
               key={item.id}
-              type="button"
+              title={item.customer_name}
+              subtitle={item.comment}
+              badge={
+                !item.is_published ? (
+                  <Badge variant="outline">Draft</Badge>
+                ) : undefined
+              }
               onClick={() =>
                 setEditing({
                   id: item.id,
@@ -84,18 +90,7 @@ export function TestimonialsEditor({
                   is_published: item.is_published,
                 })
               }
-              className="w-full rounded-lg border border-white/10 p-3 text-left hover:bg-white/5"
-            >
-              <div className="flex items-center justify-between">
-                <p className="font-medium">{item.customer_name}</p>
-                {!item.is_published && (
-                  <Badge variant="outline">Draft</Badge>
-                )}
-              </div>
-              <p className="mt-1 line-clamp-2 text-sm text-white/60">
-                {item.comment}
-              </p>
-            </button>
+            />
           ))}
         </>
       }
@@ -153,26 +148,11 @@ export function TestimonialsEditor({
           />
           Published on website
         </label>
-        <div className="flex gap-2">
-          <Button type="submit" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              "Save testimonial"
-            )}
-          </Button>
-          {editing.id && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => handleDelete(editing.id!)}
-              disabled={isPending}
-            >
-              <Trash2 className="mr-1 h-4 w-4" />
-              Delete
-            </Button>
-          )}
-        </div>
+        <CmsFormActions
+          isPending={isPending}
+          saveLabel="Save testimonial"
+          onDelete={editing.id ? () => handleDelete(editing.id!) : undefined}
+        />
         </form>
       }
     />

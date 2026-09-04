@@ -1,9 +1,11 @@
 "use client";
 
+import type { Dispatch, SetStateAction } from "react";
 import { Check, ImageIcon, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
-export type EnhancementQueueStatus =
+type EnhancementQueueStatus =
   | "queued"
   | "processing"
   | "complete"
@@ -341,4 +343,63 @@ export function revokeUploadQueueBlobUrls(items: UploadQueueItem[]) {
       URL.revokeObjectURL(item.blobUrl);
     }
   }
+}
+
+type QueueActionResult = {
+  success: boolean;
+  message: string;
+  url?: string;
+};
+
+type CreateQueueItemProcessorOptions = {
+  queue: UploadQueueItem[];
+  setQueue: Dispatch<SetStateAction<UploadQueueItem[]>>;
+  setProgress: Dispatch<SetStateAction<{ current: number; total: number }>>;
+  onSuccess?: (item: UploadQueueItem, result: QueueActionResult) => void;
+};
+
+export function createQueueItemProcessor({
+  queue,
+  setQueue,
+  setProgress,
+  onSuccess,
+}: CreateQueueItemProcessorOptions) {
+  return async (
+    item: UploadQueueItem,
+    action: () => Promise<QueueActionResult>,
+  ) => {
+    const itemIndex = queue.findIndex((entry) => entry.id === item.id);
+    setProgress({ current: itemIndex + 1, total: queue.length });
+    setQueue((current) =>
+      current.map((entry) =>
+        entry.id === item.id
+          ? { ...entry, status: "processing" }
+          : entry.status === "error"
+            ? entry
+            : { ...entry, status: "queued" },
+      ),
+    );
+
+    const result = await action();
+
+    if (result.success) {
+      onSuccess?.(item, result);
+      setQueue((current) => current.filter((entry) => entry.id !== item.id));
+      return true;
+    }
+
+    setQueue((current) =>
+      current.map((entry) =>
+        entry.id === item.id
+          ? {
+              ...entry,
+              status: "error",
+              errorMessage: result.message,
+            }
+          : entry,
+      ),
+    );
+    toast.error(result.message);
+    return false;
+  };
 }

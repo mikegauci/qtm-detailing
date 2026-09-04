@@ -3,11 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Check,
-  ChevronLeft,
-  Folder,
   HardDrive,
-  ImageIcon,
   Images,
   Loader2,
   Upload,
@@ -27,23 +23,18 @@ import {
 import {
   UploadQueuePanel,
   buildGalleryPublishQueue,
+  createQueueItemProcessor,
   type UploadQueueItem,
 } from "@/components/admin/enhancement-progress-overlay";
 import type { Tables } from "@/lib/supabase/types";
-import { galleryPhotoCategoryOptions } from "@/lib/content/gallery-categories";
+import { DriveConnectPrompt } from "@/components/admin/drive-connect-prompt";
+import { GalleryPhotoMetadataFields } from "@/components/admin/gallery-photo-metadata-fields";
 import { LinkedPhotosPanel } from "@/components/admin/linked-photos-panel";
+import { SelectionCheckBadge } from "@/components/admin/selection-check-badge";
 import { ViewToggle } from "@/components/admin/view-toggle";
 import { DriveBrowser } from "@/components/admin/drive-browser";
 import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useDriveBrowser } from "@/hooks/use-drive-browser";
 import type { DriveFolder } from "@/types/drive";
@@ -229,44 +220,14 @@ export function GalleryHub({
     startTransition(async () => {
       let successCount = 0;
 
-      const processItem = async (
-        item: UploadQueueItem,
-        publish: () => Promise<{ success: boolean; message: string }>,
-      ) => {
-        const itemIndex = queue.findIndex((entry) => entry.id === item.id);
-        setPublishProgress({ current: itemIndex + 1, total: queue.length });
-        setPublishQueue((current) =>
-          current.map((entry) =>
-            entry.id === item.id
-              ? { ...entry, status: "processing" }
-              : entry.status === "error"
-                ? entry
-                : { ...entry, status: "queued" },
-          ),
-        );
-
-        const result = await publish();
-
-        if (result.success) {
+      const processItem = createQueueItemProcessor({
+        queue,
+        setQueue: setPublishQueue,
+        setProgress: setPublishProgress,
+        onSuccess: () => {
           successCount += 1;
-          setPublishQueue((current) =>
-            current.filter((entry) => entry.id !== item.id),
-          );
-        } else {
-          setPublishQueue((current) =>
-            current.map((entry) =>
-              entry.id === item.id
-                ? {
-                    ...entry,
-                    status: "error",
-                    errorMessage: result.message,
-                  }
-                : entry,
-            ),
-          );
-          toast.error(result.message);
-        }
-      };
+        },
+      });
 
       if (action.type === "single") {
         const item = queue[0];
@@ -455,9 +416,11 @@ export function GalleryHub({
           </div>
 
           {!driveConnected ? (
-            <p className="text-sm text-white/60">
-              Connect Google Drive in Settings to browse and link photos.
-            </p>
+            <DriveConnectPrompt
+              showButton={false}
+              message="Connect Google Drive in Settings to browse and link photos."
+              className="py-0 text-left"
+            />
           ) : (
             <>
               {isPublishing ? (
@@ -499,11 +462,7 @@ export function GalleryHub({
                           name={image.name}
                           size="lg"
                         />
-                        {isSelected && (
-                          <span className="absolute top-1.5 right-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-brand-purple-500 text-white sm:top-2 sm:right-2 sm:h-6 sm:w-6">
-                            <Check className="h-3 w-3 sm:h-4 sm:w-4" />
-                          </span>
-                        )}
+                        {isSelected && <SelectionCheckBadge selected size="sm" />}
                       </button>
                     );
                   }}
@@ -528,40 +487,12 @@ export function GalleryHub({
                       </Button>
                     )}
                   </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label>Type</Label>
-                      <Select
-                        value={photoType}
-                        onValueChange={(v) =>
-                          setPhotoType(v as "before" | "after")
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="before">Before</SelectItem>
-                          <SelectItem value="after">After</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Category</Label>
-                      <Select value={category} onValueChange={setCategory}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {galleryPhotoCategoryOptions.map((option) => (
-                            <SelectItem key={option.id} value={option.id}>
-                              {option.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
+                  <GalleryPhotoMetadataFields
+                    photoType={photoType}
+                    category={category}
+                    onPhotoTypeChange={setPhotoType}
+                    onCategoryChange={setCategory}
+                  />
                   {selectedCount === 1 && (
                     <Button
                       className="w-full sm:w-auto"

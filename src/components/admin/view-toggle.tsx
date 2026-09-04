@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
-export type ViewToggleOption<T extends string> = {
+type ViewToggleOption<T extends string> = {
   id: T;
   label: string;
   icon?: ReactNode;

@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import Image from "next/image";
-import { ImageIcon, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   removeVehiclePhoto,
@@ -10,10 +8,9 @@ import {
   setVehiclePhotoFromLinked,
   uploadVehiclePhoto,
 } from "@/app/actions/admin/customers";
-import { LinkedPhotoPickerDialog } from "@/components/admin/linked-photo-picker-dialog";
-import { PhotoSourceDialog } from "@/components/admin/photo-source-dialog";
-import { Button } from "@/components/ui/button";
-import { useImageLoadError } from "@/hooks/use-image-load-error";
+import { HiddenImageFileInput } from "@/components/admin/hidden-image-file-input";
+import { ImageUploadPreview } from "@/components/admin/image-upload-preview";
+import { PhotoSourceFieldDialogs } from "@/components/admin/photo-source-field-dialogs";
 import { usePhotoSourcePicker } from "@/hooks/use-photo-source-picker";
 import { cn } from "@/lib/utils";
 
@@ -32,8 +29,6 @@ export function VehiclePhotoField({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [isPending, startTransition] = useTransition();
-  const { hasError: previewError, onError: onPreviewError, reset: resetPreviewError } =
-    useImageLoadError();
   const {
     sourceDialogOpen,
     linkedPickerOpen,
@@ -47,8 +42,7 @@ export function VehiclePhotoField({
 
   useEffect(() => {
     setCurrentUrl(photoUrl);
-    resetPreviewError();
-  }, [photoUrl, resetPreviewError]);
+  }, [photoUrl]);
 
   function handleUpload(file: File) {
     const formData = new FormData();
@@ -57,7 +51,6 @@ export function VehiclePhotoField({
     startTransition(async () => {
       const result = await uploadVehiclePhoto(vehicleId, customerId, formData);
       if (result.success && result.url) {
-        resetPreviewError();
         setCurrentUrl(result.url);
         toast.success(result.message);
         onUpdated?.();
@@ -71,7 +64,6 @@ export function VehiclePhotoField({
     startTransition(async () => {
       const result = await removeVehiclePhoto(vehicleId, customerId);
       if (result.success) {
-        resetPreviewError();
         setCurrentUrl(null);
         toast.success(result.message);
         onUpdated?.();
@@ -93,86 +85,32 @@ export function VehiclePhotoField({
             "relative h-24 w-32 overflow-hidden rounded-lg border border-white/10 bg-white/[0.02]",
           )}
         >
-          {currentUrl && !previewError ? (
-            <>
-              <Image
-                src={currentUrl}
-                alt={label}
-                fill
-                className="object-cover"
-                sizes="128px"
-                onError={onPreviewError}
-              />
-              <div className="absolute inset-x-0 bottom-0 flex gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 pt-6">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  className="h-7 px-2 text-xs"
-                  disabled={isPending}
-                  onClick={openSourceDialog}
-                >
-              {isPending ? (
-                <Loader2 className="h-3 w-3 animate-spin" />
-              ) : (
-                "Replace"
-              )}
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-7 px-2 text-xs"
-                  disabled={isPending}
-                  onClick={handleRemove}
-                >
-                  Remove
-                </Button>
-              </div>
-            </>
-          ) : (
-            <button
-              type="button"
-              disabled={isPending}
-              onClick={openSourceDialog}
-              className="flex h-full w-full flex-col items-center justify-center gap-1 p-2 text-white/50 transition-colors hover:bg-white/[0.04] hover:text-white/70 disabled:opacity-50"
-            >
-              {isPending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
-              ) : (
-                <>
-                  <ImageIcon className="h-5 w-5" />
-                  <span className="text-[10px]">Add photo</span>
-                </>
-              )}
-            </button>
-          )}
+          <ImageUploadPreview
+            value={currentUrl}
+            alt={label}
+            isPending={isPending}
+            size="compact"
+            emptyLabel="Add photo"
+            onReplace={openSourceDialog}
+            onRemove={handleRemove}
+          />
         </div>
-        <input
-          ref={inputRef}
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          className="hidden"
-          onChange={(e) => {
-            const file = e.target.files?.[0];
-            if (file) handleUpload(file);
-            e.target.value = "";
-          }}
+        <HiddenImageFileInput
+          inputRef={inputRef}
+          onSelect={(files) => handleUpload(files[0])}
         />
       </div>
 
-      <PhotoSourceDialog
-        open={sourceDialogOpen}
-        onOpenChange={setSourceDialogOpen}
+      <PhotoSourceFieldDialogs
         title="Add vehicle photo"
-        onChooseDevice={() => chooseDeviceUpload(openFilePicker)}
-        onChooseDrive={chooseLinkedPhoto}
         disabled={isPending}
-      />
-
-      <LinkedPhotoPickerDialog
-        open={linkedPickerOpen}
-        onOpenChange={setLinkedPickerOpen}
+        sourceDialogOpen={sourceDialogOpen}
+        linkedPickerOpen={linkedPickerOpen}
+        setSourceDialogOpen={setSourceDialogOpen}
+        setLinkedPickerOpen={setLinkedPickerOpen}
+        chooseDeviceUpload={chooseDeviceUpload}
+        chooseLinkedPhoto={chooseLinkedPhoto}
+        openFilePicker={openFilePicker}
         onDriveSelect={async (driveFileIds) => {
           const result = await setVehiclePhotoFromDrive(
             vehicleId,
@@ -180,7 +118,6 @@ export function VehiclePhotoField({
             driveFileIds[0],
           );
           if (result.success && result.url) {
-            resetPreviewError();
             setCurrentUrl(result.url);
             onUpdated?.();
           }
@@ -193,7 +130,6 @@ export function VehiclePhotoField({
             photoIds[0],
           );
           if (result.success && result.url) {
-            resetPreviewError();
             setCurrentUrl(result.url);
             onUpdated?.();
           }

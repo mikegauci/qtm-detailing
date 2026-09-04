@@ -1,17 +1,18 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, ImageIcon, Pencil, Search, Sparkles, Trash2, Upload } from "lucide-react";
+import { Eye, ImageIcon, Pencil, Sparkles, Trash2, Upload } from "lucide-react";
 import type { Tables } from "@/lib/supabase/types";
-import { parseCarName } from "@/lib/content/parse-car-name";
-import { galleryPhotoDisplayUrl } from "@/lib/cms/gallery-photo-url";
+import {
+  getLinkedPhotoDisplaySrc,
+  getLinkedPhotoLabel,
+} from "@/lib/cms/gallery-photo-url";
 import {
   galleryPhotoCategoryIds,
-  galleryPhotoCategoryOptions,
 } from "@/lib/content/gallery-categories";
+import { GalleryPhotoMetadataFields } from "@/components/admin/gallery-photo-metadata-fields";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -20,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { SearchInput } from "@/components/ui/search-input";
 import { ScrollCarousel } from "@/components/ui/scroll-carousel";
 import { cn } from "@/lib/utils";
 
@@ -48,18 +50,6 @@ function getPhotoActivityTime(photo: Tables<"gallery_photos">): number {
   return Math.max(created, enhanced);
 }
 
-function getPhotoViewUrl(photo: Tables<"gallery_photos">): string | null {
-  if (photo.publish_to_gallery && photo.photo_url) {
-    return galleryPhotoDisplayUrl(photo.photo_url, photo.ai_enhanced_at);
-  }
-
-  if (photo.drive_file_id) {
-    return `/api/google-drive/thumbnail/${photo.drive_file_id}`;
-  }
-
-  return null;
-}
-
 function LinkedPhotoThumbnail({
   photo,
   className,
@@ -68,15 +58,8 @@ function LinkedPhotoThumbnail({
   className?: string;
 }) {
   const [failed, setFailed] = useState(false);
-  const carName = photo.drive_folder_name
-    ? parseCarName(photo.drive_folder_name)
-    : "Linked photo";
-  const src =
-    photo.publish_to_gallery && photo.photo_url
-      ? galleryPhotoDisplayUrl(photo.photo_url, photo.ai_enhanced_at)
-      : photo.drive_file_id
-        ? `/api/google-drive/thumbnail/${photo.drive_file_id}`
-        : null;
+  const carName = getLinkedPhotoLabel(photo);
+  const src = getLinkedPhotoDisplaySrc(photo);
 
   if (!src || failed) {
     return (
@@ -150,7 +133,7 @@ function LinkedPhotoCard({
     setIsEditing(false);
   };
 
-  const viewUrl = getPhotoViewUrl(photo);
+  const viewUrl = getLinkedPhotoDisplaySrc(photo);
 
   return (
     <div className="overflow-hidden rounded-xl border border-white/10 bg-black/20">
@@ -158,38 +141,13 @@ function LinkedPhotoCard({
       <div className="space-y-3 p-3">
         {isEditing ? (
           <div className="space-y-3">
-            <div className="space-y-2">
-              <Label className="text-xs text-white/60">Type</Label>
-              <Select
-                value={photoType}
-                onValueChange={(value) =>
-                  setPhotoType(value as "before" | "after")
-                }
-              >
-                <SelectTrigger className="h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="before">Before</SelectItem>
-                  <SelectItem value="after">After</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-xs text-white/60">Category</Label>
-              <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger className="h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {galleryPhotoCategoryOptions.map((option) => (
-                    <SelectItem key={option.id} value={option.id}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <GalleryPhotoMetadataFields
+              compact
+              photoType={photoType}
+              category={category}
+              onPhotoTypeChange={setPhotoType}
+              onCategoryChange={setCategory}
+            />
             <div className="flex gap-2">
               <Button
                 size="sm"
@@ -317,7 +275,7 @@ export function LinkedPhotosPanel({
           photos
             .map((photo) =>
               photo.drive_folder_name
-                ? parseCarName(photo.drive_folder_name)
+                ? getLinkedPhotoLabel(photo)
                 : null,
             )
             .filter(Boolean),
@@ -342,7 +300,7 @@ export function LinkedPhotosPanel({
 
     return photos.filter((photo) => {
       const carName = photo.drive_folder_name
-        ? parseCarName(photo.drive_folder_name)
+        ? getLinkedPhotoLabel(photo)
         : "Unknown car";
 
       if (vehicleFilter !== "all" && carName !== vehicleFilter) {
@@ -383,7 +341,7 @@ export function LinkedPhotosPanel({
 
     for (const photo of filteredPhotos) {
       const carName = photo.drive_folder_name
-        ? parseCarName(photo.drive_folder_name)
+        ? getLinkedPhotoLabel(photo)
         : "Unknown car";
       const existing = groups.get(carName) ?? [];
       existing.push(photo);
@@ -464,16 +422,11 @@ export function LinkedPhotosPanel({
       <div className="grid gap-4 rounded-xl border border-white/10 bg-black/20 p-4 lg:grid-cols-[1.4fr_repeat(4,minmax(0,1fr))]">
         <div className="space-y-2">
           <Label htmlFor="linked-search">Search</Label>
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-white/40" />
-            <Input
-              id="linked-search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search vehicle or folder..."
-              className="pl-9"
-            />
-          </div>
+          <SearchInput
+            value={search}
+            onChange={setSearch}
+            placeholder="Search vehicle or folder..."
+          />
         </div>
         <div className="space-y-2">
           <Label>Vehicle</Label>

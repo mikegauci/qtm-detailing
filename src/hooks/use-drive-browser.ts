@@ -102,13 +102,9 @@ export function useDriveBrowser(options: UseDriveBrowserOptions = {}) {
     currentFolder,
     loadingDrive,
     canGoBack,
-    loadFolderContents,
     openFolder,
     goBack,
     initialize,
     reset,
-    setFolderStack,
-    setFolders,
-    setImages,
   };
 }

@@ -6,6 +6,8 @@ import {
   cmsAssetStoragePath,
   optimizeCmsImage,
 } from "@/lib/cms/upload-cms-asset";
+import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
+import { loadGalleryPhotoBuffer } from "@/lib/cms/load-gallery-photo-buffer";
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { downloadFile } from "@/lib/google-drive";
@@ -27,9 +29,41 @@ export type UploadCmsAssetResult = ActionResult & {
   url?: string;
 };
 
+async function saveCmsAssetBuffer(
+  folder: string,
+  filename: string,
+  buffer: Buffer,
+): Promise<UploadCmsAssetResult> {
+  const { supabase } = await requireAdmin();
+  const baseName = filename || `asset-${Date.now()}`;
+  const storagePath = cmsAssetStoragePath(folder, `${baseName}.jpg`);
+  const optimized = await optimizeCmsImage(buffer);
+
+  const { error: uploadError } = await supabase.storage
+    .from(CMS_ASSETS_BUCKET)
+    .upload(storagePath, optimized, {
+      contentType: "image/jpeg",
+      upsert: true,
+    });
+
+  if (uploadError) {
+    return { success: false, message: uploadError.message };
+  }
+
+  const {
+    data: { publicUrl },
+  } = supabase.storage.from(CMS_ASSETS_BUCKET).getPublicUrl(storagePath);
+
+  return {
+    success: true,
+    message: "Image uploaded.",
+    url: withCacheBuster(publicUrl),
+  };
+}
+
 export async function uploadCmsAsset(formData: FormData): Promise<UploadCmsAssetResult> {
   try {
-    const { supabase } = await requireAdmin();
+    await requireAdmin();
 
     const file = formData.get("file");
     const folder = String(formData.get("folder") ?? "misc");
@@ -47,29 +81,68 @@ export async function uploadCmsAsset(formData: FormData): Promise<UploadCmsAsset
       filename ||
       file.name.replace(/\.[^.]+$/, "") ||
       `asset-${Date.now()}`;
-    const storagePath = cmsAssetStoragePath(folder, `${baseName}.jpg`);
-    const optimized = await optimizeCmsImage(Buffer.from(await file.arrayBuffer()));
 
-    const { error: uploadError } = await supabase.storage
-      .from(CMS_ASSETS_BUCKET)
-      .upload(storagePath, optimized, {
-        contentType: "image/jpeg",
-        upsert: true,
-      });
-
-    if (uploadError) {
-      return { success: false, message: uploadError.message };
-    }
-
-    const {
-      data: { publicUrl },
-    } = supabase.storage.from(CMS_ASSETS_BUCKET).getPublicUrl(storagePath);
-
-    return { success: true, message: "Image uploaded.", url: publicUrl };
+    return saveCmsAssetBuffer(
+      folder,
+      baseName,
+      Buffer.from(await file.arrayBuffer()),
+    );
   } catch (err) {
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to upload image.",
+    };
+  }
+}
+
+export async function uploadCmsAssetFromDrive(
+  driveFileId: string,
+  folder: string,
+  filename?: string,
+): Promise<UploadCmsAssetResult> {
+  try {
+    await requireAdmin();
+    const buffer = await downloadFile(driveFileId);
+    return saveCmsAssetBuffer(folder, filename ?? `asset-${Date.now()}`, buffer);
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to use Google Drive photo.",
+    };
+  }
+}
+
+export async function uploadCmsAssetFromLinked(
+  galleryPhotoId: string,
+  folder: string,
+  filename?: string,
+): Promise<UploadCmsAssetResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const { data: photo, error: fetchError } = await supabase
+      .from("gallery_photos")
+      .select("*")
+      .eq("id", galleryPhotoId)
+      .single();
+
+    if (fetchError || !photo) {
+      return { success: false, message: "Linked photo not found." };
+    }
+
+    const buffer = await loadGalleryPhotoBuffer(photo);
+
+    return saveCmsAssetBuffer(
+      folder,
+      filename ?? `asset-${Date.now()}`,
+      buffer,
+    );
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to use linked photo.",
     };
   }
 }

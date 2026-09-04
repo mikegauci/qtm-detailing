@@ -1,7 +1,9 @@
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getAdminPageSections } from "@/app/actions/admin/cms";
-import { PageCopyEditor } from "@/components/admin/page-copy-editor";
-import { SitePageCopyEditor } from "@/components/admin/site-page-copy-editor";
+import {
+  PageCopyEditorLazy,
+  SitePageCopyEditorLazy,
+} from "@/components/admin/lazy/page-copy-editor-lazy";
 import {
   defaultAboutIntro,
   defaultContactHero,
@@ -38,8 +40,8 @@ function findSection<T>(
 }
 
 export default async function PageCopyAdminPage() {
-  await requireAdmin();
-  const sections = await getAdminPageSections();
+  const { supabase } = await requireAdmin();
+  const sections = await getAdminPageSections(undefined, supabase);
 
   const hero = findSection<HeroContent>(sections, "home", "hero", defaultHero);
   const whyQtm = findSection<WhyQtmContent>(
@@ -64,9 +66,9 @@ export default async function PageCopyAdminPage() {
         </p>
       </div>
 
-      <PageCopyEditor hero={hero} whyQtm={whyQtm} ctaBand={ctaBand} />
+      <PageCopyEditorLazy hero={hero} whyQtm={whyQtm} ctaBand={ctaBand} />
 
-      <SitePageCopyEditor
+      <SitePageCopyEditorLazy
         featuredServices={findSection<SectionHeadingContent>(
           sections,
           "home",

@@ -1,6 +1,8 @@
+import { unstable_cache } from "next/cache";
 import type { Package, Service } from "@/types/content";
+import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
 import { resolvePackageFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/supabase/types";
 
 function parseIncludedServices(features: string[] | null): string[] {
@@ -83,14 +85,12 @@ export type PackagesData = {
   comparisonFeatures: string[];
 };
 
-export async function getPackages(
-  includeInactive = false,
-): Promise<PackagesData> {
-  const supabase = await createClient();
+async function fetchPackages(includeInactive: boolean): Promise<PackagesData> {
+  const supabase = createPublicClient();
 
   const featuresQuery = supabase
     .from("comparison_features")
-    .select("*")
+    .select("label, sort_order")
     .order("sort_order", { ascending: true });
 
   let packagesQuery = supabase
@@ -125,4 +125,20 @@ export async function getPackages(
     ),
     comparisonFeatures,
   };
+}
+
+const getActivePackagesCached = unstable_cache(
+  () => fetchPackages(false),
+  [CMS_CACHE_TAGS.packages, "active"],
+  { tags: [CMS_CACHE_TAGS.packages] },
+);
+
+export async function getPackages(
+  includeInactive = false,
+): Promise<PackagesData> {
+  if (includeInactive) {
+    return fetchPackages(true);
+  }
+
+  return getActivePackagesCached();
 }

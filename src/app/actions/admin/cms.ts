@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidateAllContent } from "@/lib/content/revalidate-cms";
 import {
   CMS_ASSETS_BUCKET,
   cmsAssetStoragePath,
@@ -9,7 +9,9 @@ import {
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { downloadFile } from "@/lib/google-drive";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/supabase/admin";
+import type { Database } from "@/lib/supabase/types";
 import type { Json } from "@/lib/supabase/types";
 import type { ServiceImage } from "@/types/content";
 import { slugify } from "@/lib/utils";
@@ -204,17 +206,7 @@ export async function uploadServiceImageFromLinked(
 }
 
 function revalidateContent() {
-  revalidatePath("/");
-  revalidatePath("/services");
-  revalidatePath("/gallery");
-  revalidatePath("/about");
-  revalidatePath("/contact");
-  revalidatePath("/admin");
-  revalidatePath("/admin/content/site-settings");
-  revalidatePath("/admin/content/services");
-  revalidatePath("/admin/content/testimonials");
-  revalidatePath("/admin/content/faqs");
-  revalidatePath("/admin/content/page-copy");
+  revalidateAllContent();
 }
 
 export async function upsertSiteSettings(
@@ -469,36 +461,38 @@ export async function upsertPageSection(input: {
   }
 }
 
-export async function getAdminServices() {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase
+type AdminSupabase = SupabaseClient<Database>;
+
+export async function getAdminServices(supabase?: AdminSupabase) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  const { data } = await client
     .from("services")
     .select("*")
     .order("sort_order", { ascending: true });
   return data ?? [];
 }
 
-export async function getAdminFaqs() {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase
+export async function getAdminFaqs(supabase?: AdminSupabase) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  const { data } = await client
     .from("faqs")
     .select("*")
     .order("sort_order", { ascending: true });
   return data ?? [];
 }
 
-export async function getAdminTestimonials() {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase
+export async function getAdminTestimonials(supabase?: AdminSupabase) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  const { data } = await client
     .from("reviews")
     .select("*")
     .order("created_at", { ascending: false });
   return data ?? [];
 }
 
-export async function getAdminSiteSettings() {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase
+export async function getAdminSiteSettings(supabase?: AdminSupabase) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  const { data } = await client
     .from("site_settings")
     .select("value")
     .eq("key", "main")
@@ -506,9 +500,12 @@ export async function getAdminSiteSettings() {
   return (data?.value as Record<string, unknown> | null) ?? defaultSiteConfig;
 }
 
-export async function getAdminPageSections(pageKey?: string) {
-  const { supabase } = await requireAdmin();
-  let query = supabase.from("page_sections").select("*").order("page_key");
+export async function getAdminPageSections(
+  pageKey?: string,
+  supabase?: AdminSupabase,
+) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  let query = client.from("page_sections").select("*").order("page_key");
 
   if (pageKey) {
     query = query.eq("page_key", pageKey);

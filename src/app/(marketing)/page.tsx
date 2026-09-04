@@ -11,42 +11,38 @@ import {
   defaultWhyQtm,
 } from "@/lib/content/cms-defaults";
 import { getPackages } from "@/lib/content/get-packages";
-import { getPageSection } from "@/lib/content/get-page-section";
+import { getPageSections } from "@/lib/content/get-page-section";
 import { getServices } from "@/lib/content/get-services";
 import { getTestimonials } from "@/lib/content/get-testimonials";
 
+export const revalidate = 3600;
+
 export default async function HomePage() {
-  const [
-    services,
-    { packages },
-    testimonials,
-    hero,
-    whyQtm,
-    cta,
-    featuredServicesHeading,
-  ] = await Promise.all([
+  const [services, { packages }, testimonials, sections] = await Promise.all([
     getServices(),
     getPackages(),
     getTestimonials(),
-    getPageSection("home", "hero", defaultHero),
-    getPageSection("home", "why-qtm", defaultWhyQtm),
-    getPageSection("home", "cta-band", defaultCtaBand),
-    getPageSection("home", "featured-services", defaultFeaturedServicesHeading),
+    getPageSections("home", {
+      hero: defaultHero,
+      "why-qtm": defaultWhyQtm,
+      "cta-band": defaultCtaBand,
+      "featured-services": defaultFeaturedServicesHeading,
+    }),
   ]);
 
   return (
     <>
-      <HeroSection content={hero} />
+      <HeroSection content={sections.hero} />
       <FeaturedServicesSection
         services={services}
-        heading={featuredServicesHeading}
+        heading={sections["featured-services"]}
       />
-      <WhyQtmSection content={whyQtm} />
+      <WhyQtmSection content={sections["why-qtm"]} />
       <PricingPreviewSection packages={packages} />
       {testimonials.length > 0 && (
         <TestimonialsSection testimonials={testimonials} />
       )}
-      <CtaBand content={cta} />
+      <CtaBand content={sections["cta-band"]} />
     </>
   );
 }

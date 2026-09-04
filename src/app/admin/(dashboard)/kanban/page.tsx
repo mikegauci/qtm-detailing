@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getCustomerRelation } from "@/lib/admin/supabase-relations";
-import { BookingsKanban } from "@/components/admin/bookings-kanban";
+import { BookingsKanbanLazy } from "@/components/admin/lazy/bookings-kanban-lazy";
 
 export default async function KanbanPage() {
   const { supabase } = await requireAdmin();
@@ -33,7 +33,7 @@ export default async function KanbanPage() {
         </p>
       </div>
 
-      <BookingsKanban initialBookings={kanbanBookings} />
+      <BookingsKanbanLazy initialBookings={kanbanBookings} />
     </div>
   );
 }

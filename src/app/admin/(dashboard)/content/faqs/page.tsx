@@ -1,10 +1,10 @@
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getAdminFaqs } from "@/app/actions/admin/cms";
-import { FaqsEditor } from "@/components/admin/faqs-editor";
+import { FaqsEditorLazy } from "@/components/admin/lazy/faqs-editor-lazy";
 
 export default async function AdminFaqsPage() {
-  await requireAdmin();
-  const faqs = await getAdminFaqs();
+  const { supabase } = await requireAdmin();
+  const faqs = await getAdminFaqs(supabase);
 
   return (
     <div className="space-y-6">
@@ -14,7 +14,7 @@ export default async function AdminFaqsPage() {
           Manage frequently asked questions on the services page.
         </p>
       </div>
-      <FaqsEditor initialFaqs={faqs} />
+      <FaqsEditorLazy initialFaqs={faqs} />
     </div>
   );
 }

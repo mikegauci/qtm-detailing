@@ -1,7 +1,16 @@
 "use client";
 
-import { motion, useReducedMotion } from "motion/react";
-import type { ReactNode } from "react";
+import {
+  Children,
+  createContext,
+  isValidElement,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { cn } from "@/lib/utils";
 
 type FadeInProps = {
   children: ReactNode;
@@ -10,38 +19,66 @@ type FadeInProps = {
   direction?: "up" | "down" | "left" | "right" | "none";
 };
 
+const hiddenDirectionClasses = {
+  up: "translate-y-6",
+  down: "-translate-y-6",
+  left: "translate-x-6",
+  right: "-translate-x-6",
+  none: "",
+};
+
 export function FadeIn({
   children,
   className,
   delay = 0,
   direction = "up",
 }: FadeInProps) {
-  const shouldReduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-  const directionOffset = {
-    up: { y: 24, x: 0 },
-    down: { y: -24, x: 0 },
-    left: { x: 24, y: 0 },
-    right: { x: -24, y: 0 },
-    none: { x: 0, y: 0 },
-  };
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) {
+      return;
+    }
 
-  const offset = directionOffset[direction];
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
 
-  if (shouldReduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
+    if (prefersReducedMotion) {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "-80px", threshold: 0 },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <motion.div
-      className={className}
-      initial={{ opacity: 0, ...offset }}
-      whileInView={{ opacity: 1, x: 0, y: 0 }}
-      viewport={{ once: true, margin: "-80px" }}
-      transition={{ duration: 0.6, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    <div
+      ref={ref}
+      className={cn(
+        "transition-all duration-600 ease-[cubic-bezier(0.21,0.47,0.32,0.98)]",
+        visible
+          ? "translate-x-0 translate-y-0 opacity-100"
+          : cn("opacity-0", hiddenDirectionClasses[direction]),
+        className,
+      )}
+      style={{ transitionDelay: visible ? `${delay}s` : undefined }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -51,32 +88,67 @@ type StaggerContainerProps = {
   staggerDelay?: number;
 };
 
+const StaggerIndexContext = createContext(0);
+
 export function StaggerContainer({
   children,
   className,
   staggerDelay = 0.1,
 }: StaggerContainerProps) {
-  const shouldReduceMotion = useReducedMotion();
+  const ref = useRef<HTMLDivElement>(null);
+  const [visible, setVisible] = useState(false);
 
-  if (shouldReduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) {
+      return;
+    }
+
+    const prefersReducedMotion = window.matchMedia(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+
+    if (prefersReducedMotion) {
+      setVisible(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "-80px", threshold: 0 },
+    );
+
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
 
   return (
-    <motion.div
-      className={className}
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: "-80px" }}
-      variants={{
-        hidden: {},
-        visible: {
-          transition: { staggerChildren: staggerDelay },
-        },
-      }}
+    <div
+      ref={ref}
+      className={cn(
+        "stagger-container",
+        visible && "stagger-visible",
+        className,
+      )}
+      style={{ ["--stagger-delay" as string]: `${staggerDelay}s` }}
     >
-      {children}
-    </motion.div>
+      {Children.map(children, (child, index) => {
+        if (!isValidElement(child)) {
+          return child;
+        }
+
+        return (
+          <StaggerIndexContext.Provider key={child.key ?? index} value={index}>
+            {child}
+          </StaggerIndexContext.Provider>
+        );
+      })}
+    </div>
   );
 }
 
@@ -87,25 +159,14 @@ export function StaggerItem({
   children: ReactNode;
   className?: string;
 }) {
-  const shouldReduceMotion = useReducedMotion();
-
-  if (shouldReduceMotion) {
-    return <div className={className}>{children}</div>;
-  }
+  const index = useContext(StaggerIndexContext);
 
   return (
-    <motion.div
-      className={className}
-      variants={{
-        hidden: { opacity: 0, y: 24 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          transition: { duration: 0.5, ease: [0.21, 0.47, 0.32, 0.98] },
-        },
-      }}
+    <div
+      className={cn("stagger-item", className)}
+      style={{ ["--stagger-index" as string]: index }}
     >
       {children}
-    </motion.div>
+    </div>
   );
 }

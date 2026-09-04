@@ -1,5 +1,3 @@
-"use client";
-
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { CTAButton } from "@/components/ui/section-heading";
@@ -38,7 +36,6 @@ export function HeroSection({ content }: HeroSectionProps) {
             src={content.desktopImage}
             alt="Glossy black sports car in the QTM detailing studio"
             fill
-            priority
             className="object-cover object-right opacity-80"
             sizes="58vw"
           />

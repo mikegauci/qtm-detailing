@@ -22,6 +22,10 @@ function getSupabaseHostname(): string | undefined {
 const supabaseHost = getSupabaseHostname();
 
 const nextConfig: NextConfig = {
+  poweredByHeader: false,
+  experimental: {
+    optimizePackageImports: ["lucide-react", "motion"],
+  },
   images: supabaseHost
     ? {
         remotePatterns: [

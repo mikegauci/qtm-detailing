@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getDriveRootFolderName, isDriveConnected } from "@/lib/google-drive";
-import { GalleryHub } from "@/components/admin/gallery-hub";
+import { GalleryHubLazy } from "@/components/admin/lazy/gallery-hub-lazy";
 import { getGalleryPhotos } from "@/app/actions/admin/gallery";
 
 export const maxDuration = 300;
@@ -13,10 +13,10 @@ type AdminGalleryPageProps = {
 export default async function AdminGalleryPage({
   searchParams,
 }: AdminGalleryPageProps) {
-  await requireAdmin();
+  const { supabase } = await requireAdmin();
   const [{ view }, photos, driveConnected] = await Promise.all([
     searchParams,
-    getGalleryPhotos(),
+    getGalleryPhotos(supabase),
     isDriveConnected(),
   ]);
   const rootFolderName = getDriveRootFolderName();
@@ -33,7 +33,7 @@ export default async function AdminGalleryPage({
         </p>
       </div>
       <Suspense fallback={null}>
-        <GalleryHub
+        <GalleryHubLazy
           initialPhotos={photos}
           driveConnected={driveConnected}
           rootFolderName={rootFolderName}

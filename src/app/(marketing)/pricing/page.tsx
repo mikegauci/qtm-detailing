@@ -4,7 +4,7 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-
 import { CtaBand } from "@/components/sections/cta-band";
 import { PricingCard } from "@/components/pricing/pricing-card";
 import { defaultCtaBand } from "@/lib/content/cms-defaults";
-import { getPageSection } from "@/lib/content/get-page-section";
+import { getPageSections } from "@/lib/content/get-page-section";
 import {
   pricingHero,
   pricingImportantInfo,
@@ -17,8 +17,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+export const revalidate = 3600;
+
 export default async function PricingPage() {
-  const cta = await getPageSection("home", "cta-band", defaultCtaBand);
+  const sections = await getPageSections("home", {
+    "cta-band": defaultCtaBand,
+  });
 
   return (
     <>
@@ -92,7 +96,7 @@ export default async function PricingPage() {
         </div>
       </section>
 
-      <CtaBand content={cta} />
+      <CtaBand content={sections["cta-band"]} />
     </>
   );
 }

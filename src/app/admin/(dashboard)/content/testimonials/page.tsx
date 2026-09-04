@@ -1,10 +1,10 @@
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getAdminTestimonials } from "@/app/actions/admin/cms";
-import { TestimonialsEditor } from "@/components/admin/testimonials-editor";
+import { TestimonialsEditorLazy } from "@/components/admin/lazy/testimonials-editor-lazy";
 
 export default async function AdminTestimonialsPage() {
-  await requireAdmin();
-  const testimonials = await getAdminTestimonials();
+  const { supabase } = await requireAdmin();
+  const testimonials = await getAdminTestimonials(supabase);
 
   return (
     <div className="space-y-6">
@@ -14,7 +14,7 @@ export default async function AdminTestimonialsPage() {
           Manage customer reviews displayed on the homepage.
         </p>
       </div>
-      <TestimonialsEditor initialTestimonials={testimonials} />
+      <TestimonialsEditorLazy initialTestimonials={testimonials} />
     </div>
   );
 }

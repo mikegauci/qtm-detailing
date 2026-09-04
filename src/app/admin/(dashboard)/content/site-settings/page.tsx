@@ -5,8 +5,8 @@ import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import type { SiteConfig } from "@/types/content";
 
 export default async function SiteSettingsPage() {
-  await requireAdmin();
-  const settings = await getAdminSiteSettings();
+  const { supabase } = await requireAdmin();
+  const settings = await getAdminSiteSettings(supabase);
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">

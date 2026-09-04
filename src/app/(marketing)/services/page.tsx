@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/accordion";
 import { CtaBand } from "@/components/sections/cta-band";
 import { FaqAnswer } from "@/components/faq/faq-answer";
-import { HashScroll } from "@/components/services/hash-scroll";
 import { ServiceImageSlider } from "@/components/services/service-image-slider";
 import { cn } from "@/lib/utils";
 import {
@@ -20,7 +19,7 @@ import {
   defaultServicesHero,
 } from "@/lib/content/cms-defaults";
 import { getFaqs } from "@/lib/content/get-faqs";
-import { getPageSection } from "@/lib/content/get-page-section";
+import { getPageSections } from "@/lib/content/get-page-section";
 import { getServices } from "@/lib/content/get-services";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
 
@@ -30,21 +29,31 @@ export const metadata: Metadata = {
     "Explore QTM Detailing services — premium interior deep clean, exterior detail, paint enhancement, ceramic protection, and signature packages. Premium automotive care in Malta.",
 };
 
+export const revalidate = 3600;
+
 export default async function ServicesPage() {
-  const [services, faqItems, settings, cta, hero, pricingInfo, faqHeading] =
+  const [services, faqItems, settings, homeSections, servicesSections] =
     await Promise.all([
       getServices(),
       getFaqs(),
       getSiteSettings(),
-      getPageSection("home", "cta-band", defaultCtaBand),
-      getPageSection("services", "hero", defaultServicesHero),
-      getPageSection("services", "pricing-info", defaultPricingInfo),
-      getPageSection("services", "faq-heading", defaultFaqHeading),
+      getPageSections("home", {
+        "cta-band": defaultCtaBand,
+      }),
+      getPageSections("services", {
+        hero: defaultServicesHero,
+        "pricing-info": defaultPricingInfo,
+        "faq-heading": defaultFaqHeading,
+      }),
     ]);
+
+  const cta = homeSections["cta-band"];
+  const hero = servicesSections.hero;
+  const pricingInfo = servicesSections["pricing-info"];
+  const faqHeading = servicesSections["faq-heading"];
 
   return (
     <>
-      <HashScroll />
       <section className="section-padding pt-32">
         <div className="container-narrow">
           <FadeIn>

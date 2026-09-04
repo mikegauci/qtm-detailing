@@ -1,9 +1,14 @@
+import { unstable_cache } from "next/cache";
 import type { FaqItem } from "@/types/content";
 import { sanitizeFaqAnswer } from "@/lib/content/sanitize-faq-answer";
-import { createClient } from "@/lib/supabase/server";
-import type { Tables } from "@/lib/supabase/types";
+import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createPublicClient } from "@/lib/supabase/public";
 
-function mapDbFaq(row: Tables<"faqs">): FaqItem {
+function mapDbFaq(row: {
+  id: string;
+  question: string;
+  answer: string;
+}): FaqItem {
   return {
     id: row.id,
     question: row.question,
@@ -11,11 +16,11 @@ function mapDbFaq(row: Tables<"faqs">): FaqItem {
   };
 }
 
-export async function getFaqs(includeInactive = false): Promise<FaqItem[]> {
-  const supabase = await createClient();
+async function fetchFaqs(includeInactive: boolean): Promise<FaqItem[]> {
+  const supabase = createPublicClient();
   let query = supabase
     .from("faqs")
-    .select("*")
+    .select("id, question, answer, sort_order, is_active")
     .order("sort_order", { ascending: true });
 
   if (!includeInactive) {
@@ -29,4 +34,18 @@ export async function getFaqs(includeInactive = false): Promise<FaqItem[]> {
   }
 
   return data.map(mapDbFaq);
+}
+
+const getActiveFaqsCached = unstable_cache(
+  () => fetchFaqs(false),
+  [CMS_CACHE_TAGS.faqs, "active"],
+  { tags: [CMS_CACHE_TAGS.faqs] },
+);
+
+export async function getFaqs(includeInactive = false): Promise<FaqItem[]> {
+  if (includeInactive) {
+    return fetchFaqs(true);
+  }
+
+  return getActiveFaqsCached();
 }

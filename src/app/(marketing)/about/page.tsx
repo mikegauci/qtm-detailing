@@ -8,7 +8,7 @@ import {
   defaultCtaBand,
   defaultProcessSteps,
 } from "@/lib/content/cms-defaults";
-import { getPageSection } from "@/lib/content/get-page-section";
+import { getPageSections } from "@/lib/content/get-page-section";
 
 export const metadata: Metadata = {
   title: "About",
@@ -16,12 +16,22 @@ export const metadata: Metadata = {
     "Learn about QTM Detailing — Malta's premium automotive detailing studio. Our story and process.",
 };
 
+export const revalidate = 3600;
+
 export default async function AboutPage() {
-  const [intro, processSteps, cta] = await Promise.all([
-    getPageSection("about", "intro", defaultAboutIntro),
-    getPageSection("about", "process-steps", defaultProcessSteps),
-    getPageSection("home", "cta-band", defaultCtaBand),
+  const [aboutSections, homeSections] = await Promise.all([
+    getPageSections("about", {
+      intro: defaultAboutIntro,
+      "process-steps": defaultProcessSteps,
+    }),
+    getPageSections("home", {
+      "cta-band": defaultCtaBand,
+    }),
   ]);
+
+  const intro = aboutSections.intro;
+  const processSteps = aboutSections["process-steps"];
+  const cta = homeSections["cta-band"];
 
   return (
     <>

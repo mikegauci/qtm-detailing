@@ -7,20 +7,21 @@ import { format } from "date-fns";
 import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { createCustomer } from "@/app/actions/admin/customers";
-import type { Tables } from "@/lib/supabase/types";
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type Customer = Tables<"customers"> & {
+type Customer = {
+  id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  created_at: string;
   vehicles: { count: number }[];
-  bookings: { total_price: number }[];
+  lifetime_value: number;
+  booking_count: number;
 };
-
-function getCustomerTotalPrice(bookings: Customer["bookings"]): number {
-  return bookings.reduce((sum, booking) => sum + Number(booking.total_price), 0);
-}
 
 export function CustomersManager({ customers }: { customers: Customer[] }) {
   const router = useRouter();
@@ -122,7 +123,7 @@ export function CustomersManager({ customers }: { customers: Customer[] }) {
           </thead>
           <tbody>
             {customers.map((customer) => {
-              const totalPrice = getCustomerTotalPrice(customer.bookings ?? []);
+              const totalPrice = customer.lifetime_value;
 
               return (
               <tr
@@ -155,7 +156,7 @@ export function CustomersManager({ customers }: { customers: Customer[] }) {
                     <DeleteCustomerButton
                       customerId={customer.id}
                       customerName={customer.full_name}
-                      bookingCount={customer.bookings?.length ?? 0}
+                      bookingCount={customer.booking_count}
                       vehicleCount={customer.vehicles?.[0]?.count ?? 0}
                       redirectTo="/admin/customers"
                       size="icon-sm"

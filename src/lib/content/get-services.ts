@@ -1,5 +1,7 @@
+import { unstable_cache } from "next/cache";
 import type { Service } from "@/types/content";
-import { createClient } from "@/lib/supabase/server";
+import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/supabase/types";
 import { parseServiceImages } from "@/lib/content/service-images";
 
@@ -34,11 +36,11 @@ function mapDbService(row: Tables<"services">): Service {
   };
 }
 
-export async function getServices(options?: {
+async function fetchServices(options?: {
   featuredOnly?: boolean;
   includeInactive?: boolean;
 }): Promise<Service[]> {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
   let query = supabase
     .from("services")
     .select("*")
@@ -59,6 +61,33 @@ export async function getServices(options?: {
   }
 
   return data.map(mapDbService);
+}
+
+const getAllServicesCached = unstable_cache(
+  () => fetchServices(),
+  [CMS_CACHE_TAGS.services, "all"],
+  { tags: [CMS_CACHE_TAGS.services] },
+);
+
+const getFeaturedServicesCached = unstable_cache(
+  () => fetchServices({ featuredOnly: true }),
+  [CMS_CACHE_TAGS.services, "featured"],
+  { tags: [CMS_CACHE_TAGS.services] },
+);
+
+export async function getServices(options?: {
+  featuredOnly?: boolean;
+  includeInactive?: boolean;
+}): Promise<Service[]> {
+  if (options?.includeInactive) {
+    return fetchServices(options);
+  }
+
+  if (options?.featuredOnly) {
+    return getFeaturedServicesCached();
+  }
+
+  return getAllServicesCached();
 }
 
 export async function getServiceBySlug(slug: string): Promise<Service | undefined> {

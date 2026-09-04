@@ -1,6 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { revalidateGalleryContent } from "@/lib/content/revalidate-cms";
+import { queryGalleryPhotoRows, type GalleryQueryClient } from "@/lib/content/gallery-query";
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
 import { downloadFile } from "@/lib/google-drive";
@@ -93,7 +95,7 @@ export async function linkAndPublishDrivePhotos(input: {
   }
 
   revalidatePath("/admin/gallery");
-  revalidatePath("/gallery");
+  revalidateGalleryContent();
 
   if (published === 0) {
     return {
@@ -219,7 +221,7 @@ export async function publishPhoto(
     }
 
     revalidatePath("/admin/gallery");
-    revalidatePath("/gallery");
+    revalidateGalleryContent();
     return { success: true, message: "Photo published to gallery." };
   } catch (err) {
     return {
@@ -250,7 +252,7 @@ export async function updatePhotoMetadata(input: {
     }
 
     revalidatePath("/admin/gallery");
-    revalidatePath("/gallery");
+    revalidateGalleryContent();
     return { success: true, message: "Photo updated." };
   } catch (err) {
     return {
@@ -274,7 +276,7 @@ export async function unpublishPhoto(photoId: string): Promise<ActionResult> {
     }
 
     revalidatePath("/admin/gallery");
-    revalidatePath("/gallery");
+    revalidateGalleryContent();
     return { success: true, message: "Photo removed from public gallery." };
   } catch (err) {
     return {
@@ -310,7 +312,7 @@ export async function deletePhoto(photoId: string): Promise<ActionResult> {
     }
 
     revalidatePath("/admin/gallery");
-    revalidatePath("/gallery");
+    revalidateGalleryContent();
     return { success: true, message: "Photo deleted." };
   } catch (err) {
     return {
@@ -340,11 +342,7 @@ export async function findDriveRootFolder() {
   return findFolderByName(getDriveRootFolderName());
 }
 
-export async function getGalleryPhotos() {
-  const { supabase } = await requireAdmin();
-  const { data } = await supabase
-    .from("gallery_photos")
-    .select("*")
-    .order("created_at", { ascending: false });
-  return data ?? [];
+export async function getGalleryPhotos(supabase?: GalleryQueryClient) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  return queryGalleryPhotoRows(client);
 }

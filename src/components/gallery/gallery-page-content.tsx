@@ -1,36 +1,72 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import dynamic from "next/dynamic";
+import {
+  Children,
+  createContext,
+  useCallback,
+  useContext,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
+import { getGalleryLightboxData } from "@/app/actions/gallery-lightbox";
 import {
   galleryCategories,
   getGalleryPhotoLabel,
 } from "@/lib/content/gallery-categories";
-import {
-  clampLightboxIndex,
-  filterPhotosByType,
-  getGalleryPageCount,
-  getVisiblePageNumbers,
-  GALLERY_PAGE_SIZE,
-  paginatePhotos,
-  sortPhotosForDisplay,
-  type GalleryPhotoTypeFilter,
-} from "@/lib/content/gallery-photo-utils";
 import type { GalleryCategory, GalleryPhoto } from "@/types/content";
-import type { CtaBandContent, SectionHeadingContent } from "@/types/page-sections";
+import type { SectionHeadingContent } from "@/types/page-sections";
+import type { GalleryPhotoTypeFilter } from "@/lib/content/gallery-photo-utils";
+import { GALLERY_PAGE_SIZE } from "@/lib/content/gallery-photo-utils";
+import { getVisiblePageNumbers } from "@/lib/content/gallery-photo-utils";
 import { SectionHeading } from "@/components/ui/section-heading";
-import { FadeIn, StaggerItem } from "@/components/motion/fade-in";
+import { FadeIn } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
-import { CtaBand } from "@/components/sections/cta-band";
-import { GalleryLightbox } from "@/components/gallery/gallery-lightbox";
+
+const GalleryLightbox = dynamic(
+  () =>
+    import("@/components/gallery/gallery-lightbox").then(
+      (mod) => mod.GalleryLightbox,
+    ),
+  { ssr: false },
+);
 
 type GalleryPageContentProps = {
   photos: GalleryPhoto[];
-  cta: CtaBandContent;
+  filteredCount: number;
+  carNames: string[];
+  filters: {
+    category: GalleryCategory;
+    selectedCar: string;
+    photoTypeFilter: GalleryPhotoTypeFilter;
+    currentPage: number;
+  };
+  totalPages: number;
+  currentPage: number;
   hero: SectionHeadingContent;
 };
+
+function buildGalleryUrl(
+  baseParams: URLSearchParams,
+  updates: Record<string, string | undefined>,
+): string {
+  const params = new URLSearchParams(baseParams.toString());
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (!value || value === "all") {
+      params.delete(key);
+    } else {
+      params.set(key, value);
+    }
+  }
+
+  const query = params.toString();
+  return query ? `/gallery?${query}` : "/gallery";
+}
 
 function FilterPill({
   active,
@@ -100,66 +136,25 @@ function FilterScrollRow({
   );
 }
 
-function PhotoGrid({
-  items,
-  filterKey,
-  onSelect,
-}: {
-  items: GalleryPhoto[];
-  filterKey: string;
-  onSelect: (photo: GalleryPhoto) => void;
-}) {
-  const shouldReduceMotion = useReducedMotion();
-
-  if (shouldReduceMotion) {
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {items.map((photo) => (
-          <PhotoGridItem key={photo.id} photo={photo} onSelect={onSelect} />
-        ))}
-      </div>
-    );
-  }
-
-  return (
-    <motion.div
-      key={filterKey}
-      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.08 } },
-      }}
-    >
-      {items.map((photo) => (
-        <PhotoGridItem key={photo.id} photo={photo} onSelect={onSelect} animated />
-      ))}
-    </motion.div>
-  );
-}
-
 function PhotoGridItem({
   photo,
   onSelect,
-  animated = false,
 }: {
   photo: GalleryPhoto;
   onSelect: (photo: GalleryPhoto) => void;
-  animated?: boolean;
 }) {
-  const content = (
+  return (
     <button
       type="button"
       onClick={() => onSelect(photo)}
-      className="group glass-panel w-full overflow-hidden rounded-2xl text-left transition-all hover:border-brand-purple-400/30 hover:glow-purple"
+      className="group glass-panel w-full overflow-hidden rounded-2xl text-left transition-all hover:border-brand-purple-400/30 hover:opacity-95 hover:ring-1 hover:ring-brand-purple-400/20"
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         <Image
           src={photo.imageUrl}
           alt={getGalleryPhotoLabel(photo)}
           fill
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          className="object-cover transition-opacity duration-300 group-hover:opacity-90"
           sizes="(max-width: 768px) 100vw, 33vw"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-surface-base/80 via-transparent to-transparent" />
@@ -181,12 +176,6 @@ function PhotoGridItem({
       </div>
     </button>
   );
-
-  if (!animated) {
-    return content;
-  }
-
-  return <StaggerItem>{content}</StaggerItem>;
 }
 
 function GalleryPagination({
@@ -198,10 +187,7 @@ function GalleryPagination({
   totalPages: number;
   onPageChange: (page: number) => void;
 }) {
-  const visiblePages = useMemo(
-    () => getVisiblePageNumbers(currentPage, totalPages),
-    [currentPage, totalPages],
-  );
+  const visiblePages = getVisiblePageNumbers(currentPage, totalPages);
 
   if (totalPages <= 1) {
     return null;
@@ -272,100 +258,64 @@ function GalleryPagination({
 
 export function GalleryPageContent({
   photos,
-  cta,
+  filteredCount,
+  carNames,
+  filters,
+  totalPages,
+  currentPage,
   hero,
 }: GalleryPageContentProps) {
-  const [category, setCategory] = useState<GalleryCategory>("all");
-  const [selectedCar, setSelectedCar] = useState("all");
-  const [photoTypeFilter, setPhotoTypeFilter] =
-    useState<GalleryPhotoTypeFilter>("all");
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const gallerySectionRef = useRef<HTMLElement>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const gallerySectionRef = useRef<HTMLElement>(null);
+  const [lightboxPhotos, setLightboxPhotos] = useState<GalleryPhoto[]>([]);
+  const [comparisonPhotos, setComparisonPhotos] = useState<GalleryPhoto[]>([]);
+  const [lightboxLoading, setLightboxLoading] = useState(false);
 
-  const categoryPhotos = useMemo(
-    () =>
-      category === "all"
-        ? photos
-        : photos.filter((photo) => photo.category === category),
-    [photos, category],
+  const navigate = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      router.push(buildGalleryUrl(searchParams, updates), { scroll: false });
+    },
+    [router, searchParams],
   );
 
-  const carNames = useMemo(
-    () =>
-      Array.from(
-        new Set(categoryPhotos.map((photo) => photo.carName).filter(Boolean)),
-      ).sort() as string[],
-    [categoryPhotos],
-  );
-
-  const filteredPhotos = useMemo(() => {
-    const byCar =
-      selectedCar === "all"
-        ? categoryPhotos
-        : categoryPhotos.filter((photo) => photo.carName === selectedCar);
-
-    return sortPhotosForDisplay(
-      filterPhotosByType(byCar, photoTypeFilter),
-    );
-  }, [categoryPhotos, selectedCar, photoTypeFilter]);
-
-  const totalPages = getGalleryPageCount(filteredPhotos.length);
-
-  const paginatedPhotos = useMemo(
-    () => paginatePhotos(filteredPhotos, currentPage),
-    [filteredPhotos, currentPage],
-  );
-
-  const comparisonPhotos = useMemo(() => {
-    const byCar =
-      selectedCar === "all"
-        ? categoryPhotos
-        : categoryPhotos.filter((photo) => photo.carName === selectedCar);
-
-    return byCar;
-  }, [categoryPhotos, selectedCar]);
-
-  useEffect(() => {
-    if (selectedCar !== "all" && !carNames.includes(selectedCar)) {
-      setSelectedCar("all");
-    }
-  }, [carNames, selectedCar]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [category, selectedCar, photoTypeFilter]);
-
-  useEffect(() => {
-    setCurrentPage((page) => Math.min(page, totalPages));
-  }, [totalPages]);
-
-  useEffect(() => {
-    if (lightboxOpen && filteredPhotos.length === 0) {
-      setLightboxOpen(false);
-      return;
-    }
-
-    setLightboxIndex((current) =>
-      clampLightboxIndex(current, filteredPhotos.length),
-    );
-  }, [filteredPhotos.length, lightboxOpen]);
-
-  const openPhoto = (photo: GalleryPhoto) => {
-    const index = filteredPhotos.findIndex((item) => item.id === photo.id);
-    setLightboxIndex(index >= 0 ? index : 0);
+  const openPhoto = async (photo: GalleryPhoto) => {
     setLightboxOpen(true);
+    setLightboxLoading(true);
+
+    try {
+      const params = Object.fromEntries(searchParams.entries());
+      const data = await getGalleryLightboxData(params);
+      const index = data.filteredPhotos.findIndex((item) => item.id === photo.id);
+
+      if (data.filteredPhotos.length === 0) {
+        setLightboxOpen(false);
+        return;
+      }
+
+      setLightboxPhotos(data.filteredPhotos);
+      setComparisonPhotos(data.comparisonPhotos);
+      setLightboxIndex(index >= 0 ? index : 0);
+    } catch {
+      setLightboxOpen(false);
+    } finally {
+      setLightboxLoading(false);
+    }
   };
 
   const handleCategoryChange = (nextCategory: GalleryCategory) => {
-    setCategory(nextCategory);
-    setSelectedCar("all");
-    setPhotoTypeFilter("all");
+    navigate({
+      category: nextCategory === "all" ? undefined : nextCategory,
+      car: undefined,
+      type: undefined,
+      page: undefined,
+    });
   };
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    navigate({ page: page <= 1 ? undefined : String(page) });
     gallerySectionRef.current?.scrollIntoView({
       behavior: "smooth",
       block: "start",
@@ -395,7 +345,7 @@ export function GalleryPageContent({
               {galleryCategories.map((cat) => (
                 <FilterPill
                   key={cat.id}
-                  active={category === cat.id}
+                  active={filters.category === cat.id}
                   onClick={() => handleCategoryChange(cat.id)}
                 >
                   {cat.label}
@@ -406,8 +356,8 @@ export function GalleryPageContent({
             {carNames.length > 0 && (
               <FilterScrollRow label="Vehicle" className="mb-6">
                 <FilterPill
-                  active={selectedCar === "all"}
-                  onClick={() => setSelectedCar("all")}
+                  active={filters.selectedCar === "all"}
+                  onClick={() => navigate({ car: undefined, page: undefined })}
                   variant="cyan"
                   size="sm"
                 >
@@ -416,8 +366,10 @@ export function GalleryPageContent({
                 {carNames.map((carName) => (
                   <FilterPill
                     key={carName}
-                    active={selectedCar === carName}
-                    onClick={() => setSelectedCar(carName)}
+                    active={filters.selectedCar === carName}
+                    onClick={() =>
+                      navigate({ car: carName, page: undefined })
+                    }
                     variant="cyan"
                     size="sm"
                   >
@@ -431,8 +383,13 @@ export function GalleryPageContent({
               {photoTypeOptions.map((option) => (
                 <FilterPill
                   key={option.id}
-                  active={photoTypeFilter === option.id}
-                  onClick={() => setPhotoTypeFilter(option.id)}
+                  active={filters.photoTypeFilter === option.id}
+                  onClick={() =>
+                    navigate({
+                      type: option.id === "all" ? undefined : option.id,
+                      page: undefined,
+                    })
+                  }
                   variant="cyan"
                   size="sm"
                 >
@@ -442,7 +399,7 @@ export function GalleryPageContent({
             </FilterScrollRow>
           </FadeIn>
 
-          {filteredPhotos.length === 0 ? (
+          {filteredCount === 0 ? (
             <FadeIn>
               <p className="text-center text-muted-foreground">
                 No projects in this category yet. Try another filter or check back soon.
@@ -450,13 +407,13 @@ export function GalleryPageContent({
             </FadeIn>
           ) : (
             <>
-              <PhotoGrid
-                filterKey={`${category}-${selectedCar}-${photoTypeFilter}-${currentPage}`}
-                items={paginatedPhotos}
-                onSelect={openPhoto}
-              />
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {photos.map((photo) => (
+                  <PhotoGridItem key={photo.id} photo={photo} onSelect={openPhoto} />
+                ))}
+              </div>
 
-              {filteredPhotos.length > GALLERY_PAGE_SIZE && (
+              {filteredCount > GALLERY_PAGE_SIZE && (
                 <GalleryPagination
                   currentPage={currentPage}
                   totalPages={totalPages}
@@ -468,17 +425,17 @@ export function GalleryPageContent({
         </div>
       </section>
 
-      <GalleryLightbox
-        photos={filteredPhotos}
-        comparisonPhotos={comparisonPhotos}
-        photoTypeFilter={photoTypeFilter}
-        index={lightboxIndex}
-        open={lightboxOpen}
-        onOpenChange={setLightboxOpen}
-        onIndexChange={setLightboxIndex}
-      />
-
-      <CtaBand content={cta} />
+      {lightboxOpen && !lightboxLoading && lightboxPhotos.length > 0 && (
+        <GalleryLightbox
+          photos={lightboxPhotos}
+          comparisonPhotos={comparisonPhotos}
+          photoTypeFilter={filters.photoTypeFilter}
+          index={lightboxIndex}
+          open={lightboxOpen}
+          onOpenChange={setLightboxOpen}
+          onIndexChange={setLightboxIndex}
+        />
+      )}
     </>
   );
 }

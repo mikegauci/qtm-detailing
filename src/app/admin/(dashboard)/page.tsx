@@ -37,7 +37,10 @@ export default async function AdminDashboardPage() {
       .from("bookings")
       .select("*", { count: "exact", head: true })
       .eq("status", "in_progress"),
-    supabase.from("inventory_items").select("*"),
+    supabase
+      .from("inventory_items")
+      .select("id, name, quantity, unit, low_stock_threshold")
+      .not("low_stock_threshold", "is", null),
     supabase
       .from("leads")
       .select("*")

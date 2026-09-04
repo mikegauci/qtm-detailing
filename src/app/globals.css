@@ -105,7 +105,7 @@
 
 @layer utilities {
   .glass-panel {
-    @apply border border-border-subtle bg-surface-raised/70 backdrop-blur-xl;
+    @apply border border-border-subtle bg-surface-raised/90 lg:bg-surface-raised/70 lg:backdrop-blur-xl;
   }
 
   .gradient-text {
@@ -128,9 +128,27 @@
     content: "";
     position: absolute;
     inset: 0;
-    opacity: 0.03;
+    opacity: 0.04;
     pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+  }
+
+  .stagger-container .stagger-item {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+
+  .stagger-container.stagger-visible .stagger-item {
+    animation: stagger-fade-in 0.5s cubic-bezier(0.21, 0.47, 0.32, 0.98) forwards;
+    animation-delay: calc(var(--stagger-delay, 0.1s) * var(--stagger-index, 0));
+  }
+
+  @keyframes stagger-fade-in {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .section-padding {

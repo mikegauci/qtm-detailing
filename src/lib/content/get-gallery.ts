@@ -1,8 +1,11 @@
+import { unstable_cache } from "next/cache";
 import type { GalleryPhoto } from "@/types/content";
+import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
 import { normalizeGalleryPhotoCategory } from "@/lib/content/gallery-categories";
 import { galleryPhotoDisplayUrl } from "@/lib/cms/gallery-photo-url";
 import { parseCarName } from "@/lib/content/parse-car-name";
-import { createClient } from "@/lib/supabase/server";
+import { queryGalleryPhotoRows } from "@/lib/content/gallery-query";
+import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/supabase/types";
 
 function mapRowToPhoto(row: Tables<"gallery_photos">): GalleryPhoto | null {
@@ -23,24 +26,21 @@ function mapRowToPhoto(row: Tables<"gallery_photos">): GalleryPhoto | null {
   };
 }
 
-async function fetchPublishedPhotos(): Promise<Tables<"gallery_photos">[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("gallery_photos")
-    .select("*")
-    .eq("publish_to_gallery", true)
-    .order("created_at", { ascending: false });
+async function fetchPublishedPhotos(): Promise<GalleryPhoto[]> {
+  const supabase = createPublicClient();
+  const rows = await queryGalleryPhotoRows(supabase, { publishedOnly: true });
 
-  if (error || !data?.length) {
-    return [];
-  }
-
-  return data;
-}
-
-export async function getGalleryPhotos(): Promise<GalleryPhoto[]> {
-  const rows = await fetchPublishedPhotos();
   return rows
     .map(mapRowToPhoto)
     .filter((photo): photo is GalleryPhoto => photo !== null);
+}
+
+const getGalleryPhotosCached = unstable_cache(
+  fetchPublishedPhotos,
+  [CMS_CACHE_TAGS.gallery],
+  { tags: [CMS_CACHE_TAGS.gallery] },
+);
+
+export async function getGalleryPhotos(): Promise<GalleryPhoto[]> {
+  return getGalleryPhotosCached();
 }

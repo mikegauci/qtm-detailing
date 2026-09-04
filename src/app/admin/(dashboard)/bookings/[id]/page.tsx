@@ -10,44 +10,39 @@ export default async function BookingDetailPage({
   const { id } = await params;
   const { supabase } = await requireAdmin();
 
-  const { data: booking } = await supabase
-    .from("bookings")
-    .select("*")
-    .eq("id", id)
-    .single();
+  const [{ data: bookingDetail }, { data: availableServices }] =
+    await Promise.all([
+      supabase
+        .from("bookings")
+        .select(
+          "*, customers(*), vehicles(*), booking_services(*, services(id, name))",
+        )
+        .eq("id", id)
+        .single(),
+      supabase
+        .from("services")
+        .select("*")
+        .eq("is_active", true)
+        .order("sort_order", { ascending: true }),
+    ]);
 
-  if (!booking) notFound();
+  if (!bookingDetail?.customers) notFound();
 
-  const [
-    { data: customer },
-    { data: vehicle },
-    { data: bookingServices },
-    { data: availableServices },
-  ] = await Promise.all([
-    supabase
-      .from("customers")
-      .select("*")
-      .eq("id", booking.customer_id)
-      .single(),
-    booking.vehicle_id
-      ? supabase
-          .from("vehicles")
-          .select("*")
-          .eq("id", booking.vehicle_id)
-          .single()
-      : Promise.resolve({ data: null }),
-    supabase
-      .from("booking_services")
-      .select("*, services(id, name)")
-      .eq("booking_id", id),
-    supabase
-      .from("services")
-      .select("*")
-      .eq("is_active", true)
-      .order("sort_order", { ascending: true }),
-  ]);
+  const customer = Array.isArray(bookingDetail.customers)
+    ? bookingDetail.customers[0]
+    : bookingDetail.customers;
+  const vehicle = Array.isArray(bookingDetail.vehicles)
+    ? bookingDetail.vehicles[0] ?? null
+    : bookingDetail.vehicles;
 
   if (!customer) notFound();
+
+  const {
+    customers: _customers,
+    vehicles: _vehicles,
+    booking_services: bookingServices,
+    ...booking
+  } = bookingDetail;
 
   return (
     <BookingDetail

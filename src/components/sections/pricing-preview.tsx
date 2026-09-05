@@ -8,6 +8,19 @@ type PricingPreviewSectionProps = {
   packages: Package[];
 };
 
+function packageGridClass(count: number) {
+  if (count >= 4) {
+    return "sm:grid-cols-2 lg:grid-cols-4";
+  }
+  if (count === 3) {
+    return "mx-auto max-w-5xl sm:grid-cols-2 lg:grid-cols-3";
+  }
+  if (count === 2) {
+    return "mx-auto max-w-2xl sm:grid-cols-2";
+  }
+  return "mx-auto max-w-sm grid-cols-1";
+}
+
 export function PricingPreviewSection({ packages }: PricingPreviewSectionProps) {
   return (
     <section className="section-padding bg-surface-raised/30">
@@ -20,7 +33,7 @@ export function PricingPreviewSection({ packages }: PricingPreviewSectionProps) 
           />
         </FadeIn>
 
-        <StaggerContainer className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StaggerContainer className={cn("grid gap-6", packageGridClass(packages.length))}>
           {packages.map((pkg) => (
             <StaggerItem key={pkg.id}>
               <div

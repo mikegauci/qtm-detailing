@@ -1,9 +1,6 @@
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getAdminPageSections } from "@/app/actions/admin/cms";
-import {
-  PageCopyEditorLazy,
-  SitePageCopyEditorLazy,
-} from "@/components/admin/lazy/page-copy-editor-lazy";
+import { PageCopyEditorLazy } from "@/components/admin/lazy/page-copy-editor-lazy";
 import {
   defaultAboutIntro,
   defaultContactHero,
@@ -43,22 +40,8 @@ export default async function PageCopyAdminPage() {
   const { supabase } = await requireAdmin();
   const sections = await getAdminPageSections(undefined, supabase);
 
-  const hero = findSection<HeroContent>(sections, "home", "hero", defaultHero);
-  const whyQtm = findSection<WhyQtmContent>(
-    sections,
-    "home",
-    "why-qtm",
-    defaultWhyQtm,
-  );
-  const ctaBand = findSection<CtaBandContent>(
-    sections,
-    "home",
-    "cta-band",
-    defaultCtaBand,
-  );
-
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
+    <div className="mx-auto max-w-6xl space-y-8">
       <div>
         <h1 className="text-3xl font-bold">Page Copy</h1>
         <p className="mt-1 text-white/60">
@@ -66,9 +49,20 @@ export default async function PageCopyAdminPage() {
         </p>
       </div>
 
-      <PageCopyEditorLazy hero={hero} whyQtm={whyQtm} ctaBand={ctaBand} />
-
-      <SitePageCopyEditorLazy
+      <PageCopyEditorLazy
+        hero={findSection<HeroContent>(sections, "home", "hero", defaultHero)}
+        whyQtm={findSection<WhyQtmContent>(
+          sections,
+          "home",
+          "why-qtm",
+          defaultWhyQtm,
+        )}
+        ctaBand={findSection<CtaBandContent>(
+          sections,
+          "home",
+          "cta-band",
+          defaultCtaBand,
+        )}
         featuredServices={findSection<SectionHeadingContent>(
           sections,
           "home",

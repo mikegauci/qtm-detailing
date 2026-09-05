@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { Service } from "@/types/content";
 import type { SectionHeadingContent } from "@/types/page-sections";
-import { serviceImageObjectPosition } from "@/lib/content/service-images";
+import { serviceImageObjectPosition, serviceImageZoomStyle } from "@/lib/content/service-images";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScrollCarousel } from "@/components/ui/scroll-carousel";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -19,22 +19,29 @@ function ServiceCard({ service }: { service: Service }) {
     >
       <div className="relative aspect-[4/3] overflow-hidden">
         {imageSrc ? (
-          <Image
-            src={imageSrc}
-            alt={service.title}
-            fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
-            style={
-              primaryImage
-                ? {
-                    objectPosition: serviceImageObjectPosition(
-                      primaryImage.focalY,
-                    ),
-                  }
-                : undefined
-            }
-            sizes="(max-width: 640px) 82vw, (max-width: 1024px) 55vw, 25vw"
-          />
+          <div
+            className="absolute inset-0"
+            style={primaryImage ? serviceImageZoomStyle(primaryImage) : undefined}
+          >
+            <div className="absolute inset-0 transition-transform duration-500 group-hover:scale-105">
+              <Image
+                src={imageSrc}
+                alt={service.title}
+                fill
+                className="object-cover"
+                style={
+                  primaryImage
+                    ? {
+                        objectPosition: serviceImageObjectPosition(
+                          primaryImage.focalY,
+                        ),
+                      }
+                    : undefined
+                }
+                sizes="(max-width: 640px) 82vw, (max-width: 1024px) 55vw, 25vw"
+              />
+            </div>
+          </div>
         ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-transparent to-transparent" />
       </div>

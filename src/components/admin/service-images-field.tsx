@@ -36,7 +36,7 @@ import {
 } from "@/components/admin/enhancement-progress-overlay";
 import { HiddenImageFileInput } from "@/components/admin/hidden-image-file-input";
 import { PhotoSourceFieldDialogs } from "@/components/admin/photo-source-field-dialogs";
-import { serviceImageObjectPosition } from "@/lib/content/service-images";
+import { serviceImageStyle } from "@/lib/content/service-images";
 import { useMounted } from "@/hooks/use-mounted";
 import { usePhotoSourcePicker } from "@/hooks/use-photo-source-picker";
 import { useSortableSensors } from "@/hooks/use-sortable-sensors";
@@ -61,12 +61,14 @@ function ServiceImageCard({
   image,
   index,
   onFocalChange,
+  onZoomChange,
   onRemove,
   dragHandle,
 }: {
   image: ServiceImage;
   index: number;
   onFocalChange: (focalY: number) => void;
+  onZoomChange: (zoom: number) => void;
   onRemove: () => void;
   dragHandle?: {
     attributes: DraggableAttributes;
@@ -109,7 +111,7 @@ function ServiceImageCard({
           alt={`Service photo ${index + 1}`}
           fill
           className="object-cover"
-          style={{ objectPosition: serviceImageObjectPosition(image.focalY) }}
+          style={serviceImageStyle(image)}
           sizes="400px"
         />
       </div>
@@ -131,6 +133,24 @@ function ServiceImageCard({
           <span>Bottom</span>
         </div>
       </div>
+
+      <div className="mt-3 space-y-1">
+        <Label className="text-xs text-white/60">Zoom</Label>
+        <input
+          type="range"
+          min={100}
+          max={250}
+          step={5}
+          value={image.zoom}
+          onChange={(e) => onZoomChange(Number(e.target.value))}
+          className="w-full accent-brand-purple-400"
+        />
+        <div className="flex justify-between text-[10px] text-white/40">
+          <span>1×</span>
+          <span>{(image.zoom / 100).toFixed(2).replace(/\.?0+$/, "")}×</span>
+          <span>2.5×</span>
+        </div>
+      </div>
     </div>
   );
 }
@@ -139,11 +159,13 @@ function SortableImageItem({
   image,
   index,
   onFocalChange,
+  onZoomChange,
   onRemove,
 }: {
   image: ServiceImage;
   index: number;
   onFocalChange: (focalY: number) => void;
+  onZoomChange: (zoom: number) => void;
   onRemove: () => void;
 }) {
   const {
@@ -170,6 +192,7 @@ function SortableImageItem({
         image={image}
         index={index}
         onFocalChange={onFocalChange}
+        onZoomChange={onZoomChange}
         onRemove={onRemove}
         dragHandle={{ attributes, listeners }}
       />
@@ -250,7 +273,7 @@ export function ServiceImagesField({
             successCount += 1;
             accumulatedImages = [
               ...accumulatedImages,
-              { url: result.url, focalY: 50 },
+              { url: result.url, focalY: 50, zoom: 100 },
             ];
             onChange(accumulatedImages);
           }
@@ -401,6 +424,7 @@ export function ServiceImagesField({
                     image={image}
                     index={index}
                     onFocalChange={(focalY) => updateImage(index, { focalY })}
+                    onZoomChange={(zoom) => updateImage(index, { zoom })}
                     onRemove={() =>
                       onChange(value.filter((_, i) => i !== index))
                     }
@@ -417,6 +441,7 @@ export function ServiceImagesField({
                 image={image}
                 index={index}
                 onFocalChange={(focalY) => updateImage(index, { focalY })}
+                onZoomChange={(zoom) => updateImage(index, { zoom })}
                 onRemove={() => onChange(value.filter((_, i) => i !== index))}
               />
             ))}

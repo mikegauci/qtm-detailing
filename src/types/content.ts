@@ -27,6 +27,8 @@ export type SiteConfig = {
 export type ServiceImage = {
   url: string;
   focalY: number;
+  /** Crop zoom as a percentage; 100 = default (object-cover fill). */
+  zoom: number;
 };
 
 export type Service = {

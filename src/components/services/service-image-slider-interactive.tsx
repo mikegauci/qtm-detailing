@@ -4,7 +4,7 @@ import { useCallback, useState } from "react";
 import Image from "next/image";
 import { ChevronLeft, ChevronRight, ImageIcon } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { serviceImageObjectPosition } from "@/lib/content/service-images";
+import { serviceImageStyle } from "@/lib/content/service-images";
 import type { ServiceImage } from "@/types/content";
 import { cn } from "@/lib/utils";
 
@@ -123,9 +123,7 @@ export function ServiceImageSliderInteractive({
           alt={hasMultiple ? `${alt} — photo ${activeIndex + 1}` : alt}
           fill
           className="object-cover"
-          style={{
-            objectPosition: serviceImageObjectPosition(activeImage.focalY),
-          }}
+          style={serviceImageStyle(activeImage)}
           sizes="(max-width: 1024px) 100vw, 50vw"
           priority={activeIndex === 0}
         />
@@ -151,9 +149,7 @@ export function ServiceImageSliderInteractive({
               fill
               draggable={false}
               className="pointer-events-none object-cover select-none"
-              style={{
-                objectPosition: serviceImageObjectPosition(activeImage.focalY),
-              }}
+              style={serviceImageStyle(activeImage)}
               sizes="(max-width: 1024px) 100vw, 50vw"
               priority={activeIndex === 0}
             />

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type ComponentType } from "react";
 import Image from "next/image";
-import { serviceImageObjectPosition } from "@/lib/content/service-images";
+import { serviceImageStyle } from "@/lib/content/service-images";
 import type { ServiceImage } from "@/types/content";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +39,7 @@ function ServiceImageSliderFallback({
         alt={alt}
         fill
         className="object-cover"
-        style={{ objectPosition: serviceImageObjectPosition(image.focalY) }}
+        style={serviceImageStyle(image)}
         sizes="(max-width: 1024px) 100vw, 50vw"
       />
     </div>

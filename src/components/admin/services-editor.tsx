@@ -44,6 +44,7 @@ type ServicesEditorProps = {
 type ServiceFormState = {
   id?: string;
   name: string;
+  title_subline: string;
   short_description: string;
   description: string;
   featuresText: string;
@@ -54,6 +55,7 @@ type ServiceFormState = {
 
 const emptyService: ServiceFormState = {
   name: "",
+  title_subline: "",
   short_description: "",
   description: "",
   featuresText: "",
@@ -106,7 +108,7 @@ function ServiceRowCard({
         <div className="min-w-0">
           <p className="truncate font-medium">{service.name}</p>
           <p className="truncate text-sm text-white/60">
-            {slugify(service.name)}
+            {service.title_subline || slugify(service.name)}
           </p>
         </div>
         {!service.is_active && <Badge variant="outline">Inactive</Badge>}
@@ -192,6 +194,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
         upsertService({
           id: editing.id,
           name: editing.name,
+          title_subline: editing.title_subline,
           short_description: editing.short_description,
           description: editing.description,
           features: editing.featuresText
@@ -217,6 +220,7 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
     setEditing({
       id: service.id,
       name: service.name,
+      title_subline: service.title_subline ?? "",
       short_description: service.short_description ?? "",
       description: service.description ?? "",
       featuresText: (service.features ?? []).join("\n"),
@@ -291,6 +295,17 @@ export function ServicesEditor({ initialServices }: ServicesEditorProps) {
                 className="cursor-default bg-white/5 text-white/60"
               />
             </div>
+          </div>
+          <div className="space-y-2">
+            <Label>
+              Subtitle
+            </Label>
+            <Input
+              value={editing.title_subline}
+              onChange={(e) =>
+                setEditing((p) => ({ ...p, title_subline: e.target.value }))
+              }
+            />
           </div>
           <div className="space-y-2">
             <Label>

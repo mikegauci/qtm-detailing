@@ -300,6 +300,7 @@ export async function upsertSiteSettings(
 export async function upsertService(input: {
   id?: string;
   name: string;
+  title_subline?: string;
   short_description?: string;
   description?: string;
   features?: string[];
@@ -313,6 +314,7 @@ export async function upsertService(input: {
     const payload = {
       name: input.name,
       slug: slugify(input.name),
+      title_subline: input.title_subline?.trim() || null,
       short_description: input.short_description ?? null,
       description: input.description ?? null,
       price: 0,

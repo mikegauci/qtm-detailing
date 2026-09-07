@@ -9,6 +9,7 @@ import {
   defaultProcessSteps,
 } from "@/lib/content/cms-defaults";
 import { getPageSections } from "@/lib/content/get-page-section";
+import { getSiteSettings } from "@/lib/content/get-site-settings";
 
 export const metadata: Metadata = {
   title: "About",
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function AboutPage() {
-  const [aboutSections, homeSections] = await Promise.all([
+  const [aboutSections, homeSections, settings] = await Promise.all([
     getPageSections("about", {
       intro: defaultAboutIntro,
       "process-steps": defaultProcessSteps,
@@ -27,6 +28,7 @@ export default async function AboutPage() {
     getPageSections("home", {
       "cta-band": defaultCtaBand,
     }),
+    getSiteSettings(),
   ]);
 
   const intro = aboutSections.intro;
@@ -47,8 +49,8 @@ export default async function AboutPage() {
                 className="mb-0"
               />
               <p className="mt-6 text-lg text-muted-foreground">{intro.mission}</p>
-              <CTAButton href="/contact" className="mt-8">
-                Contact Us
+              <CTAButton href={settings.contact.whatsappUrl} className="mt-8">
+                Message on WhatsApp
               </CTAButton>
             </FadeIn>
 

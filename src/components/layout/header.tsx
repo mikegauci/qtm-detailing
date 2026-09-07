@@ -80,7 +80,7 @@ export function Header({ settings }: { settings: SiteConfig }) {
         </nav>
 
         <div className="hidden md:block">
-          <CTAButton href="/contact">Get a Quote</CTAButton>
+          <CTAButton href={settings.contact.whatsappUrl}>Get a Quote</CTAButton>
         </div>
 
         <Sheet open={open} onOpenChange={setOpen}>
@@ -119,7 +119,7 @@ export function Header({ settings }: { settings: SiteConfig }) {
                 );
               })}
               <CTAButton
-                href="/contact"
+                href={settings.contact.whatsappUrl}
                 className="mt-4 w-full"
                 onClick={() => setOpen(false)}
               >

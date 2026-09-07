@@ -12,13 +12,15 @@ import {
 } from "@/lib/content/cms-defaults";
 import { getPackages } from "@/lib/content/get-packages";
 import { getPageSections } from "@/lib/content/get-page-section";
+import { getSiteSettings } from "@/lib/content/get-site-settings";
 import { getServices } from "@/lib/content/get-services";
 import { getTestimonials } from "@/lib/content/get-testimonials";
 
 export const revalidate = 3600;
 
 export default async function HomePage() {
-  const [services, { packages }, testimonials, sections] = await Promise.all([
+  const [services, { packages }, testimonials, sections, settings] =
+    await Promise.all([
     getServices(),
     getPackages(),
     getTestimonials(),
@@ -28,6 +30,7 @@ export default async function HomePage() {
       "cta-band": defaultCtaBand,
       "featured-services": defaultFeaturedServicesHeading,
     }),
+    getSiteSettings(),
   ]);
 
   return (
@@ -38,7 +41,10 @@ export default async function HomePage() {
         heading={sections["featured-services"]}
       />
       <WhyQtmSection content={sections["why-qtm"]} />
-      <PricingPreviewSection packages={packages} />
+      <PricingPreviewSection
+        packages={packages}
+        quoteUrl={settings.contact.whatsappUrl}
+      />
       {testimonials.length > 0 && (
         <TestimonialsSection testimonials={testimonials} />
       )}

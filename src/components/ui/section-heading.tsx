@@ -47,6 +47,19 @@ type CTAButtonProps = {
   onClick?: () => void;
 };
 
+function isExternalHref(href: string) {
+  return (
+    href.startsWith("http://") ||
+    href.startsWith("https://") ||
+    href.startsWith("mailto:") ||
+    href.startsWith("tel:")
+  );
+}
+
+function opensInNewTab(href: string) {
+  return href.startsWith("http://") || href.startsWith("https://");
+}
+
 export function CTAButton({
   href,
   children,
@@ -63,16 +76,29 @@ export function CTAButton({
       "border border-brand-purple-400/50 text-brand-purple-300 hover:bg-brand-purple-950/50 hover:border-brand-purple-400",
   };
 
+  const buttonClassName = cn(
+    "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300",
+    variants[variant],
+    className,
+  );
+
+  if (isExternalHref(href)) {
+    return (
+      <a
+        href={href}
+        {...(opensInNewTab(href)
+          ? { target: "_blank", rel: "noopener noreferrer" }
+          : {})}
+        onClick={onClick}
+        className={buttonClassName}
+      >
+        {children}
+      </a>
+    );
+  }
+
   return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={cn(
-        "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-semibold transition-all duration-300",
-        variants[variant],
-        className,
-      )}
-    >
+    <Link href={href} onClick={onClick} className={buttonClassName}>
       {children}
     </Link>
   );

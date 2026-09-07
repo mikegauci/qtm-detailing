@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 
 type PricingPreviewSectionProps = {
   packages: Package[];
+  quoteUrl: string;
 };
 
 function packageGridClass(count: number) {
@@ -21,7 +22,10 @@ function packageGridClass(count: number) {
   return "mx-auto max-w-sm grid-cols-1";
 }
 
-export function PricingPreviewSection({ packages }: PricingPreviewSectionProps) {
+export function PricingPreviewSection({
+  packages,
+  quoteUrl,
+}: PricingPreviewSectionProps) {
   return (
     <section className="section-padding bg-surface-raised/30">
       <div className="container-narrow">
@@ -64,7 +68,7 @@ export function PricingPreviewSection({ packages }: PricingPreviewSectionProps) 
                   ))}
                 </ul>
                 <CTAButton
-                  href="/contact"
+                  href={quoteUrl}
                   variant={pkg.popular ? "primary" : "outline"}
                   className="mt-8 w-full"
                 >

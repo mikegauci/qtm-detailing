@@ -9,6 +9,8 @@ import type {
   WhyQtmContent,
 } from "@/types/page-sections";
 
+const WHATSAPP_QUOTE_URL = "https://wa.me/message/ACBWHSZMFJGVE1";
+
 export const defaultSiteConfig: SiteConfig = {
   name: "QTM Detailing",
   tagline: "Premium automotive detailing in Malta",
@@ -21,7 +23,7 @@ export const defaultSiteConfig: SiteConfig = {
     email: "hello@qtmdetailing.mt",
     phone: "+356 9997 1101",
     whatsapp: "+356 9997 1101",
-    whatsappUrl: "https://wa.link/lvy8rn",
+    whatsappUrl: WHATSAPP_QUOTE_URL,
     address: "Xemxija, Malta",
     coordinates: {
       lat: 35.898,
@@ -52,7 +54,7 @@ export const defaultHero: HeroContent = {
   titleLine2: "detailing for every drive",
   description:
     "Paint correction, ceramic coating, and interior restoration, crafted with precision for Malta's most discerning drivers.",
-  primaryCta: { label: "Request a Quote", href: "/contact" },
+  primaryCta: { label: "Request a Quote", href: WHATSAPP_QUOTE_URL },
   secondaryCta: { label: "View Services", href: "/services" },
   mobileImage: "",
   desktopImage: "",
@@ -91,7 +93,7 @@ export const defaultCtaBand: CtaBandContent = {
   title: "Ready for showroom results?",
   description:
     "Request a free quote and we'll get back within 24 hours with availability and personalised pricing for your vehicle.",
-  primaryCta: { label: "Request a Quote", href: "/contact" },
+  primaryCta: { label: "Request a Quote", href: WHATSAPP_QUOTE_URL },
   secondaryCta: { label: "Explore Services", href: "/services" },
 };
 
@@ -174,7 +176,7 @@ export const defaultContactHero: SectionHeadingContent = {
   eyebrow: "Contact",
   title: "Request a quote",
   description:
-    "Tell us about your vehicle and the services you're interested in. WhatsApp is the fastest way to reach us — or use the form below and we'll get back within 24 hours.",
+    "Tell us about your vehicle and the services you're interested in. WhatsApp is the fastest way to reach us. We'll get back within 24 hours.",
 };
 
 export const defaultGalleryHero: SectionHeadingContent = {

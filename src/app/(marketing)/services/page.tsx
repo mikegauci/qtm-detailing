@@ -120,7 +120,10 @@ export default async function ServicesPage() {
                           {service.note}
                         </p>
                       )}
-                      <CTAButton href="/contact" className="mt-8 w-fit">
+                      <CTAButton
+                        href={settings.contact.whatsappUrl}
+                        className="mt-8 w-fit"
+                      >
                         Request Quote
                       </CTAButton>
                     </div>

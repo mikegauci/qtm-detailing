@@ -6,10 +6,12 @@ import { PricingCard } from "@/components/pricing/pricing-card";
 import { defaultCtaBand } from "@/lib/content/cms-defaults";
 import { getPageSections } from "@/lib/content/get-page-section";
 import {
-  pricingHero,
-  pricingImportantInfo,
-  pricingSections,
-} from "@/lib/content/pricing-data";
+  getPricingHero,
+  getPricingImportantInfo,
+  getPricingSections,
+} from "@/lib/content/get-pricing";
+import { pricingImportantInfo as defaultImportantInfo } from "@/lib/content/pricing-data";
+import { getSiteSettings } from "@/lib/content/get-site-settings";
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -20,9 +22,25 @@ export const metadata: Metadata = {
 export const revalidate = 3600;
 
 export default async function PricingPage() {
-  const sections = await getPageSections("home", {
-    "cta-band": defaultCtaBand,
-  });
+  const [hero, pricingSections, importantInfo, sections, settings] =
+    await Promise.all([
+    getPricingHero(),
+    getPricingSections(),
+    getPricingImportantInfo(),
+    getPageSections("home", {
+      "cta-band": defaultCtaBand,
+    }),
+    getSiteSettings(),
+  ]);
+
+  const quoteCtaLabel =
+    importantInfo.ctaLabel?.trim() ||
+    defaultImportantInfo.ctaLabel ||
+    "Request a Quote";
+  const quoteCtaHref =
+    importantInfo.ctaHref?.trim() ||
+    defaultImportantInfo.ctaHref ||
+    settings.contact.whatsappUrl;
 
   return (
     <>
@@ -30,9 +48,9 @@ export default async function PricingPage() {
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
-              eyebrow={pricingHero.eyebrow}
-              title={pricingHero.title}
-              description={pricingHero.description}
+              eyebrow={hero.eyebrow}
+              title={hero.title}
+              description={hero.description}
             />
           </FadeIn>
 
@@ -71,25 +89,25 @@ export default async function PricingPage() {
         <div className="container-narrow max-w-3xl">
           <FadeIn>
             <SectionHeading
-              eyebrow="Pricing"
-              title={pricingImportantInfo.title}
+              eyebrow={importantInfo.eyebrow ?? "Pricing"}
+              title={importantInfo.title}
             />
           </FadeIn>
           <FadeIn delay={0.1}>
             <div className="space-y-4 text-muted-foreground">
-              {pricingImportantInfo.paragraphs.map((paragraph) => (
+              {importantInfo.paragraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
               <ul className="list-inside list-disc space-y-1 pl-2">
-                {pricingImportantInfo.bullets.map((bullet) => (
+                {importantInfo.bullets.map((bullet) => (
                   <li key={bullet}>{bullet}</li>
                 ))}
               </ul>
-              {pricingImportantInfo.closingParagraphs.map((paragraph) => (
+              {importantInfo.closingParagraphs.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
-              <CTAButton href="/contact" className="mt-4">
-                Request a Quote
+              <CTAButton href={quoteCtaHref} className="mt-4">
+                {quoteCtaLabel}
               </CTAButton>
             </div>
           </FadeIn>

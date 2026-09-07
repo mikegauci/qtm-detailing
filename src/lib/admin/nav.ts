@@ -11,6 +11,7 @@ import {
   Star,
   Users,
   Wrench,
+  Euro,
   Boxes,
   ListOrdered,
 } from "lucide-react";
@@ -28,6 +29,7 @@ export const crmNav = [
 export const contentNav = [
   { label: "Site Settings", href: "/admin/content/site-settings", icon: Settings },
   { label: "Services", href: "/admin/content/services", icon: Wrench },
+  { label: "Pricing", href: "/admin/content/pricing", icon: Euro },
   { label: "Gallery", href: "/admin/gallery", icon: Image },
   { label: "Linked Photos", href: "/admin/gallery?view=linked", icon: Images },
   { label: "Testimonials", href: "/admin/content/testimonials", icon: Star },

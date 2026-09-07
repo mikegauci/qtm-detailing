@@ -395,6 +395,89 @@ export type Database = {
         }
         Relationships: []
       }
+      pricing_items: {
+        Row: {
+          created_at: string
+          description: string
+          id: string
+          includes: string[]
+          note: string | null
+          section_id: string
+          slug: string
+          sort_order: number
+          tiers: Json
+          title: string
+          updated_at: string
+          warning: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string
+          id?: string
+          includes?: string[]
+          note?: string | null
+          section_id: string
+          slug: string
+          sort_order?: number
+          tiers?: Json
+          title: string
+          updated_at?: string
+          warning?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          id?: string
+          includes?: string[]
+          note?: string | null
+          section_id?: string
+          slug?: string
+          sort_order?: number
+          tiers?: Json
+          title?: string
+          updated_at?: string
+          warning?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pricing_items_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "pricing_sections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pricing_sections: {
+        Row: {
+          created_at: string
+          heading: string | null
+          id: string
+          intro: string | null
+          slug: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          heading?: string | null
+          id?: string
+          intro?: string | null
+          slug: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          heading?: string | null
+          id?: string
+          intro?: string | null
+          slug?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_sections: {
         Row: {
           content: Json

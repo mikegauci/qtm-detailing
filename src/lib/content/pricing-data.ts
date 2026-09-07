@@ -1,37 +1,17 @@
-export type PriceTier = {
-  label: string;
-  price: number;
-};
+import { defaultSiteConfig } from "@/lib/content/cms-defaults";
+import type {
+  PricingHero,
+  PricingImportantInfo,
+  PricingSection,
+} from "@/types/pricing";
 
-export type PricingItem = {
-  slug: string;
-  title: string;
-  description: string;
-  tiers: PriceTier[];
-  includes?: string[];
-  note?: string;
-  warning?: string;
-};
-
-export type PricingHero = {
-  eyebrow: string;
-  title: string;
-  description: string;
-};
-
-export type PricingSection = {
-  id: string;
-  heading?: string;
-  intro?: string;
-  items: PricingItem[];
-};
-
-export type PricingImportantInfo = {
-  title: string;
-  paragraphs: string[];
-  bullets: string[];
-  closingParagraphs: string[];
-};
+export type {
+  PriceTier,
+  PricingHero,
+  PricingImportantInfo,
+  PricingItem,
+  PricingSection,
+} from "@/types/pricing";
 
 export const pricingHero: PricingHero = {
   eyebrow: "Premium Detailing Services & Pricing",
@@ -262,6 +242,7 @@ export const pricingSections: PricingSection[] = [
 ];
 
 export const pricingImportantInfo: PricingImportantInfo = {
+  eyebrow: "Pricing",
   title: "Important Pricing Information",
   paragraphs: [
     "All prices shown are starting prices and are based on the vehicle's size, condition and individual requirements.",
@@ -284,4 +265,6 @@ export const pricingImportantInfo: PricingImportantInfo = {
     "Any additional work or costs will always be discussed and agreed with the customer before work begins.",
     "For a personalised quotation, please send us your vehicle make, model and a few clear photos of its current condition.",
   ],
+  ctaLabel: "Request a Quote",
+  ctaHref: defaultSiteConfig.contact.whatsappUrl,
 };

@@ -23,6 +23,7 @@ export function revalidateAdminContent() {
   revalidatePath("/admin");
   revalidatePath("/admin/content/site-settings");
   revalidatePath("/admin/content/services");
+  revalidatePath("/admin/content/pricing");
   revalidatePath("/admin/content/testimonials");
   revalidatePath("/admin/content/faqs");
   revalidatePath("/admin/content/page-copy");

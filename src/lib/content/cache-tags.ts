@@ -6,6 +6,7 @@ export const CMS_CACHE_TAGS = {
   testimonials: "cms-testimonials",
   faqs: "cms-faqs",
   packages: "cms-packages",
+  pricing: "cms-pricing",
 } as const;
 
 export const CMS_CACHE_TAGS_ALL = Object.values(CMS_CACHE_TAGS);

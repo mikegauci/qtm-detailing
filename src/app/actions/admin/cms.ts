@@ -582,3 +582,239 @@ export async function getAdminPageSections(
   const { data } = await query;
   return data ?? [];
 }
+
+export async function getAdminPricing(supabase?: AdminSupabase) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  const [{ data: sections }, { data: items }] = await Promise.all([
+    client
+      .from("pricing_sections")
+      .select("*")
+      .order("sort_order", { ascending: true }),
+    client
+      .from("pricing_items")
+      .select("*")
+      .order("sort_order", { ascending: true }),
+  ]);
+
+  const itemsBySection = new Map<string, (typeof items extends (infer T)[] | null ? T : never)[]>();
+  for (const item of items ?? []) {
+    const list = itemsBySection.get(item.section_id) ?? [];
+    list.push(item);
+    itemsBySection.set(item.section_id, list);
+  }
+
+  return {
+    sections: (sections ?? []).map((section) => ({
+      ...section,
+      items: (itemsBySection.get(section.id) ?? []).sort(
+        (a, b) => a.sort_order - b.sort_order,
+      ),
+    })),
+  };
+}
+
+export async function upsertPricingSection(input: {
+  id?: string;
+  slug: string;
+  heading?: string;
+  intro?: string;
+}): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+    const payload = {
+      slug: slugify(input.slug),
+      heading: input.heading?.trim() || null,
+      intro: input.intro?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (input.id) {
+      const { error } = await supabase
+        .from("pricing_sections")
+        .update(payload)
+        .eq("id", input.id);
+
+      if (error) return { success: false, message: error.message };
+    } else {
+      const { data: lastSection } = await supabase
+        .from("pricing_sections")
+        .select("sort_order")
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const { error } = await supabase.from("pricing_sections").insert({
+        ...payload,
+        sort_order: (lastSection?.sort_order ?? -1) + 1,
+      });
+
+      if (error) return { success: false, message: error.message };
+    }
+
+    revalidateContent();
+    return { success: true, message: "Pricing section saved." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to save pricing section.",
+    };
+  }
+}
+
+export async function reorderPricingSections(
+  orderedIds: string[],
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("pricing_sections")
+          .update({ sort_order: index })
+          .eq("id", id),
+      ),
+    );
+
+    const error = results.find((result) => result.error)?.error;
+    if (error) return { success: false, message: error.message };
+
+    revalidateContent();
+    return { success: true, message: "Pricing sections reordered." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error
+          ? err.message
+          : "Failed to reorder pricing sections.",
+    };
+  }
+}
+
+export async function deletePricingSection(id: string): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+    const { error } = await supabase
+      .from("pricing_sections")
+      .delete()
+      .eq("id", id);
+    if (error) return { success: false, message: error.message };
+    revalidateContent();
+    return { success: true, message: "Pricing section deleted." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error
+          ? err.message
+          : "Failed to delete pricing section.",
+    };
+  }
+}
+
+export async function upsertPricingItem(input: {
+  id?: string;
+  section_id: string;
+  title: string;
+  slug?: string;
+  description?: string;
+  tiers?: { label: string; price: number }[];
+  includes?: string[];
+  note?: string;
+  warning?: string;
+}): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+    const payload = {
+      section_id: input.section_id,
+      slug: slugify(input.slug ?? input.title),
+      title: input.title,
+      description: input.description ?? "",
+      tiers: (input.tiers ?? []) as unknown as Json,
+      includes: input.includes ?? [],
+      note: input.note?.trim() || null,
+      warning: input.warning?.trim() || null,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (input.id) {
+      const { error } = await supabase
+        .from("pricing_items")
+        .update(payload)
+        .eq("id", input.id);
+
+      if (error) return { success: false, message: error.message };
+    } else {
+      const { data: lastItem } = await supabase
+        .from("pricing_items")
+        .select("sort_order")
+        .eq("section_id", input.section_id)
+        .order("sort_order", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      const { error } = await supabase.from("pricing_items").insert({
+        ...payload,
+        sort_order: (lastItem?.sort_order ?? -1) + 1,
+      });
+
+      if (error) return { success: false, message: error.message };
+    }
+
+    revalidateContent();
+    return { success: true, message: "Pricing item saved." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to save pricing item.",
+    };
+  }
+}
+
+export async function reorderPricingItems(
+  orderedIds: string[],
+): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const results = await Promise.all(
+      orderedIds.map((id, index) =>
+        supabase
+          .from("pricing_items")
+          .update({ sort_order: index })
+          .eq("id", id),
+      ),
+    );
+
+    const error = results.find((result) => result.error)?.error;
+    if (error) return { success: false, message: error.message };
+
+    revalidateContent();
+    return { success: true, message: "Pricing items reordered." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to reorder pricing items.",
+    };
+  }
+}
+
+export async function deletePricingItem(id: string): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+    const { error } = await supabase.from("pricing_items").delete().eq("id", id);
+    if (error) return { success: false, message: error.message };
+    revalidateContent();
+    return { success: true, message: "Pricing item deleted." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to delete pricing item.",
+    };
+  }
+}

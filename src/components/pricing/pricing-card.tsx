@@ -1,6 +1,6 @@
 import { Check } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
-import type { PricingItem } from "@/lib/content/pricing-data";
+import type { PricingItem } from "@/types/pricing";
 
 type PricingCardProps = {
   item: PricingItem;

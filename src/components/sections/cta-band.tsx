@@ -27,17 +27,17 @@ export function CtaBand({ content = defaultCtaBand }: CtaBandProps) {
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">
                 {content.description}
               </p>
-              <div className="mt-8 flex flex-col items-center justify-center gap-4 sm:flex-row">
+              <div className="mx-auto mt-8 flex w-full max-w-sm flex-col gap-4 sm:max-w-none sm:flex-row sm:justify-center">
                 <CTAButton
                   href={content.primaryCta.href}
-                  className="px-8 py-4 text-base"
+                  className="w-full px-8 py-4 text-base sm:w-auto"
                 >
                   {content.primaryCta.label}
                 </CTAButton>
                 <CTAButton
                   href={content.secondaryCta.href}
                   variant="outline"
-                  className="px-8 py-4 text-base"
+                  className="w-full px-8 py-4 text-base sm:w-auto"
                 >
                   {content.secondaryCta.label}
                 </CTAButton>

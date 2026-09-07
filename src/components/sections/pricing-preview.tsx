@@ -1,5 +1,6 @@
 import { Check } from "lucide-react";
 import type { Package } from "@/types/content";
+import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
@@ -27,8 +28,7 @@ export function PricingPreviewSection({
   quoteUrl,
 }: PricingPreviewSectionProps) {
   return (
-    <section className="section-padding bg-surface-raised/30">
-      <div className="container-narrow">
+    <PageSection raised>
         <FadeIn>
           <SectionHeading
             eyebrow="Packages"
@@ -78,7 +78,6 @@ export function PricingPreviewSection({
             </StaggerItem>
           ))}
         </StaggerContainer>
-      </div>
-    </section>
+    </PageSection>
   );
 }

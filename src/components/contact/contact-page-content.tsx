@@ -13,11 +13,10 @@ type ContactPageContentProps = {
 
 export function ContactPageContent({ settings, hero }: ContactPageContentProps) {
   return (
-    <InternalPageSection className="pb-12 lg:pb-16">
-      <div className="container-narrow">
-        <FadeIn>
+    <InternalPageSection className="!pb-12 lg:!pb-16">
+      <FadeIn>
           <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-10">
-            <div>
+            <div className="text-center lg:text-left">
               <SectionHeading
                 eyebrow={hero.eyebrow}
                 title={hero.title}
@@ -25,13 +24,15 @@ export function ContactPageContent({ settings, hero }: ContactPageContentProps) 
                 align="left"
                 className="mb-6"
               />
-              <CTAButton
-                href={settings.contact.whatsappUrl}
-                className="gap-2 px-8 py-4 text-base"
-              >
-                <WhatsAppIcon className="h-4 w-4" />
-                Message on WhatsApp
-              </CTAButton>
+              <div className="mx-auto flex w-full max-w-sm justify-center lg:mx-0 lg:justify-start">
+                <CTAButton
+                  href={settings.contact.whatsappUrl}
+                  className="w-full gap-2 px-8 py-4 text-base lg:w-auto"
+                >
+                  <WhatsAppIcon className="h-4 w-4" />
+                  Message on WhatsApp
+                </CTAButton>
+              </div>
             </div>
 
             <div className="glass-panel divide-y divide-border-subtle rounded-2xl">
@@ -105,8 +106,7 @@ export function ContactPageContent({ settings, hero }: ContactPageContentProps) 
               </div>
             </div>
           </div>
-        </FadeIn>
-      </div>
+      </FadeIn>
     </InternalPageSection>
   );
 }

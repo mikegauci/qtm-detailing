@@ -4,6 +4,7 @@ import { ArrowRight } from "lucide-react";
 import type { Service } from "@/types/content";
 import type { SectionHeadingContent } from "@/types/page-sections";
 import { serviceImageObjectPosition, serviceImageZoomStyle } from "@/lib/content/service-images";
+import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { ScrollCarousel } from "@/components/ui/scroll-carousel";
 import { FadeIn } from "@/components/motion/fade-in";
@@ -67,8 +68,7 @@ export function FeaturedServicesSection({
   heading,
 }: FeaturedServicesSectionProps) {
   return (
-    <section className="section-padding overflow-x-clip bg-surface-base">
-      <div className="container-narrow">
+    <PageSection className="overflow-x-clip bg-surface-base">
         <FadeIn>
           <SectionHeading
             eyebrow={heading.eyebrow}
@@ -98,7 +98,6 @@ export function FeaturedServicesSection({
             <ArrowRight className="h-4 w-4" />
           </Link>
         </FadeIn>
-      </div>
-    </section>
+    </PageSection>
   );
 }

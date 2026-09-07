@@ -46,7 +46,7 @@ export function HeroSection({ content }: HeroSectionProps) {
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-48 bg-gradient-to-b from-transparent via-surface-base/80 to-surface-base sm:h-56 lg:h-64" />
 
-      <div className="container-narrow relative z-[2] flex min-h-screen flex-col justify-center px-4 pt-28 pb-20 sm:px-6 lg:px-8">
+      <div className="container-narrow relative z-[2] flex min-h-screen flex-col justify-center px-4 pt-28 pb-20 text-center sm:px-6 lg:px-8 lg:text-left">
         <FadeIn>
           <p className="mb-4 text-sm font-medium uppercase tracking-[0.25em] text-brand-cyan-400">
             {content.eyebrow}
@@ -54,7 +54,7 @@ export function HeroSection({ content }: HeroSectionProps) {
         </FadeIn>
 
         <FadeIn delay={0.1}>
-          <h1 className="max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:max-w-2xl lg:text-7xl">
+          <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:mx-0 lg:max-w-2xl lg:text-7xl">
             <span className="gradient-text">{content.titleLine1}</span>
             <br />
             <span className="text-foreground">{content.titleLine2}</span>
@@ -62,16 +62,16 @@ export function HeroSection({ content }: HeroSectionProps) {
         </FadeIn>
 
         <FadeIn delay={0.2}>
-          <p className="mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl lg:max-w-lg">
+          <p className="mx-auto mt-6 max-w-xl text-lg text-muted-foreground sm:text-xl lg:mx-0 lg:max-w-lg">
             {content.description}
           </p>
         </FadeIn>
 
         <FadeIn delay={0.3}>
-          <div className="mt-10 flex flex-col gap-4 sm:flex-row">
+          <div className="mx-auto mt-10 flex w-full max-w-sm flex-col gap-4 sm:max-w-none sm:flex-row sm:justify-center lg:mx-0 lg:justify-start">
             <CTAButton
               href={content.primaryCta.href}
-              className="gap-2 px-8 py-4 text-base"
+              className="w-full gap-2 px-8 py-4 text-base sm:w-auto"
             >
               {content.primaryCta.label}
               <ArrowRight className="h-4 w-4" />
@@ -79,7 +79,7 @@ export function HeroSection({ content }: HeroSectionProps) {
             <CTAButton
               href={content.secondaryCta.href}
               variant="outline"
-              className="px-8 py-4 text-base"
+              className="w-full px-8 py-4 text-base sm:w-auto"
             >
               {content.secondaryCta.label}
             </CTAButton>

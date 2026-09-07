@@ -1,19 +1,5 @@
-import type { ComponentProps } from "react";
-import { cn } from "@/lib/utils";
+import { PageSection, type PageSectionProps } from "@/components/layout/page-section";
 
-type InternalPageSectionProps = ComponentProps<"section">;
-
-export function InternalPageSection({
-  className,
-  children,
-  ...props
-}: InternalPageSectionProps) {
-  return (
-    <section
-      className={cn("section-padding pt-40 md:pt-32", className)}
-      {...props}
-    >
-      {children}
-    </section>
-  );
+export function InternalPageSection(props: PageSectionProps) {
+  return <PageSection internal {...props} />;
 }

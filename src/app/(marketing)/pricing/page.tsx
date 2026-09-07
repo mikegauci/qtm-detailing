@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InternalPageSection } from "@/components/layout/internal-page-section";
+import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { CtaBand } from "@/components/sections/cta-band";
@@ -46,8 +47,7 @@ export default async function PricingPage() {
   return (
     <>
       <InternalPageSection>
-        <div className="container-narrow">
-          <FadeIn>
+        <FadeIn>
             <SectionHeading
               eyebrow={hero.eyebrow}
               title={hero.title}
@@ -83,11 +83,9 @@ export default async function PricingPage() {
               </div>
             ))}
           </div>
-        </div>
       </InternalPageSection>
 
-      <section className="section-padding bg-surface-raised/30">
-        <div className="container-narrow max-w-3xl">
+      <PageSection raised narrow>
           <FadeIn>
             <SectionHeading
               eyebrow={importantInfo.eyebrow ?? "Pricing"}
@@ -112,8 +110,7 @@ export default async function PricingPage() {
               </CTAButton>
             </div>
           </FadeIn>
-        </div>
-      </section>
+      </PageSection>
 
       <CtaBand content={sections["cta-band"]} />
     </>

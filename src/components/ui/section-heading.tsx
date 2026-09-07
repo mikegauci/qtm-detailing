@@ -21,6 +21,7 @@ export function SectionHeading({
       className={cn(
         "mb-12 max-w-3xl",
         align === "center" && "mx-auto text-center",
+        align === "left" && "mx-auto text-center lg:mx-0 lg:text-left",
         className,
       )}
     >

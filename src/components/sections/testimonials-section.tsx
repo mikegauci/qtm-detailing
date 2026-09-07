@@ -1,5 +1,6 @@
 import { Star } from "lucide-react";
 import type { Testimonial } from "@/lib/content/get-testimonials";
+import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 
@@ -11,8 +12,7 @@ export function TestimonialsSection({
   testimonials,
 }: TestimonialsSectionProps) {
   return (
-    <section className="section-padding">
-      <div className="container-narrow">
+    <PageSection>
         <FadeIn>
           <SectionHeading
             eyebrow="Testimonials"
@@ -49,7 +49,6 @@ export function TestimonialsSection({
             </StaggerItem>
           ))}
         </StaggerContainer>
-      </div>
-    </section>
+    </PageSection>
   );
 }

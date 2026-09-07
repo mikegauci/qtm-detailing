@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { InternalPageSection } from "@/components/layout/internal-page-section";
+import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { CtaBand } from "@/components/sections/cta-band";
@@ -39,9 +40,8 @@ export default async function AboutPage() {
   return (
     <>
       <InternalPageSection>
-        <div className="container-narrow">
-          <div className="grid items-center gap-12 lg:grid-cols-2">
-            <FadeIn>
+        <div className="grid items-center gap-12 lg:grid-cols-2">
+            <FadeIn className="text-center lg:text-left">
               <SectionHeading
                 eyebrow={intro.eyebrow}
                 title={intro.title}
@@ -50,9 +50,11 @@ export default async function AboutPage() {
                 className="mb-0"
               />
               <p className="mt-6 text-lg text-muted-foreground">{intro.mission}</p>
-              <CTAButton href={settings.contact.whatsappUrl} className="mt-8">
-                Message on WhatsApp
-              </CTAButton>
+              <div className="mx-auto mt-8 flex w-full max-w-sm justify-center lg:mx-0 lg:justify-start">
+                <CTAButton href={settings.contact.whatsappUrl} className="w-full lg:w-auto">
+                  Message on WhatsApp
+                </CTAButton>
+              </div>
             </FadeIn>
 
             <FadeIn delay={0.2}>
@@ -74,12 +76,10 @@ export default async function AboutPage() {
                 <div className="absolute inset-0 bg-gradient-to-t from-surface-base/60 to-transparent" />
               </div>
             </FadeIn>
-          </div>
         </div>
       </InternalPageSection>
 
-      <section className="section-padding bg-surface-raised/30">
-        <div className="container-narrow">
+      <PageSection raised>
           <FadeIn>
             <SectionHeading
               eyebrow={processSteps.eyebrow}
@@ -103,8 +103,7 @@ export default async function AboutPage() {
               </StaggerItem>
             ))}
           </StaggerContainer>
-        </div>
-      </section>
+      </PageSection>
 
       <CtaBand content={cta} />
     </>

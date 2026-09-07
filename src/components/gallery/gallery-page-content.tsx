@@ -332,8 +332,7 @@ export function GalleryPageContent({
   return (
     <>
       <InternalPageSection ref={gallerySectionRef}>
-        <div className="container-narrow">
-          <FadeIn>
+        <FadeIn>
             <SectionHeading
               eyebrow={hero.eyebrow}
               title={hero.title}
@@ -423,7 +422,6 @@ export function GalleryPageContent({
               )}
             </>
           )}
-        </div>
       </InternalPageSection>
 
       {lightboxOpen && !lightboxLoading && lightboxPhotos.length > 0 && (

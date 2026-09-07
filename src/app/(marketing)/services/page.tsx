@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Check } from "lucide-react";
 import { InternalPageSection } from "@/components/layout/internal-page-section";
+import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import {
@@ -56,8 +57,7 @@ export default async function ServicesPage() {
   return (
     <>
       <InternalPageSection>
-        <div className="container-narrow">
-          <FadeIn>
+        <FadeIn>
             <SectionHeading
               eyebrow={hero.eyebrow}
               title={hero.title}
@@ -131,12 +131,10 @@ export default async function ServicesPage() {
                   </article>
                 </StaggerItem>
             ))}
-          </StaggerContainer>
-        </div>
+        </StaggerContainer>
       </InternalPageSection>
 
-      <section className="section-padding bg-surface-raised/30">
-        <div className="container-narrow max-w-3xl">
+      <PageSection raised narrow>
           <FadeIn>
             <SectionHeading eyebrow="Pricing" title={pricingInfo.title} />
           </FadeIn>
@@ -147,11 +145,9 @@ export default async function ServicesPage() {
               ))}
             </div>
           </FadeIn>
-        </div>
-      </section>
+      </PageSection>
 
-      <section className="section-padding">
-        <div className="container-narrow max-w-3xl">
+      <PageSection narrow>
           <FadeIn>
             <SectionHeading
               eyebrow={faqHeading.eyebrow}
@@ -179,8 +175,7 @@ export default async function ServicesPage() {
               ))}
             </Accordion>
           </FadeIn>
-        </div>
-      </section>
+      </PageSection>
 
       <CtaBand content={cta} />
     </>

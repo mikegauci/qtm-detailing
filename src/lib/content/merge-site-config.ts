@@ -18,6 +18,11 @@ export function mergeSiteConfig(partial: Partial<SiteConfig>): SiteConfig {
     seo: {
       ...defaultSiteConfig.seo,
       ...partial.seo,
+      llmsSummary:
+        partial.seo?.llmsSummary?.trim() ||
+        defaultSiteConfig.seo.llmsSummary ||
+        partial.description?.trim() ||
+        defaultSiteConfig.description,
     },
     contact: {
       ...defaultSiteConfig.contact,

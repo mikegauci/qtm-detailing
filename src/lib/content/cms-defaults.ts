@@ -12,11 +12,13 @@ import type {
 
 const WHATSAPP_QUOTE_URL = "https://wa.me/message/ACBWHSZMFJGVE1";
 
+const DEFAULT_SITE_DESCRIPTION =
+  "QTM Detailing delivers showroom-grade paint correction, ceramic coating, and interior restoration across Malta. Precision, passion, and premium results.";
+
 export const defaultSiteConfig: SiteConfig = {
   name: "QTM Detailing",
   tagline: "Premium automotive detailing in Malta",
-  description:
-    "QTM Detailing delivers showroom-grade paint correction, ceramic coating, and interior restoration across Malta. Precision, passion, and premium results.",
+  description: DEFAULT_SITE_DESCRIPTION,
   url: "https://www.qtmdetailing.mt",
   locale: "en_MT",
   currency: "EUR",
@@ -28,6 +30,7 @@ export const defaultSiteConfig: SiteConfig = {
       "auto detailing Xemxija",
       "QTM Detailing",
     ],
+    llmsSummary: DEFAULT_SITE_DESCRIPTION,
     priceRange: "€€",
   },
   contact: {

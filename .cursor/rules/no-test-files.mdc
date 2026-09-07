@@ -1,0 +1,14 @@
+---
+description: Do not add automated test files to this project
+alwaysApply: true
+---
+
+# No test files
+
+This project does not use an automated test suite. Do not create test files.
+
+- Do **not** add `*.test.ts`, `*.test.tsx`, `*.spec.ts`, `*.spec.tsx`, or `__tests__/` directories
+- Do **not** add testing frameworks (Jest, Vitest, Playwright, Cypress, etc.) unless explicitly requested
+- Do **not** suggest adding tests as part of routine feature work or code reviews
+
+If the user explicitly asks for tests, follow their instructions for that task only.

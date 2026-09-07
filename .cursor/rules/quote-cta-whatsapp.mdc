@@ -1,0 +1,39 @@
+---
+description: Quote CTAs and WhatsApp URL — single source of truth
+globs: src/**/*.{tsx,ts}
+alwaysApply: false
+---
+
+# Quote CTAs → WhatsApp
+
+All "Get a Quote", "Request a Quote", "Request Quote", and "Get Started" buttons must link to WhatsApp, not `/contact`.
+
+## Single source of truth
+
+Use **`settings.contact.whatsappUrl`** from `getSiteSettings()` (or pass it as a prop from a page that already fetched settings).
+
+Do **not** introduce a second exported URL constant. Defaults live in `defaultSiteConfig.contact.whatsappUrl` inside `cms-defaults.ts` only.
+
+```tsx
+// ✅ GOOD — page already has or can fetch settings (React cache dedupes with layout)
+const settings = await getSiteSettings();
+<CTAButton href={settings.contact.whatsappUrl}>Request a Quote</CTAButton>
+
+// ❌ BAD — hardcoded path or duplicate constant
+<CTAButton href="/contact">Request a Quote</CTAButton>
+import { WHATSAPP_QUOTE_URL } from "@/lib/content/cms-defaults";
+```
+
+## CMS defaults
+
+Hero and CTA band `primaryCta.href` in `cms-defaults.ts` should match `defaultSiteConfig.contact.whatsappUrl`. CMS-stored sections override defaults — do not leave `/contact` in CMS data for quote buttons.
+
+## Components
+
+- Use `CTAButton` for quote actions (handles external links with `target="_blank"`).
+- Nav "Contact" may still point to `/contact` (info page, not a quote CTA).
+- `/contact` is contact details only — no lead form.
+
+## Admin
+
+If adding site-settings fields, include `contact.whatsappUrl` so the link is editable without code changes. Page-copy primary CTA href fields should default to the WhatsApp URL, not `/contact`.

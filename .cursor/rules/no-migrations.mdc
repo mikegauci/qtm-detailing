@@ -1,0 +1,14 @@
+---
+description: Do not add Supabase migration files to this project
+alwaysApply: true
+---
+
+# No migration files
+
+This project does not keep schema changes in local migration files. Do not create or restore them.
+
+- Do **not** add files under `supabase/migrations/`
+- Do **not** create new `*.sql` migration files for schema, seed, or data fixes
+- Apply database changes directly via Supabase MCP, dashboard, or SQL — not via repo migrations
+
+If the user explicitly asks for a migration file, confirm first — the default is to avoid them.

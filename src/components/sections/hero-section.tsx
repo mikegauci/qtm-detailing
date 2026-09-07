@@ -23,7 +23,7 @@ export function HeroSection({ content }: HeroSectionProps) {
             fill
             priority
             className="object-cover object-bottom opacity-80"
-            sizes="100vw"
+            sizes="(max-width: 1023px) 100vw, 0px"
           />
           <div className="absolute inset-0 bg-gradient-to-b from-surface-base from-0% via-surface-base/90 via-40% to-surface-base/40" />
           <div className="absolute inset-0 bg-gradient-to-t from-surface-base via-surface-base/60 via-35% to-transparent" />
@@ -36,6 +36,8 @@ export function HeroSection({ content }: HeroSectionProps) {
             src={content.desktopImage}
             alt="Glossy black sports car in the QTM detailing studio"
             fill
+            priority
+            loading="eager"
             className="object-cover object-right opacity-80"
             sizes="58vw"
           />

@@ -19,6 +19,7 @@ import {
   LayoutTemplate,
   List,
   Plus,
+  Search,
   Settings2,
   Trash2,
 } from "lucide-react";
@@ -33,6 +34,7 @@ import {
 } from "@/app/actions/admin/cms";
 import { CmsFormActions } from "@/components/admin/cms-form-actions";
 import { EditorTabBar } from "@/components/admin/editor-tab-bar";
+import { PageSeoFields } from "@/components/admin/page-seo-fields";
 import { SaveSectionButton } from "@/components/admin/save-section-button";
 import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
 import { Button } from "@/components/ui/button";
@@ -44,6 +46,7 @@ import { usePageSectionSave } from "@/hooks/use-page-section-save";
 import { useServerAction } from "@/hooks/use-server-action";
 import { useSortableSensors } from "@/hooks/use-sortable-sensors";
 import type { Tables } from "@/lib/supabase/types";
+import type { PageSeoContent } from "@/types/page-sections";
 import type {
   PriceTier,
   PricingHero,
@@ -59,9 +62,10 @@ export type PricingEditorProps = {
   initialSections: PricingSectionRow[];
   hero: PricingHero;
   importantInfo: PricingImportantInfo;
+  seo: PageSeoContent;
 };
 
-type PricingTab = "hero" | "cards" | "important-info";
+type PricingTab = "hero" | "cards" | "important-info" | "seo";
 
 type CardsView = "items" | "section-settings";
 
@@ -355,12 +359,14 @@ export function PricingEditor({
   initialSections,
   hero,
   importantInfo,
+  seo,
 }: PricingEditorProps) {
   const [activeTab, setActiveTab] = useState<PricingTab>("hero");
   const [sections, setSections] = useState(initialSections);
   const [heroContent, setHeroContent] = useState(hero);
   const [importantInfoContent, setImportantInfoContent] =
     useState(importantInfo);
+  const [seoContent, setSeoContent] = useState(seo);
   const [activeSectionId, setActiveSectionId] = useState<string | null>(
     initialSections[0]?.id ?? null,
   );
@@ -677,6 +683,11 @@ export function PricingEditor({
             label: "Important info",
             icon: <List className="h-4 w-4" />,
           },
+          {
+            id: "seo",
+            label: "SEO",
+            icon: <Search className="h-4 w-4" />,
+          },
         ]}
       />
 
@@ -791,6 +802,21 @@ export function PricingEditor({
             onClick={() =>
               save("pricing", "important-info", importantInfoContent)
             }
+          />
+        </div>
+      ) : null}
+
+      {activeTab === "seo" ? (
+        <div className="max-w-2xl space-y-4 rounded-xl border border-white/10 p-5">
+          <PageSeoFields
+            content={seoContent}
+            onChange={setSeoContent}
+            showNoindex
+          />
+          <SaveSectionButton
+            label="Save SEO"
+            isSaving={isSaving("pricing", "seo")}
+            onClick={() => save("pricing", "seo", seoContent)}
           />
         </div>
       ) : null}

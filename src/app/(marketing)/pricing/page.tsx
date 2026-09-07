@@ -1,11 +1,10 @@
-import type { Metadata } from "next";
 import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { CtaBand } from "@/components/sections/cta-band";
 import { PricingCard } from "@/components/pricing/pricing-card";
-import { defaultCtaBand } from "@/lib/content/cms-defaults";
+import { defaultCtaBand, defaultPricingSeo } from "@/lib/content/cms-defaults";
 import { getPageSections } from "@/lib/content/get-page-section";
 import {
   getPricingHero,
@@ -14,12 +13,15 @@ import {
 } from "@/lib/content/get-pricing";
 import { pricingImportantInfo as defaultImportantInfo } from "@/lib/content/pricing-data";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
+import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Pricing",
-  description: "QTM Detailing service pricing — starting rates by vehicle size.",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata() {
+  return getMarketingPageMetadata({
+    pageKey: "pricing",
+    path: "/pricing",
+    defaultSeo: defaultPricingSeo,
+  });
+}
 
 export const revalidate = 3600;
 

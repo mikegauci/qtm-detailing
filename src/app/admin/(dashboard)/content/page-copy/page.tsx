@@ -3,21 +3,27 @@ import { getAdminPageSections } from "@/app/actions/admin/cms";
 import { PageCopyEditorLazy } from "@/components/admin/lazy/page-copy-editor-lazy";
 import {
   defaultAboutIntro,
+  defaultAboutSeo,
   defaultContactHero,
+  defaultContactSeo,
   defaultCtaBand,
   defaultFaqHeading,
   defaultFeaturedServicesHeading,
   defaultGalleryHero,
+  defaultGallerySeo,
   defaultHero,
+  defaultHomeSeo,
   defaultPricingInfo,
   defaultProcessSteps,
   defaultServicesHero,
+  defaultServicesSeo,
   defaultWhyQtm,
 } from "@/lib/content/cms-defaults";
 import type {
   AboutIntroContent,
   CtaBandContent,
   HeroContent,
+  PageSeoContent,
   PricingInfoContent,
   ProcessStepsContent,
   SectionHeadingContent,
@@ -69,6 +75,12 @@ export default async function PageCopyAdminPage() {
           "featured-services",
           defaultFeaturedServicesHeading,
         )}
+        homeSeo={findSection<PageSeoContent>(
+          sections,
+          "home",
+          "seo",
+          defaultHomeSeo,
+        )}
         servicesHero={findSection<SectionHeadingContent>(
           sections,
           "services",
@@ -87,6 +99,12 @@ export default async function PageCopyAdminPage() {
           "pricing-info",
           defaultPricingInfo,
         )}
+        servicesSeo={findSection<PageSeoContent>(
+          sections,
+          "services",
+          "seo",
+          defaultServicesSeo,
+        )}
         aboutIntro={findSection<AboutIntroContent>(
           sections,
           "about",
@@ -99,17 +117,35 @@ export default async function PageCopyAdminPage() {
           "process-steps",
           defaultProcessSteps,
         )}
+        aboutSeo={findSection<PageSeoContent>(
+          sections,
+          "about",
+          "seo",
+          defaultAboutSeo,
+        )}
         contactHero={findSection<SectionHeadingContent>(
           sections,
           "contact",
           "hero",
           defaultContactHero,
         )}
+        contactSeo={findSection<PageSeoContent>(
+          sections,
+          "contact",
+          "seo",
+          defaultContactSeo,
+        )}
         galleryHero={findSection<SectionHeadingContent>(
           sections,
           "gallery",
           "hero",
           defaultGalleryHero,
+        )}
+        gallerySeo={findSection<PageSeoContent>(
+          sections,
+          "gallery",
+          "seo",
+          defaultGallerySeo,
         )}
       />
     </div>

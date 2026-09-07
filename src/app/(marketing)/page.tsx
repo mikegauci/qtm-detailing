@@ -8,6 +8,7 @@ import {
   defaultCtaBand,
   defaultFeaturedServicesHeading,
   defaultHero,
+  defaultHomeSeo,
   defaultWhyQtm,
 } from "@/lib/content/cms-defaults";
 import { getPackages } from "@/lib/content/get-packages";
@@ -15,6 +16,15 @@ import { getPageSections } from "@/lib/content/get-page-section";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
 import { getServices } from "@/lib/content/get-services";
 import { getTestimonials } from "@/lib/content/get-testimonials";
+import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
+
+export async function generateMetadata() {
+  return getMarketingPageMetadata({
+    pageKey: "home",
+    path: "/",
+    defaultSeo: defaultHomeSeo,
+  });
+}
 
 export const revalidate = 3600;
 

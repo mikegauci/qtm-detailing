@@ -1,3 +1,11 @@
+export type SiteSeoConfig = {
+  keywords: string[];
+  googleSiteVerification?: string;
+  bingSiteVerification?: string;
+  llmsSummary?: string;
+  priceRange?: string;
+};
+
 export type SiteConfig = {
   name: string;
   tagline: string;
@@ -5,6 +13,7 @@ export type SiteConfig = {
   url: string;
   locale: string;
   currency: string;
+  seo: SiteSeoConfig;
   contact: {
     email: string;
     phone: string;

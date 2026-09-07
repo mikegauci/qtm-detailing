@@ -6,6 +6,7 @@ import {
   Layers,
   Mail,
   Megaphone,
+  Search,
   Sparkles,
   Wrench,
   type LucideIcon,
@@ -57,6 +58,12 @@ export const PAGE_COPY_NAV: Record<PageKey, PageConfig> = {
         description: "Bottom call-to-action strip",
         note: "This CTA also appears on Services, About, Gallery, and Pricing pages.",
       },
+      {
+        id: "seo",
+        label: "SEO",
+        icon: Search,
+        description: "Search and social preview metadata",
+      },
     ],
   },
   services: {
@@ -79,6 +86,12 @@ export const PAGE_COPY_NAV: Record<PageKey, PageConfig> = {
         icon: HelpCircle,
         description: "Heading above the FAQ list (items edited in FAQ admin)",
       },
+      {
+        id: "seo",
+        label: "SEO",
+        icon: Search,
+        description: "Search and social preview metadata",
+      },
     ],
   },
   about: {
@@ -95,6 +108,12 @@ export const PAGE_COPY_NAV: Record<PageKey, PageConfig> = {
         label: "Process steps",
         description: "How-we-work steps shown on the About page",
       },
+      {
+        id: "seo",
+        label: "SEO",
+        icon: Search,
+        description: "Search and social preview metadata",
+      },
     ],
   },
   contact: {
@@ -106,6 +125,12 @@ export const PAGE_COPY_NAV: Record<PageKey, PageConfig> = {
         label: "Page hero",
         description: "Headline at the top of the Contact page",
       },
+      {
+        id: "seo",
+        label: "SEO",
+        icon: Search,
+        description: "Search and social preview metadata",
+      },
     ],
   },
   gallery: {
@@ -116,6 +141,12 @@ export const PAGE_COPY_NAV: Record<PageKey, PageConfig> = {
         id: "hero",
         label: "Page hero",
         description: "Headline at the top of the Gallery page",
+      },
+      {
+        id: "seo",
+        label: "SEO",
+        icon: Search,
+        description: "Search and social preview metadata",
       },
     ],
   },

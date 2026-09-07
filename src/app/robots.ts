@@ -1,16 +1,29 @@
 import type { MetadataRoute } from "next";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
-import { getOptionalSiteUrl } from "@/lib/env";
+import { isIndexableHost } from "@/lib/seo/indexing";
+import { getProductionSiteUrl, joinSiteUrl } from "@/lib/seo/site-url";
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const settings = await getSiteSettings();
-  const baseUrl = getOptionalSiteUrl() || settings.url;
+  const indexable = await isIndexableHost(settings);
+
+  if (!indexable) {
+    return {
+      rules: {
+        userAgent: "*",
+        disallow: "/",
+      },
+    };
+  }
+
+  const baseUrl = getProductionSiteUrl(settings);
 
   return {
     rules: {
       userAgent: "*",
       allow: "/",
+      disallow: ["/admin"],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: joinSiteUrl(baseUrl, "/sitemap.xml"),
   };
 }

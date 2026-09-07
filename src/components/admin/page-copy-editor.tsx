@@ -12,6 +12,7 @@ import {
   PAGE_KEYS,
   type PageKey,
 } from "@/components/admin/page-copy-config";
+import { PageSeoFields } from "@/components/admin/page-seo-fields";
 import { SaveSectionButton } from "@/components/admin/save-section-button";
 import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
 import {
@@ -35,6 +36,7 @@ import type {
   AboutIntroContent,
   CtaBandContent,
   HeroContent,
+  PageSeoContent,
   PricingInfoContent,
   ProcessStepsContent,
   SectionHeadingContent,
@@ -53,6 +55,11 @@ export type PageCopyEditorProps = {
   processSteps: ProcessStepsContent;
   contactHero: SectionHeadingContent;
   galleryHero: SectionHeadingContent;
+  homeSeo: PageSeoContent;
+  servicesSeo: PageSeoContent;
+  aboutSeo: PageSeoContent;
+  contactSeo: PageSeoContent;
+  gallerySeo: PageSeoContent;
 };
 
 function FieldGroup({
@@ -241,6 +248,11 @@ export function PageCopyEditor({
   processSteps,
   contactHero,
   galleryHero,
+  homeSeo,
+  servicesSeo,
+  aboutSeo,
+  contactSeo,
+  gallerySeo,
 }: PageCopyEditorProps) {
   const [activePage, setActivePage] = useState<PageKey>("home");
   const [activeSection, setActiveSection] = useState(() =>
@@ -259,6 +271,11 @@ export function PageCopyEditor({
   const [processStepsContent, setProcessStepsContent] = useState(processSteps);
   const [contactHeroContent, setContactHeroContent] = useState(contactHero);
   const [galleryHeroContent, setGalleryHeroContent] = useState(galleryHero);
+  const [homeSeoContent, setHomeSeoContent] = useState(homeSeo);
+  const [servicesSeoContent, setServicesSeoContent] = useState(servicesSeo);
+  const [aboutSeoContent, setAboutSeoContent] = useState(aboutSeo);
+  const [contactSeoContent, setContactSeoContent] = useState(contactSeo);
+  const [gallerySeoContent, setGallerySeoContent] = useState(gallerySeo);
 
   const { save, isSaving } = usePageSectionSave();
 
@@ -289,6 +306,28 @@ export function PageCopyEditor({
   function handlePageChange(page: PageKey) {
     setActivePage(page);
     setActiveSection(getFirstSectionId(page));
+  }
+
+  function renderSeoEditor(
+    page: PageKey,
+    content: PageSeoContent,
+    onChange: (content: PageSeoContent) => void,
+  ) {
+    return (
+      <>
+        <PageSeoFields
+          content={content}
+          onChange={onChange}
+          showNoindex={page !== "home"}
+        />
+        <SaveSectionButton
+          label="Save SEO"
+          isSaving={isSaving(page, "seo")}
+          onClick={() => save(page, "seo", content)}
+          className="border-t border-white/10 pt-4"
+        />
+      </>
+    );
   }
 
   function renderSectionEditor() {
@@ -780,6 +819,36 @@ export function PageCopyEditor({
           />
         </>
       );
+    }
+
+    if (activeSection === "seo") {
+      if (activePage === "home") {
+        return renderSeoEditor("home", homeSeoContent, setHomeSeoContent);
+      }
+      if (activePage === "services") {
+        return renderSeoEditor(
+          "services",
+          servicesSeoContent,
+          setServicesSeoContent,
+        );
+      }
+      if (activePage === "about") {
+        return renderSeoEditor("about", aboutSeoContent, setAboutSeoContent);
+      }
+      if (activePage === "contact") {
+        return renderSeoEditor(
+          "contact",
+          contactSeoContent,
+          setContactSeoContent,
+        );
+      }
+      if (activePage === "gallery") {
+        return renderSeoEditor(
+          "gallery",
+          gallerySeoContent,
+          setGallerySeoContent,
+        );
+      }
     }
 
     return null;

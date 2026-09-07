@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { SiteConfig } from "@/types/content";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
+import { mergeSiteConfig } from "@/lib/content/merge-site-config";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
 import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { createPublicClient } from "@/lib/supabase/public";
@@ -14,7 +15,7 @@ async function fetchSiteSettings(): Promise<SiteConfig> {
     .maybeSingle();
 
   if (data?.value && typeof data.value === "object") {
-    return data.value as SiteConfig;
+    return mergeSiteConfig(data.value as Partial<SiteConfig>);
   }
 
   return defaultSiteConfig;

@@ -1,8 +1,11 @@
 import { Suspense } from "react";
-import type { Metadata } from "next";
 import { CtaBand } from "@/components/sections/cta-band";
 import { GalleryPageContent } from "@/components/gallery/gallery-page-content";
-import { defaultCtaBand, defaultGalleryHero } from "@/lib/content/cms-defaults";
+import {
+  defaultCtaBand,
+  defaultGalleryHero,
+  defaultGallerySeo,
+} from "@/lib/content/cms-defaults";
 import {
   filterGalleryPhotos,
   getGalleryCarNames,
@@ -15,12 +18,16 @@ import {
   getGalleryPageCount,
   paginatePhotos,
 } from "@/lib/content/gallery-photo-utils";
+import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Gallery",
-  description:
-    "Browse QTM Detailing's portfolio — before and after transformations, paint correction, ceramic coating, and interior restoration in Malta.",
-};
+export async function generateMetadata() {
+  return getMarketingPageMetadata({
+    pageKey: "gallery",
+    path: "/gallery",
+    defaultSeo: defaultGallerySeo,
+    canonicalPath: "/gallery",
+  });
+}
 
 export const revalidate = 3600;
 

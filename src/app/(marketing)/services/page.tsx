@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import { Check } from "lucide-react";
 import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { PageSection } from "@/components/layout/page-section";
@@ -12,6 +11,8 @@ import {
 } from "@/components/ui/accordion";
 import { CtaBand } from "@/components/sections/cta-band";
 import { FaqAnswer } from "@/components/faq/faq-answer";
+import { FaqPageJsonLd } from "@/components/seo/faq-page-jsonld";
+import { ServicesJsonLd } from "@/components/seo/services-jsonld";
 import { ServiceImageSlider } from "@/components/services/service-image-slider";
 import { cn } from "@/lib/utils";
 import {
@@ -19,17 +20,21 @@ import {
   defaultFaqHeading,
   defaultPricingInfo,
   defaultServicesHero,
+  defaultServicesSeo,
 } from "@/lib/content/cms-defaults";
 import { getFaqs } from "@/lib/content/get-faqs";
 import { getPageSections } from "@/lib/content/get-page-section";
 import { getServices } from "@/lib/content/get-services";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
+import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Services",
-  description:
-    "Explore QTM Detailing services — premium interior deep clean, exterior detail, paint enhancement, ceramic protection, and signature packages. Premium automotive care in Malta.",
-};
+export async function generateMetadata() {
+  return getMarketingPageMetadata({
+    pageKey: "services",
+    path: "/services",
+    defaultSeo: defaultServicesSeo,
+  });
+}
 
 export const revalidate = 3600;
 
@@ -56,6 +61,11 @@ export default async function ServicesPage() {
 
   return (
     <>
+      <FaqPageJsonLd
+        faqs={faqItems}
+        whatsappUrl={settings.contact.whatsappUrl}
+      />
+      <ServicesJsonLd services={services} settings={settings} />
       <InternalPageSection>
         <FadeIn>
             <SectionHeading

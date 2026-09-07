@@ -1,14 +1,16 @@
-import type { Metadata } from "next";
 import { ContactPageContent } from "@/components/contact/contact-page-content";
-import { defaultContactHero } from "@/lib/content/cms-defaults";
+import { defaultContactHero, defaultContactSeo } from "@/lib/content/cms-defaults";
 import { getPageSections } from "@/lib/content/get-page-section";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
+import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "Contact",
-  description:
-    "Get in touch with QTM Detailing via WhatsApp, phone, or email. We'll respond within 24 hours with availability and pricing.",
-};
+export async function generateMetadata() {
+  return getMarketingPageMetadata({
+    pageKey: "contact",
+    path: "/contact",
+    defaultSeo: defaultContactSeo,
+  });
+}
 
 export const revalidate = 3600;
 

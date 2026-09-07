@@ -43,3 +43,11 @@ export type PricingInfoContent = {
   title: string;
   paragraphs: string[];
 };
+
+export type PageSeoContent = {
+  title: string;
+  description: string;
+  ogTitle?: string;
+  ogDescription?: string;
+  noindex?: boolean;
+};

@@ -3,6 +3,7 @@ import type {
   AboutIntroContent,
   CtaBandContent,
   HeroContent,
+  PageSeoContent,
   PricingInfoContent,
   ProcessStepsContent,
   SectionHeadingContent,
@@ -16,9 +17,19 @@ export const defaultSiteConfig: SiteConfig = {
   tagline: "Premium automotive detailing in Malta",
   description:
     "QTM Detailing delivers showroom-grade paint correction, ceramic coating, and interior restoration across Malta. Precision, passion, and premium results.",
-  url: "https://www.qtmdetailing.mt/",
+  url: "https://www.qtmdetailing.mt",
   locale: "en_MT",
   currency: "EUR",
+  seo: {
+    keywords: [
+      "car detailing Malta",
+      "paint correction Malta",
+      "ceramic coating Malta",
+      "auto detailing Xemxija",
+      "QTM Detailing",
+    ],
+    priceRange: "€€",
+  },
   contact: {
     email: "hello@qtmdetailing.mt",
     phone: "+356 9997 1101",
@@ -184,4 +195,39 @@ export const defaultGalleryHero: SectionHeadingContent = {
   title: "Our latest work",
   description:
     "Real transformations straight from our studio. Click any photo to view it full size.",
+};
+
+export const defaultHomeSeo: PageSeoContent = {
+  title: "",
+  description: "",
+};
+
+export const defaultServicesSeo: PageSeoContent = {
+  title: "Services",
+  description:
+    "Explore QTM Detailing services — premium interior deep clean, exterior detail, paint enhancement, ceramic protection, and signature packages. Premium automotive care in Malta.",
+};
+
+export const defaultAboutSeo: PageSeoContent = {
+  title: "About",
+  description:
+    "Learn about QTM Detailing — Malta's premium automotive detailing studio. Our story and process.",
+};
+
+export const defaultContactSeo: PageSeoContent = {
+  title: "Contact",
+  description:
+    "Get in touch with QTM Detailing via WhatsApp, phone, or email. We'll respond within 24 hours with availability and pricing.",
+};
+
+export const defaultGallerySeo: PageSeoContent = {
+  title: "Gallery",
+  description:
+    "Browse QTM Detailing's portfolio — before and after transformations, paint correction, ceramic coating, and interior restoration in Malta.",
+};
+
+export const defaultPricingSeo: PageSeoContent = {
+  title: "Pricing",
+  description: "QTM Detailing service pricing — starting rates by vehicle size.",
+  noindex: true,
 };

@@ -10,6 +10,7 @@ import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
 import { loadGalleryPhotoBuffer } from "@/lib/cms/load-gallery-photo-buffer";
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
+import { mergeSiteConfig } from "@/lib/content/merge-site-config";
 import { downloadFile } from "@/lib/google-drive";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/supabase/admin";
@@ -565,7 +566,9 @@ export async function getAdminSiteSettings(supabase?: AdminSupabase) {
     .select("value")
     .eq("key", "main")
     .maybeSingle();
-  return (data?.value as Record<string, unknown> | null) ?? defaultSiteConfig;
+  return mergeSiteConfig(
+    (data?.value as Partial<import("@/types/content").SiteConfig> | null) ?? {},
+  );
 }
 
 export async function getAdminPageSections(

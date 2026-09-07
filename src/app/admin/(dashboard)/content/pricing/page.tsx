@@ -4,10 +4,12 @@ import {
   getAdminPricing,
 } from "@/app/actions/admin/cms";
 import { PricingEditorLazy } from "@/components/admin/lazy/pricing-editor-lazy";
+import { defaultPricingSeo } from "@/lib/content/cms-defaults";
 import {
   pricingHero,
   pricingImportantInfo,
 } from "@/lib/content/pricing-data";
+import type { PageSeoContent } from "@/types/page-sections";
 import type { PricingHero, PricingImportantInfo } from "@/types/pricing";
 
 function findSection<T>(sections: { section_key: string; content: unknown }[], key: string, fallback: T): T {
@@ -33,6 +35,11 @@ export default async function AdminPricingPage() {
     "important-info",
     pricingImportantInfo,
   );
+  const seo = findSection<PageSeoContent>(
+    pageSections,
+    "seo",
+    defaultPricingSeo,
+  );
 
   return (
     <div className="space-y-6">
@@ -46,6 +53,7 @@ export default async function AdminPricingPage() {
         initialSections={sections}
         hero={hero}
         importantInfo={importantInfo}
+        seo={seo}
       />
     </div>
   );

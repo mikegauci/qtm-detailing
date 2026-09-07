@@ -1,4 +1,3 @@
-import type { Metadata } from "next";
 import Image from "next/image";
 import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { PageSection } from "@/components/layout/page-section";
@@ -7,17 +6,21 @@ import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-
 import { CtaBand } from "@/components/sections/cta-band";
 import {
   defaultAboutIntro,
+  defaultAboutSeo,
   defaultCtaBand,
   defaultProcessSteps,
 } from "@/lib/content/cms-defaults";
 import { getPageSections } from "@/lib/content/get-page-section";
 import { getSiteSettings } from "@/lib/content/get-site-settings";
+import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
 
-export const metadata: Metadata = {
-  title: "About",
-  description:
-    "Learn about QTM Detailing — Malta's premium automotive detailing studio. Our story and process.",
-};
+export async function generateMetadata() {
+  return getMarketingPageMetadata({
+    pageKey: "about",
+    path: "/about",
+    defaultSeo: defaultAboutSeo,
+  });
+}
 
 export const revalidate = 3600;
 

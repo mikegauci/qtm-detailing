@@ -360,6 +360,7 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          excluded_features: string[]
           features: string[]
           id: string
           includes: Json
@@ -372,6 +373,7 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          excluded_features?: string[]
           features?: string[]
           id?: string
           includes?: Json
@@ -384,6 +386,7 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          excluded_features?: string[]
           features?: string[]
           id?: string
           includes?: Json

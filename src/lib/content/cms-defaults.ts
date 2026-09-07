@@ -118,6 +118,13 @@ export const defaultFeaturedServicesHeading: SectionHeadingContent = {
     "From daily drivers to supercars, every vehicle receives the same obsessive attention to detail.",
 };
 
+export const defaultPackagesHeading: SectionHeadingContent = {
+  eyebrow: "Packages",
+  title: "Clear pricing, no surprises",
+  description:
+    "Choose a package or mix services — we'll tailor a quote to your vehicle's condition.",
+};
+
 export const defaultServicesHero: SectionHeadingContent = {
   eyebrow: "Premium Detailing Services",
   title: "Every detail, perfected",

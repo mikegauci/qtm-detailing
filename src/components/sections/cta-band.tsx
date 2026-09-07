@@ -21,7 +21,7 @@ export function CtaBand({ content = defaultCtaBand }: CtaBandProps) {
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-brand-purple-900 via-brand-purple-950 to-surface-base px-8 py-16 text-center sm:px-12 lg:py-20">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgb(90_220_242_/_0.15),transparent_50%)]" />
             <div className="relative">
-              <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
+              <h2 className="display-heading text-3xl sm:text-4xl">
                 {content.title}
               </h2>
               <p className="mx-auto mt-4 max-w-xl text-muted-foreground">

@@ -51,6 +51,7 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+  --width-heading: 64rem;
 }
 
 :root {
@@ -161,6 +162,14 @@
 
   .container-narrow {
     @apply mx-auto max-w-7xl;
+  }
+
+  .section-heading-block {
+    @apply mb-12 max-w-[var(--width-heading)];
+  }
+
+  .display-heading {
+    @apply text-balance font-bold tracking-tight;
   }
 
   .scrollbar-hide {

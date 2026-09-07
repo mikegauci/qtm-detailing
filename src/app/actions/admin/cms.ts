@@ -821,3 +821,81 @@ export async function deletePricingItem(id: string): Promise<ActionResult> {
     };
   }
 }
+
+export type AdminPackageFormState = {
+  id: string;
+  name: string;
+  description: string;
+  features: string[];
+  excludedFeatures: string[];
+  is_popular: boolean;
+  is_active: boolean;
+};
+
+export async function getAdminPackages(supabase?: AdminSupabase) {
+  const client = supabase ?? (await requireAdmin()).supabase;
+  const { data, error } = await client
+    .from("packages")
+    .select("*")
+    .order("sort_order", { ascending: true });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data ?? [];
+}
+
+export async function saveHomePackagesSection(input: {
+  heading: {
+    eyebrow: string;
+    title: string;
+    description: string;
+  };
+  packages: AdminPackageFormState[];
+}): Promise<ActionResult> {
+  try {
+    const { supabase } = await requireAdmin();
+
+    const { error: sectionError } = await supabase.from("page_sections").upsert(
+      {
+        page_key: "home",
+        section_key: "packages",
+        content: input.heading as unknown as Json,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "page_key,section_key" },
+    );
+
+    if (sectionError) return { success: false, message: sectionError.message };
+
+    const results = await Promise.all(
+      input.packages.map((pkg, index) =>
+        supabase
+          .from("packages")
+          .update({
+            name: pkg.name,
+            description: pkg.description,
+            features: pkg.features,
+            excluded_features: pkg.excludedFeatures,
+            is_popular: pkg.is_popular,
+            is_active: pkg.is_active,
+            sort_order: index,
+          })
+          .eq("id", pkg.id),
+      ),
+    );
+
+    const packageError = results.find((result) => result.error)?.error;
+    if (packageError) return { success: false, message: packageError.message };
+
+    revalidateContent();
+    return { success: true, message: "Packages section saved." };
+  } catch (err) {
+    return {
+      success: false,
+      message:
+        err instanceof Error ? err.message : "Failed to save packages section.",
+    };
+  }
+}

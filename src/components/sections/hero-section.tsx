@@ -56,7 +56,7 @@ export function HeroSection({ content }: HeroSectionProps) {
         </FadeIn>
 
         <FadeIn delay={0.1}>
-          <h1 className="mx-auto max-w-4xl text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:mx-0 lg:max-w-2xl lg:text-7xl">
+          <h1 className="display-heading mx-auto max-w-[var(--width-heading)] text-4xl leading-[1.1] sm:text-5xl lg:mx-0 lg:max-w-3xl lg:text-7xl">
             <span className="gradient-text">{content.titleLine1}</span>
             <br />
             <span className="text-foreground">{content.titleLine2}</span>

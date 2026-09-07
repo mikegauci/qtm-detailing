@@ -95,6 +95,10 @@ export function resolvePackageFeatures(
   includedServicesBySlug: Map<string, string[]>,
   storedFeatures: string[],
 ): string[] {
+  if (storedFeatures.length > 0) {
+    return storedFeatures;
+  }
+
   const serviceSlug = getPackageServiceSlug(packageName);
   const includedServices = serviceSlug
     ? includedServicesBySlug.get(serviceSlug)
@@ -105,4 +109,8 @@ export function resolvePackageFeatures(
   }
 
   return addExteriorDetailWhenPaintIncluded(includedServices);
+}
+
+export function resolvePackageExcludedFeatures(storedExcluded: string[]): string[] {
+  return storedExcluded;
 }

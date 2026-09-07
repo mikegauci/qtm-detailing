@@ -1,5 +1,8 @@
 import { requireAdmin } from "@/lib/supabase/admin";
-import { getAdminPageSections } from "@/app/actions/admin/cms";
+import {
+  getAdminPackages,
+  getAdminPageSections,
+} from "@/app/actions/admin/cms";
 import { PageCopyEditorLazy } from "@/components/admin/lazy/page-copy-editor-lazy";
 import {
   defaultAboutIntro,
@@ -13,12 +16,14 @@ import {
   defaultGallerySeo,
   defaultHero,
   defaultHomeSeo,
+  defaultPackagesHeading,
   defaultPricingInfo,
   defaultProcessSteps,
   defaultServicesHero,
   defaultServicesSeo,
   defaultWhyQtm,
 } from "@/lib/content/cms-defaults";
+import { getPackages } from "@/lib/content/get-packages";
 import type {
   AboutIntroContent,
   CtaBandContent,
@@ -44,7 +49,26 @@ function findSection<T>(
 
 export default async function PageCopyAdminPage() {
   const { supabase } = await requireAdmin();
-  const sections = await getAdminPageSections(undefined, supabase);
+  const [sections, rawPackages, { packages: resolvedPackages }] =
+    await Promise.all([
+      getAdminPageSections(undefined, supabase),
+      getAdminPackages(supabase),
+      getPackages(true),
+    ]);
+
+  const packagesForEditor = rawPackages.map((row) => {
+    const resolved = resolvedPackages.find((pkg) => pkg.id === row.id);
+
+    return {
+      id: row.id,
+      name: row.name,
+      description: row.description ?? "",
+      features: resolved?.features ?? row.features ?? [],
+      excludedFeatures: row.excluded_features ?? [],
+      is_popular: row.is_popular,
+      is_active: row.is_active,
+    };
+  });
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
@@ -75,6 +99,13 @@ export default async function PageCopyAdminPage() {
           "featured-services",
           defaultFeaturedServicesHeading,
         )}
+        packagesHeading={findSection<SectionHeadingContent>(
+          sections,
+          "home",
+          "packages",
+          defaultPackagesHeading,
+        )}
+        packages={packagesForEditor}
         homeSeo={findSection<PageSeoContent>(
           sections,
           "home",

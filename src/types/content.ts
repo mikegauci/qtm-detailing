@@ -63,6 +63,7 @@ export type Package = {
   description: string;
   popular?: boolean;
   features: string[];
+  excludedFeatures: string[];
   includes: boolean[];
 };
 

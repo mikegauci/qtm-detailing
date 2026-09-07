@@ -15,6 +15,7 @@ import {
 import { PageSeoFields } from "@/components/admin/page-seo-fields";
 import { SaveSectionButton } from "@/components/admin/save-section-button";
 import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
+import { HomePackagesEditor } from "@/components/admin/home-packages-editor";
 import {
   Accordion,
   AccordionContent,
@@ -32,6 +33,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { usePageSectionSave } from "@/hooks/use-page-section-save";
+import type { AdminPackageFormState } from "@/app/actions/admin/cms";
 import type {
   AboutIntroContent,
   CtaBandContent,
@@ -48,6 +50,8 @@ export type PageCopyEditorProps = {
   whyQtm: WhyQtmContent;
   ctaBand: CtaBandContent;
   featuredServices: SectionHeadingContent;
+  packagesHeading: SectionHeadingContent;
+  packages: AdminPackageFormState[];
   servicesHero: SectionHeadingContent;
   faqHeading: SectionHeadingContent;
   pricingInfo: PricingInfoContent;
@@ -241,6 +245,8 @@ export function PageCopyEditor({
   whyQtm,
   ctaBand,
   featuredServices,
+  packagesHeading,
+  packages,
   servicesHero,
   faqHeading,
   pricingInfo,
@@ -540,6 +546,21 @@ export function PageCopyEditor({
             className="border-t border-white/10 pt-4"
           />
         </>
+      );
+    }
+
+    if (activePage === "home" && activeSection === "packages") {
+      return (
+        <HomePackagesEditor
+          key={packages
+            .map(
+              (pkg) =>
+                `${pkg.id}:${pkg.name}:${pkg.description}:${pkg.features.join("\n")}:${pkg.excludedFeatures.join("\n")}:${pkg.is_popular}:${pkg.is_active}`,
+            )
+            .join("|")}
+          heading={packagesHeading}
+          packages={packages}
+        />
       );
     }
 

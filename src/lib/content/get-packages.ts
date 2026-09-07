@@ -1,7 +1,7 @@
 import type { Package, Service } from "@/types/content";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
 import { createCmsCache } from "@/lib/content/create-cms-cache";
-import { resolvePackageFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
+import { resolvePackageFeatures, resolvePackageExcludedFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
 import { createPublicClient } from "@/lib/supabase/public";
 import type { Tables } from "@/lib/supabase/types";
 
@@ -46,6 +46,15 @@ function mapDbPackage(
     storedIncludes.push(false);
   }
 
+  const resolvedIncludes = resolvePackageIncludes(
+    row.name,
+    comparisonFeatures,
+    includedServicesBySlug,
+    storedIncludes,
+  );
+
+  const storedExcluded = row.excluded_features ?? [];
+
   return {
     id: row.id,
     name: row.name,
@@ -57,12 +66,8 @@ function mapDbPackage(
       includedServicesBySlug,
       row.features ?? [],
     ),
-    includes: resolvePackageIncludes(
-      row.name,
-      comparisonFeatures,
-      includedServicesBySlug,
-      storedIncludes,
-    ),
+    excludedFeatures: resolvePackageExcludedFeatures(storedExcluded),
+    includes: resolvedIncludes,
   };
 }
 
@@ -76,6 +81,7 @@ export function resolvePackageRecord(
   return {
     ...row,
     features: mapped.features,
+    excluded_features: mapped.excludedFeatures,
     includes: mapped.includes,
   };
 }

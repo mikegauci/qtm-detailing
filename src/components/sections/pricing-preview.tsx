@@ -1,5 +1,6 @@
-import { Check } from "lucide-react";
+import { Check, X } from "lucide-react";
 import type { Package } from "@/types/content";
+import type { SectionHeadingContent } from "@/types/page-sections";
 import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
@@ -7,6 +8,7 @@ import { cn } from "@/lib/utils";
 
 type PricingPreviewSectionProps = {
   packages: Package[];
+  heading: SectionHeadingContent;
   quoteUrl: string;
 };
 
@@ -25,15 +27,16 @@ function packageGridClass(count: number) {
 
 export function PricingPreviewSection({
   packages,
+  heading,
   quoteUrl,
 }: PricingPreviewSectionProps) {
   return (
     <PageSection raised>
         <FadeIn>
           <SectionHeading
-            eyebrow="Packages"
-            title="Clear pricing, no surprises"
-            description="Choose a package or mix services — we'll tailor a quote to your vehicle's condition."
+            eyebrow={heading.eyebrow}
+            title={heading.title}
+            description={heading.description}
           />
         </FadeIn>
 
@@ -59,10 +62,19 @@ export function PricingPreviewSection({
                 <ul className="mt-6 flex-1 space-y-3">
                   {pkg.features.map((feature) => (
                     <li
-                      key={feature}
+                      key={`included-${feature}`}
                       className="flex items-start gap-2 text-sm text-muted-foreground"
                     >
                       <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-cyan-400" />
+                      {feature}
+                    </li>
+                  ))}
+                  {pkg.excludedFeatures.map((feature) => (
+                    <li
+                      key={`excluded-${feature}`}
+                      className="flex items-start gap-2 text-sm text-muted-foreground/70"
+                    >
+                      <X className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
                       {feature}
                     </li>
                   ))}

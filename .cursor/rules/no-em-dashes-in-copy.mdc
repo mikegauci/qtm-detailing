@@ -1,0 +1,44 @@
+---
+description: Do not use em dashes in user-facing marketing or CMS copy
+alwaysApply: true
+---
+
+# No em dashes in copy
+
+When writing or editing **user-facing text** for this site (headlines, descriptions, CTAs, FAQs, testimonials, CMS defaults, page copy, SEO meta, admin placeholder suggestions for marketing fields), **do not use em dashes** (`—`, Unicode U+2014).
+
+## Use instead
+
+- A **comma** or **full stop** and a new clause
+- A **colon** when introducing a list or explanation
+- **Parentheses** for a short aside
+- Two sentences instead of one long em-dash phrase
+
+```text
+❌ BAD
+Choose a package — we'll tailor a quote to your vehicle.
+
+✅ GOOD
+Choose a package. We'll tailor a quote to your vehicle.
+
+✅ GOOD
+Choose a package, and we'll tailor a quote to your vehicle.
+```
+
+```text
+❌ BAD
+Paint correction, ceramic coating, and interior restoration — crafted with precision.
+
+✅ GOOD
+Paint correction, ceramic coating, and interior restoration, crafted with precision.
+```
+
+## Scope
+
+- Applies to **marketing and CMS copy**, not code identifiers, comments, or admin table empty states (`—` as a null placeholder is fine).
+- **En dashes** in ranges (e.g. `Monday – Friday`, `09:00 – 19:00`) are acceptable.
+- Do not rewrite existing product or pricing item titles that already contain an em dash unless the user asks to update that copy.
+
+## Before finishing copy work
+
+Scan new or changed strings for `—` and replace with one of the alternatives above.

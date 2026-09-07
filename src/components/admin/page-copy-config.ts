@@ -1,5 +1,6 @@
 import {
   CheckCircle2,
+  Euro,
   HelpCircle,
   Home,
   Image,
@@ -40,16 +41,22 @@ export const PAGE_COPY_NAV: Record<PageKey, PageConfig> = {
         description: "Homepage headline and intro copy",
       },
       {
+        id: "featured-services",
+        label: "Featured Services",
+        icon: Layers,
+        description: "Section above the homepage carousel",
+      },
+      {
         id: "why-qtm",
         label: "Why QTM",
         icon: CheckCircle2,
         description: "Value proposition and reason cards",
       },
       {
-        id: "featured-services",
-        label: "Featured Services",
-        icon: Layers,
-        description: "Section above the homepage carousel",
+        id: "packages",
+        label: "Packages",
+        icon: Euro,
+        description: "Homepage package cards and section heading",
       },
       {
         id: "cta-band",

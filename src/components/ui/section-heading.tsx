@@ -19,7 +19,7 @@ export function SectionHeading({
   return (
     <div
       className={cn(
-        "mb-12 max-w-3xl",
+        "section-heading-block",
         align === "center" && "mx-auto text-center",
         align === "left" && "mx-auto text-center lg:mx-0 lg:text-left",
         className,
@@ -30,7 +30,7 @@ export function SectionHeading({
           {eyebrow}
         </p>
       )}
-      <h2 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+      <h2 className="display-heading text-3xl sm:text-4xl lg:text-5xl">
         <span className="gradient-text">{title}</span>
       </h2>
       {description && (

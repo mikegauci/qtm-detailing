@@ -9,6 +9,7 @@ import {
   defaultFeaturedServicesHeading,
   defaultHero,
   defaultHomeSeo,
+  defaultPackagesHeading,
   defaultWhyQtm,
 } from "@/lib/content/cms-defaults";
 import { getPackages } from "@/lib/content/get-packages";
@@ -39,6 +40,7 @@ export default async function HomePage() {
       "why-qtm": defaultWhyQtm,
       "cta-band": defaultCtaBand,
       "featured-services": defaultFeaturedServicesHeading,
+      packages: defaultPackagesHeading,
     }),
     getSiteSettings(),
   ]);
@@ -53,6 +55,7 @@ export default async function HomePage() {
       <WhyQtmSection content={sections["why-qtm"]} />
       <PricingPreviewSection
         packages={packages}
+        heading={sections.packages}
         quoteUrl={settings.contact.whatsappUrl}
       />
       {testimonials.length > 0 && (

@@ -165,8 +165,10 @@ function HeroPreview({ content }: { content: HeroContent }) {
 }
 
 function WhyQtmPreview({ content }: { content: WhyQtmContent }) {
+  const [first, ...rest] = content.reasons;
+
   return (
-    <div className="space-y-4 rounded-xl border border-white/10 bg-surface-raised/30 p-6">
+    <div className="grid gap-4 rounded-xl border border-white/10 bg-surface-raised/30 p-6 lg:grid-cols-2">
       <div>
         <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-brand-cyan-400">
           {content.eyebrow || "Eyebrow"}
@@ -178,18 +180,28 @@ function WhyQtmPreview({ content }: { content: WhyQtmContent }) {
           {content.description || "Section description…"}
         </p>
       </div>
-      <div className="grid gap-2 sm:grid-cols-2">
-        {content.reasons.map((reason, index) => (
+      <div className="rounded-lg border border-white/10 bg-white/[0.03] px-4">
+        {first && (
+          <div className="border-b border-white/10 py-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-cyan-400" />
+              <p className="text-sm font-medium">
+                {first.title || "Reason 1"}
+              </p>
+            </div>
+            <p className="mt-2 pl-6 text-xs text-white/50">
+              {first.description || "Description…"}
+            </p>
+          </div>
+        )}
+        {rest.map((reason, index) => (
           <div
             key={index}
-            className="rounded-lg border border-white/10 bg-white/[0.03] p-3"
+            className="flex items-center gap-2 border-b border-white/10 py-3 last:border-b-0"
           >
-            <CheckCircle2 className="mb-2 h-4 w-4 text-brand-cyan-400" />
-            <p className="text-sm font-medium">
-              {reason.title || `Reason ${index + 1}`}
-            </p>
-            <p className="mt-1 line-clamp-2 text-xs text-white/50">
-              {reason.description || "Description…"}
+            <CheckCircle2 className="h-4 w-4 shrink-0 text-brand-cyan-400" />
+            <p className="truncate text-sm font-medium text-white/80">
+              {reason.title || `Reason ${index + 2}`}
             </p>
           </div>
         ))}

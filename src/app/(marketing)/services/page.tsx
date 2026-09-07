@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Check } from "lucide-react";
+import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import {
@@ -54,7 +55,7 @@ export default async function ServicesPage() {
 
   return (
     <>
-      <section className="section-padding pt-32">
+      <InternalPageSection>
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
@@ -132,7 +133,7 @@ export default async function ServicesPage() {
             ))}
           </StaggerContainer>
         </div>
-      </section>
+      </InternalPageSection>
 
       <section className="section-padding bg-surface-raised/30">
         <div className="container-narrow max-w-3xl">

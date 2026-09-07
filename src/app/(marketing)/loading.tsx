@@ -1,6 +1,8 @@
+import { InternalPageSection } from "@/components/layout/internal-page-section";
+
 export default function MarketingLoading() {
   return (
-    <div className="section-padding pt-32">
+    <InternalPageSection>
       <div className="container-narrow animate-pulse space-y-8">
         <div className="mx-auto max-w-2xl space-y-4">
           <div className="mx-auto h-4 w-24 rounded bg-surface-raised" />
@@ -16,6 +18,6 @@ export default function MarketingLoading() {
           ))}
         </div>
       </div>
-    </div>
+    </InternalPageSection>
   );
 }

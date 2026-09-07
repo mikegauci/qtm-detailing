@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
 import { FadeIn, StaggerContainer, StaggerItem } from "@/components/motion/fade-in";
 import { CtaBand } from "@/components/sections/cta-band";
@@ -44,7 +45,7 @@ export default async function PricingPage() {
 
   return (
     <>
-      <section className="section-padding pt-32">
+      <InternalPageSection>
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
@@ -83,7 +84,7 @@ export default async function PricingPage() {
             ))}
           </div>
         </div>
-      </section>
+      </InternalPageSection>
 
       <section className="section-padding bg-surface-raised/30">
         <div className="container-narrow max-w-3xl">

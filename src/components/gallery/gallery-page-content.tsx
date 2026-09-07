@@ -23,6 +23,7 @@ import type { SectionHeadingContent } from "@/types/page-sections";
 import type { GalleryPhotoTypeFilter } from "@/lib/content/gallery-photo-utils";
 import { GALLERY_PAGE_SIZE } from "@/lib/content/gallery-photo-utils";
 import { getVisiblePageNumbers } from "@/lib/content/gallery-photo-utils";
+import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { cn } from "@/lib/utils";
@@ -330,7 +331,7 @@ export function GalleryPageContent({
 
   return (
     <>
-      <section ref={gallerySectionRef} className="section-padding pt-32">
+      <InternalPageSection ref={gallerySectionRef}>
         <div className="container-narrow">
           <FadeIn>
             <SectionHeading
@@ -423,7 +424,7 @@ export function GalleryPageContent({
             </>
           )}
         </div>
-      </section>
+      </InternalPageSection>
 
       {lightboxOpen && !lightboxLoading && lightboxPhotos.length > 0 && (
         <GalleryLightbox

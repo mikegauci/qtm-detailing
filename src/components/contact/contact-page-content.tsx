@@ -1,6 +1,7 @@
 import { Mail, MapPin, Phone, Clock } from "lucide-react";
 import type { SiteConfig } from "@/types/content";
 import type { SectionHeadingContent } from "@/types/page-sections";
+import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { CTAButton, SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
@@ -12,7 +13,7 @@ type ContactPageContentProps = {
 
 export function ContactPageContent({ settings, hero }: ContactPageContentProps) {
   return (
-    <section className="px-4 pb-12 pt-28 sm:px-6 lg:px-8 lg:pb-16 lg:pt-32">
+    <InternalPageSection className="pb-12 lg:pb-16">
       <div className="container-narrow">
         <FadeIn>
           <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-10">
@@ -106,6 +107,6 @@ export function ContactPageContent({ settings, hero }: ContactPageContentProps) 
           </div>
         </FadeIn>
       </div>
-    </section>
+    </InternalPageSection>
   );
 }

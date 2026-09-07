@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { InternalPageSection } from "@/components/layout/internal-page-section";
 import { CTAButton } from "@/components/ui/section-heading";
 
 export default function MarketingError({
@@ -15,7 +16,7 @@ export default function MarketingError({
   }, [error]);
 
   return (
-    <div className="section-padding pt-32">
+    <InternalPageSection>
       <div className="container-narrow max-w-lg text-center">
         <h1 className="text-2xl font-bold">Something went wrong</h1>
         <p className="mt-3 text-muted-foreground">
@@ -32,6 +33,6 @@ export default function MarketingError({
           <CTAButton href="/">Back to home</CTAButton>
         </div>
       </div>
-    </div>
+    </InternalPageSection>
   );
 }

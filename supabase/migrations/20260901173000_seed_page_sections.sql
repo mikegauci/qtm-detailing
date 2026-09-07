@@ -59,7 +59,7 @@ VALUES
   (
     'contact',
     'hero',
-    '{"eyebrow":"Contact","title":"Request a quote","description":"Tell us about your vehicle and the services you''re interested in. WhatsApp is the fastest way to reach us — or use the form below and we''ll get back within 24 hours."}'::jsonb,
+    '{"eyebrow":"Contact","title":"Request a quote","description":"Tell us about your vehicle and the services you''re interested in. WhatsApp is the fastest way to reach us. We''ll get back within 24 hours."}'::jsonb,
     now()
   ),
   (

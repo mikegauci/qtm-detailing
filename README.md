@@ -8,7 +8,7 @@ Premium dark marketing site for **QTM Detailing** — automotive detailing in Ma
 - Tailwind CSS 4
 - shadcn/ui
 - Motion (scroll animations)
-- Supabase (contact form lead capture)
+- Supabase (CMS, leads, bookings)
 
 ## Getting Started
 
@@ -26,17 +26,7 @@ Premium dark marketing site for **QTM Detailing** — automotive detailing in Ma
    cp .env.example .env.local
    ```
 
-3. **Apply Supabase migration**
-
-   Run the migration in your `qtm-detailing` Supabase project:
-
-   ```bash
-   supabase db push
-   ```
-
-   Or apply manually via the Supabase dashboard SQL editor using `supabase/migrations/20250828190000_create_leads_table.sql`.
-
-4. **Run the dev server**
+3. **Run the dev server**
 
    ```bash
    npm run dev
@@ -52,7 +42,7 @@ Premium dark marketing site for **QTM Detailing** — automotive detailing in Ma
 | `/services`| Full service catalog and FAQ         |
 | `/gallery` | Before/after portfolio with lightbox |
 | `/about`   | Story and process                    |
-| `/contact` | Quote request form (Supabase leads)  |
+| `/contact` | Contact details and WhatsApp link    |
 
 ## Brand Colors
 

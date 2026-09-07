@@ -1,9 +1,8 @@
 import { Mail, MapPin, Phone, Clock } from "lucide-react";
 import type { SiteConfig } from "@/types/content";
 import type { SectionHeadingContent } from "@/types/page-sections";
-import { SectionHeading } from "@/components/ui/section-heading";
+import { CTAButton, SectionHeading } from "@/components/ui/section-heading";
 import { FadeIn } from "@/components/motion/fade-in";
-import { ContactForm } from "@/components/contact/contact-form";
 import { WhatsAppIcon } from "@/components/icons/whatsapp-icon";
 
 type ContactPageContentProps = {
@@ -13,28 +12,31 @@ type ContactPageContentProps = {
 
 export function ContactPageContent({ settings, hero }: ContactPageContentProps) {
   return (
-    <section className="section-padding pt-32">
+    <section className="px-4 pb-12 pt-28 sm:px-6 lg:px-8 lg:pb-16 lg:pt-32">
       <div className="container-narrow">
         <FadeIn>
-          <SectionHeading
-            eyebrow={hero.eyebrow}
-            title={hero.title}
-            description={hero.description}
-          />
-        </FadeIn>
-
-        <div className="grid items-stretch gap-12 lg:grid-cols-5">
-          <FadeIn delay={0.1} className="order-2 h-full lg:order-1 lg:col-span-3">
-            <div className="glass-panel flex h-full flex-col rounded-2xl p-6 sm:p-8">
-              <ContactForm />
+          <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:items-start lg:gap-10">
+            <div>
+              <SectionHeading
+                eyebrow={hero.eyebrow}
+                title={hero.title}
+                description={hero.description}
+                align="left"
+                className="mb-6"
+              />
+              <CTAButton
+                href={settings.contact.whatsappUrl}
+                className="gap-2 px-8 py-4 text-base"
+              >
+                <WhatsAppIcon className="h-4 w-4" />
+                Message on WhatsApp
+              </CTAButton>
             </div>
-          </FadeIn>
 
-          <FadeIn delay={0.2} className="order-1 lg:order-2 lg:col-span-2">
-            <div className="space-y-6">
-              <div className="glass-panel rounded-2xl p-6">
+            <div className="glass-panel divide-y divide-border-subtle rounded-2xl">
+              <div className="p-6 sm:p-7">
                 <h3 className="mb-4 font-semibold">Get in touch</h3>
-                <ul className="space-y-4">
+                <ul className="grid gap-4 sm:grid-cols-2">
                   <li className="flex items-start gap-3">
                     <WhatsAppIcon className="mt-0.5 h-5 w-5 shrink-0 text-[#25D366]" />
                     <div>
@@ -83,8 +85,8 @@ export function ContactPageContent({ settings, hero }: ContactPageContentProps) 
                 </ul>
               </div>
 
-              <div className="glass-panel rounded-2xl p-6">
-                <h3 className="mb-4 flex items-center gap-2 font-semibold">
+              <div className="p-6 sm:p-7">
+                <h3 className="mb-3 flex items-center gap-2 font-semibold">
                   <Clock className="h-5 w-5 text-brand-cyan-400" />
                   Opening Hours
                 </h3>
@@ -92,17 +94,17 @@ export function ContactPageContent({ settings, hero }: ContactPageContentProps) 
                   {settings.hours.map((h) => (
                     <li
                       key={h.day}
-                      className="flex justify-between text-sm text-muted-foreground"
+                      className="flex justify-between gap-4 text-sm text-muted-foreground"
                     >
                       <span>{h.day}</span>
-                      <span>{h.hours}</span>
+                      <span className="text-right">{h.hours}</span>
                     </li>
                   ))}
                 </ul>
               </div>
             </div>
-          </FadeIn>
-        </div>
+          </div>
+        </FadeIn>
       </div>
     </section>
   );

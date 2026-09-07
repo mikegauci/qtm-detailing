@@ -339,8 +339,7 @@ export function LeadsManager({ leads }: { leads: Lead[] }) {
 
         {filteredLeads.length === 0 && (
           <p className="px-4 py-8 text-center text-sm text-white/50">
-            No leads match this filter. Add one manually or wait for website
-            enquiries.
+            No leads match this filter. Add one manually.
           </p>
         )}
       </div>

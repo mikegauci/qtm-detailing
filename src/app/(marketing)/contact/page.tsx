@@ -7,7 +7,7 @@ import { getSiteSettings } from "@/lib/content/get-site-settings";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Request a quote from QTM Detailing. Fill out our form and we'll respond within 24 hours with availability and pricing.",
+    "Get in touch with QTM Detailing via WhatsApp, phone, or email. We'll respond within 24 hours with availability and pricing.",
 };
 
 export const revalidate = 3600;

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 type FaqAnswerProps = {
@@ -30,11 +29,7 @@ export function FaqAnswer({
           WhatsApp
         </a>{" "}
         with your vehicle details and preferred service for the fastest
-        response, or fill out our{" "}
-        <Link href="/contact" className={linkClassName}>
-          contact form
-        </Link>
-        . We&apos;ll respond within 24 hours with availability and a
+        response. We&apos;ll respond within 24 hours with availability and a
         personalised quote.
       </p>
     );

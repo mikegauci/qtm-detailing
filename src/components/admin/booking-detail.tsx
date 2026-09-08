@@ -194,11 +194,14 @@ export function BookingDetail({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <p className="text-white">{customer.full_name}</p>
-            <p className="text-white/60">
-              {customer.email ?? customer.phone ?? "—"}
-            </p>
+            {customer.email && (
+              <p className="text-white/60">{customer.email}</p>
+            )}
             {customer.phone && (
               <p className="text-white/60">{customer.phone}</p>
+            )}
+            {!customer.email && !customer.phone && (
+              <p className="text-white/60">—</p>
             )}
             <Button asChild size="sm" variant="outline" className="mt-2">
               <Link href={`/admin/customers/${customer.id}`}>View customer</Link>

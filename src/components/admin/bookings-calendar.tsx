@@ -6,8 +6,6 @@ import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
 import type { EventClickArg, EventContentArg } from "@fullcalendar/core";
 import Link from "next/link";
-import "@fullcalendar/core/index.css";
-import "@fullcalendar/daygrid/index.css";
 
 const FullCalendar = dynamic(
   () => import("@fullcalendar/react").then((mod) => mod.default),

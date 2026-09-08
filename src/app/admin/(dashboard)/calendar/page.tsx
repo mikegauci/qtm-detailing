@@ -1,11 +1,39 @@
 import { addDays, format, parseISO } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
-import { getCustomerRelation } from "@/lib/admin/supabase-relations";
+import {
+  getCustomerRelation,
+  getRelation,
+} from "@/lib/admin/supabase-relations";
 import {
   BookingsCalendar,
   type CalendarEvent,
 } from "@/components/admin/bookings-calendar";
 import { formatBookingDateRange } from "@/lib/utils/booking";
+
+function formatVehicleLabel(
+  vehicle: {
+    make: string | null;
+    model: string | null;
+    registration: string | null;
+  } | null,
+): string | null {
+  if (!vehicle) return null;
+  const makeModel = [vehicle.make, vehicle.model].filter(Boolean).join(" ");
+  return makeModel || vehicle.registration;
+}
+
+function formatServiceLabel(
+  bookingServices:
+    | { services: { name: string } | { name: string }[] | null }[]
+    | null
+    | undefined,
+): string | null {
+  if (!bookingServices?.length) return null;
+  const names = bookingServices
+    .map((bs) => getRelation(bs.services)?.name)
+    .filter(Boolean);
+  return names.length > 0 ? names.join(", ") : null;
+}
 
 const STATUS_COLORS: Record<string, string> = {
   booked: "#3b82f6",
@@ -20,13 +48,19 @@ export default async function CalendarPage() {
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("id, booking_date, end_date, status, customers(full_name)")
+    .select(
+      "id, booking_date, end_date, status, customers(full_name), vehicles(make, model, registration), booking_services(services(name))",
+    )
     .neq("status", "cancelled")
     .order("booking_date", { ascending: true });
 
   const events: CalendarEvent[] =
     bookings?.map((booking) => {
       const customer = getCustomerRelation(booking.customers);
+      const vehicle = getRelation(booking.vehicles);
+      const bookingServices = Array.isArray(booking.booking_services)
+        ? booking.booking_services
+        : [];
       const endDate = booking.end_date ?? booking.booking_date;
       return {
         id: booking.id,
@@ -37,6 +71,8 @@ export default async function CalendarPage() {
           booking.booking_date,
           booking.end_date,
         ),
+        serviceLabel: formatServiceLabel(bookingServices),
+        vehicleLabel: formatVehicleLabel(vehicle),
         backgroundColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
         borderColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
       };

@@ -78,6 +78,26 @@ export function formatBookingDateRange(
   return `${startLabel} – ${endLabel}`;
 }
 
+export function formatVehicleLabel(
+  vehicle: {
+    make?: string | null;
+    model?: string | null;
+    registration?: string | null;
+  } | null,
+): string {
+  if (!vehicle) return "No vehicle";
+  const name = [vehicle.make, vehicle.model].filter(Boolean).join(" ");
+  if (name) return name;
+  return vehicle.registration ?? "No vehicle";
+}
+
+export function formatServiceNames(
+  services: Array<{ name: string } | null | undefined>,
+): string {
+  const names = services.map((service) => service?.name).filter(Boolean);
+  return names.length > 0 ? names.join(", ") : "No services";
+}
+
 export const LEAD_SOURCE_LABELS: Record<string, string> = {
   website: "Website",
   word_of_mouth: "Word of mouth",

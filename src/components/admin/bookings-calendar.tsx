@@ -20,6 +20,7 @@ export type CalendarEvent = {
   dateLabel: string;
   serviceLabel: string | null;
   vehicleLabel: string | null;
+  notes: string | null;
   backgroundColor: string;
   borderColor: string;
 };
@@ -33,6 +34,7 @@ function CalendarEventContent({ arg }: { arg: EventContentArg }) {
     | string
     | null
     | undefined;
+  const notes = arg.event.extendedProps.notes as string | null | undefined;
 
   return (
     <div className="overflow-hidden px-1 py-0.5 leading-tight">
@@ -47,6 +49,14 @@ function CalendarEventContent({ arg }: { arg: EventContentArg }) {
       {vehicleLabel && (
         <p className="truncate text-[10px] opacity-75 sm:text-[11px]">
           {vehicleLabel}
+        </p>
+      )}
+      {notes && (
+        <p
+          className="truncate text-[10px] italic opacity-70 sm:text-[11px]"
+          title={notes}
+        >
+          {notes}
         </p>
       )}
     </div>
@@ -129,6 +139,11 @@ export function BookingsCalendar({
           {selectedEvent.vehicleLabel && (
             <p className="mt-0.5 text-sm text-white/60">
               {selectedEvent.vehicleLabel}
+            </p>
+          )}
+          {selectedEvent.notes && (
+            <p className="mt-1 text-sm italic text-white/50">
+              {selectedEvent.notes}
             </p>
           )}
           <p className="mt-1 text-sm text-white/60">{selectedEvent.dateLabel}</p>

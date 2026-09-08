@@ -49,7 +49,7 @@ export default async function CalendarPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select(
-      "id, booking_date, end_date, status, customers(full_name), vehicles(make, model, registration), booking_services(services(name))",
+      "id, booking_date, end_date, status, notes, customers(full_name), vehicles(make, model, registration), booking_services(services(name))",
     )
     .neq("status", "cancelled")
     .order("booking_date", { ascending: true });
@@ -73,6 +73,7 @@ export default async function CalendarPage() {
         ),
         serviceLabel: formatServiceLabel(bookingServices),
         vehicleLabel: formatVehicleLabel(vehicle),
+        notes: booking.notes?.trim() || null,
         backgroundColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
         borderColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
       };

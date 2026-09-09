@@ -332,11 +332,11 @@ export async function listDriveImages(folderId: string) {
 }
 
 export async function findDriveRootFolder() {
-  const { findFolderByName, getDriveRootFolderName } = await import(
+  const { findFolderByPath, getDriveRootFolderName } = await import(
     "@/lib/google-drive"
   );
   await requireAdmin();
-  return findFolderByName(getDriveRootFolderName());
+  return findFolderByPath(getDriveRootFolderName());
 }
 
 export async function getGalleryPhotos(supabase?: GalleryQueryClient) {

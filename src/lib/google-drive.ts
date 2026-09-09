@@ -124,6 +124,26 @@ export function getDriveRootFolderName(): string {
   return process.env.GOOGLE_DRIVE_ROOT_FOLDER_NAME?.trim() || "QTM Detailing";
 }
 
+export async function findFolderByPath(path: string): Promise<DriveFolder | null> {
+  const segments = path
+    .split("/")
+    .map((segment) => segment.trim())
+    .filter(Boolean);
+
+  if (segments.length === 0) return null;
+
+  let parentId: string | undefined;
+  let folder: DriveFolder | null = null;
+
+  for (const name of segments) {
+    folder = await findFolderByName(name, parentId);
+    if (!folder) return null;
+    parentId = folder.id;
+  }
+
+  return folder;
+}
+
 export async function findFolderByName(
   name: string,
   parentId?: string,

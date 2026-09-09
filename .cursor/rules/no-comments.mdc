@@ -1,0 +1,15 @@
+---
+description: Do not add code comments unless explicitly requested
+alwaysApply: true
+---
+
+# No comments
+
+Do not add comments to code unless the user explicitly asks for them.
+
+- Do **not** add inline comments, block comments, or JSDoc when implementing features or fixes
+- Do **not** add comments to explain obvious code
+- Prefer clear naming and structure over comments
+- Existing comments may stay unless you are editing that code for another reason
+
+If the user explicitly asks for comments or documentation in code, follow their instructions for that task only.

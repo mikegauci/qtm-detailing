@@ -5,6 +5,7 @@ import { getOptionalSiteUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
 import { BOOKING_STATUS_LABELS } from "@/lib/utils/booking";
+import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
 import { joinSiteUrl } from "@/lib/seo/site-url";
 
 const PROVIDER = "google_calendar";
@@ -28,7 +29,7 @@ const STATUS_COLOR_IDS: Record<string, string> = {
 };
 
 const BOOKING_SYNC_SELECT =
-  "id, booking_date, end_date, status, notes, confirmation_code, google_event_id, customers(full_name), vehicles(make, model, registration), booking_services(services(name))";
+  "id, booking_date, end_date, status, notes, confirmation_code, google_event_id, customers(full_name), booking_vehicles(vehicles(make, model)), booking_services(services(name))";
 
 export type GoogleCalendarMetadata = {
   calendar_id?: string;
@@ -333,21 +334,6 @@ export async function disconnectGoogleCalendarConnection(): Promise<void> {
   await supabase.from("integration_tokens").delete().eq("provider", PROVIDER);
 }
 
-function formatVehicleLabel(
-  vehicle: {
-    make: string | null;
-    model: string | null;
-    registration: string | null;
-  } | null,
-): string | null {
-  if (!vehicle) return null;
-  const makeModel = [vehicle.make, vehicle.model].filter(Boolean).join(" ");
-  if (makeModel && vehicle.registration) {
-    return `${makeModel} (${vehicle.registration})`;
-  }
-  return makeModel || vehicle.registration;
-}
-
 function formatServiceLabel(
   bookingServices:
     | { services: { name: string } | { name: string }[] | null }[]
@@ -369,17 +355,8 @@ function buildEventBody(booking: {
   notes: string | null;
   confirmation_code: string;
   customers: { full_name: string } | { full_name: string }[] | null;
-  vehicles:
-    | {
-        make: string | null;
-        model: string | null;
-        registration: string | null;
-      }
-    | {
-        make: string | null;
-        model: string | null;
-        registration: string | null;
-      }[]
+  booking_vehicles:
+    | { vehicles: { make: string | null; model: string | null } | { make: string | null; model: string | null }[] | null }[]
     | null;
   booking_services:
     | { services: { name: string } | { name: string }[] | null }[]
@@ -388,12 +365,12 @@ function buildEventBody(booking: {
   const customerName =
     getCustomerRelation(booking.customers)?.full_name ?? "Booking";
   const serviceLabel = formatServiceLabel(booking.booking_services);
-  const vehicleLabel = formatVehicleLabel(getRelation(booking.vehicles));
+  const vehicleLabel = formatBookingVehiclesLabel(booking.booking_vehicles);
   const endDate = booking.end_date ?? booking.booking_date;
   const statusLabel = BOOKING_STATUS_LABELS[booking.status] ?? booking.status;
 
   const lines = [
-    vehicleLabel ? `Vehicle: ${vehicleLabel}` : null,
+    vehicleLabel !== "—" ? `Vehicles: ${vehicleLabel}` : null,
     `Status: ${statusLabel}`,
     `Confirmation: ${booking.confirmation_code}`,
     booking.notes?.trim() ? `Notes: ${booking.notes.trim()}` : null,

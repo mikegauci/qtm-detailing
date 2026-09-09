@@ -4,20 +4,20 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
   createReferenceBooking,
   updateBooking,
 } from "@/app/actions/admin/bookings";
 import {
-  createVehicle,
   deleteVehicle,
   updateCustomer,
 } from "@/app/actions/admin/customers";
+import { CustomerVehiclesPanel } from "@/components/admin/customer-vehicles-panel";
+import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
-import { VehiclePhotoField } from "@/components/admin/vehicle-photo-field";
 import type { Tables } from "@/lib/supabase/types";
 import {
   BOOKING_STATUS_COLORS,
@@ -41,7 +41,9 @@ type Vehicle = Tables<"vehicles">;
 type Booking = Tables<"bookings">;
 
 type BookingWithRelations = Booking & {
-  vehicles: Pick<Vehicle, "make" | "model" | "registration"> | null;
+  booking_vehicles: {
+    vehicles: Pick<Vehicle, "make" | "model"> | null;
+  }[];
 };
 
 export function CustomerDetail({
@@ -55,7 +57,6 @@ export function CustomerDetail({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const [showVehicleForm, setShowVehicleForm] = useState(false);
   const [showPastBookingForm, setShowPastBookingForm] = useState(false);
   const [pastBookingVehicleId, setPastBookingVehicleId] = useState<string>("");
 
@@ -68,25 +69,6 @@ export function CustomerDetail({
       });
       if (result.success) toast.success(result.message);
       else toast.error(result.message);
-    });
-  }
-
-  function handleAddVehicle(formData: FormData) {
-    startTransition(async () => {
-      const result = await createVehicle({
-        customer_id: customer.id,
-        make: (formData.get("make") as string) || null,
-        model: (formData.get("model") as string) || null,
-        registration: (formData.get("registration") as string) || null,
-        vehicle_type: (formData.get("vehicle_type") as string) || null,
-      });
-      if (result.success) {
-        toast.success(result.message);
-        setShowVehicleForm(false);
-        router.refresh();
-      } else {
-        toast.error(result.message);
-      }
     });
   }
 
@@ -110,7 +92,7 @@ export function CustomerDetail({
 
       const result = await createReferenceBooking({
         customer_id: customer.id,
-        vehicle_id: pastBookingVehicleId || null,
+        vehicle_ids: pastBookingVehicleId ? [pastBookingVehicleId] : [],
         booking_date: formData.get("booking_date") as string,
         end_date: (formData.get("end_date") as string) || null,
         notes: (formData.get("notes") as string) || null,
@@ -221,101 +203,14 @@ export function CustomerDetail({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Vehicles</CardTitle>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => setShowVehicleForm(!showVehicleForm)}
-            >
-              <Plus className="h-4 w-4" />
-              Add vehicle
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {showVehicleForm && (
-              <form
-                action={handleAddVehicle}
-                className="space-y-3 rounded-lg border border-white/10 p-4"
-              >
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="make">Make</Label>
-                    <Input id="make" name="make" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="model">Model</Label>
-                    <Input id="model" name="model" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label htmlFor="registration">Registration</Label>
-                    <Input id="registration" name="registration" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="vehicle_type">Type</Label>
-                    <Input
-                      id="vehicle_type"
-                      name="vehicle_type"
-                      placeholder="sedan, suv, van"
-                    />
-                  </div>
-                </div>
-                <Button type="submit" size="sm" disabled={isPending}>
-                  Save vehicle
-                </Button>
-              </form>
-            )}
-
-            {vehicles.length ? (
-              <ul className="divide-y divide-white/10">
-                {vehicles.map((vehicle) => (
-                  <li
-                    key={vehicle.id}
-                    className="flex items-start justify-between gap-4 py-3 first:pt-0"
-                  >
-                    <div className="flex gap-4">
-                      <VehiclePhotoField
-                        vehicleId={vehicle.id}
-                        customerId={customer.id}
-                        photoUrl={vehicle.photo_url}
-                        label={
-                          [vehicle.make, vehicle.model]
-                            .filter(Boolean)
-                            .join(" ") || "Vehicle"
-                        }
-                        onUpdated={() => router.refresh()}
-                      />
-                      <div>
-                        <p className="font-medium text-white">
-                          {[vehicle.make, vehicle.model]
-                            .filter(Boolean)
-                            .join(" ") || "Unnamed vehicle"}
-                        </p>
-                        <p className="text-sm text-white/50">
-                          {vehicle.registration ?? "No reg"} ·{" "}
-                          {vehicle.vehicle_type ?? "—"}
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => handleDeleteVehicle(vehicle.id)}
-                      disabled={isPending}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-400" />
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-sm text-white/50">No vehicles on file.</p>
-            )}
-          </CardContent>
-        </Card>
+        <CustomerVehiclesPanel
+          mode="manage"
+          customerId={customer.id}
+          vehicles={vehicles}
+          onDeleteVehicle={handleDeleteVehicle}
+          deleteDisabled={isPending}
+          onUpdated={() => router.refresh()}
+        />
       </div>
 
       <Card>
@@ -371,9 +266,7 @@ export function CustomerDetail({
                         <SelectItem key={vehicle.id} value={vehicle.id}>
                           {[vehicle.make, vehicle.model]
                             .filter(Boolean)
-                            .join(" ") ||
-                            vehicle.registration ||
-                            "Unnamed"}
+                            .join(" ") || "Unnamed"}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -465,11 +358,7 @@ export function CustomerDetail({
                         />
                       </td>
                       <td className="py-3 text-white/70">
-                        {booking.vehicles
-                          ? [booking.vehicles.make, booking.vehicles.model]
-                              .filter(Boolean)
-                              .join(" ") || booking.vehicles.registration
-                          : "—"}
+                        {formatBookingVehiclesLabel(booking.booking_vehicles)}
                       </td>
                       <td className="py-3">
                         <span

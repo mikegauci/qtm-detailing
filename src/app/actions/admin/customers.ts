@@ -205,7 +205,6 @@ export async function createVehicle(data: {
   customer_id: string;
   make?: string | null;
   model?: string | null;
-  registration?: string | null;
   vehicle_type?: string | null;
 }): Promise<CustomerActionResult> {
   const { supabase } = await requireAdmin();
@@ -230,7 +229,6 @@ export async function updateVehicle(
   data: {
     make?: string | null;
     model?: string | null;
-    registration?: string | null;
     vehicle_type?: string | null;
   },
 ): Promise<CustomerActionResult> {

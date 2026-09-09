@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/supabase/admin";
-import { getCustomerRelation, getRelation } from "@/lib/admin/supabase-relations";
+import { getCustomerRelation } from "@/lib/admin/supabase-relations";
+import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
 import {
   BOOKING_STATUS_COLORS,
   BOOKING_STATUS_LABELS,
@@ -14,7 +15,7 @@ export default async function BookingsPage() {
 
   const { data: bookings } = await supabase
     .from("bookings")
-    .select("*, customers(full_name, email, phone), vehicles(make, model, registration)")
+    .select("*, customers(full_name, email, phone), booking_vehicles(vehicles(make, model))")
     .order("booking_date", { ascending: false });
 
   return (
@@ -50,7 +51,9 @@ export default async function BookingsPage() {
           <tbody>
             {bookings?.map((booking) => {
               const customer = getCustomerRelation(booking.customers);
-              const vehicle = getRelation(booking.vehicles);
+              const bookingVehicles = Array.isArray(booking.booking_vehicles)
+                ? booking.booking_vehicles
+                : [];
               return (
               <tr
                 key={booking.id}
@@ -74,11 +77,7 @@ export default async function BookingsPage() {
                   )}
                 </td>
                 <td className="px-4 py-3 text-white/70">
-                  {vehicle
-                    ? [vehicle.make, vehicle.model]
-                        .filter(Boolean)
-                        .join(" ") || vehicle.registration
-                    : "—"}
+                  {formatBookingVehiclesLabel(bookingVehicles)}
                 </td>
                 <td className="px-4 py-3">
                   <span

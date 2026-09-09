@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatDisplayDate } from "@/lib/utils/dates";
-import { Loader2, Plus } from "lucide-react";
-import { toast } from "sonner";
-import { createCustomer } from "@/app/actions/admin/customers";
+import { Plus } from "lucide-react";
+import { AddCustomerForm } from "@/components/admin/add-customer-form";
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
 import {
   AdminDataTable,
@@ -16,8 +15,6 @@ import {
   AdminTableRow,
 } from "@/components/admin/admin-data-table";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type Customer = {
   id: string;
@@ -33,25 +30,6 @@ type Customer = {
 export function CustomersManager({ customers }: { customers: Customer[] }) {
   const router = useRouter();
   const [showAddCustomer, setShowAddCustomer] = useState(false);
-  const [isPending, startTransition] = useTransition();
-
-  function handleCreateCustomer(formData: FormData) {
-    startTransition(async () => {
-      const result = await createCustomer({
-        full_name: formData.get("full_name") as string,
-        email: (formData.get("email") as string) || null,
-        phone: (formData.get("phone") as string) || null,
-      });
-
-      if (result.success) {
-        toast.success(result.message);
-        setShowAddCustomer(false);
-        router.refresh();
-      } else {
-        toast.error(result.message);
-      }
-    });
-  }
 
   return (
     <div className="space-y-4">
@@ -67,52 +45,13 @@ export function CustomersManager({ customers }: { customers: Customer[] }) {
       </div>
 
       {showAddCustomer && (
-        <form
-          action={handleCreateCustomer}
-          className="space-y-4 rounded-xl border border-white/10 p-4"
-        >
-          <p className="text-sm font-medium text-white">
-            Add a customer manually
-          </p>
-          <p className="text-xs text-white/50">
-            Phone or email required — leave email blank if they prefer phone
-            contact only.
-          </p>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1">
-              <Label htmlFor="customer_full_name">Full name</Label>
-              <Input id="customer_full_name" name="full_name" required />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="customer_email">Email (optional)</Label>
-              <Input id="customer_email" name="email" type="email" />
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="customer_phone">Phone</Label>
-              <Input id="customer_phone" name="phone" />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={isPending}>
-              {isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Adding...
-                </>
-              ) : (
-                "Save customer"
-              )}
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => setShowAddCustomer(false)}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
+        <AddCustomerForm
+          onSuccess={async () => {
+            setShowAddCustomer(false);
+            router.refresh();
+          }}
+          onCancel={() => setShowAddCustomer(false)}
+        />
       )}
 
       <AdminDataTable

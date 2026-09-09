@@ -9,18 +9,7 @@ import {
   type CalendarEvent,
 } from "@/components/admin/bookings-calendar";
 import { formatBookingDateRange } from "@/lib/utils/booking";
-
-function formatVehicleLabel(
-  vehicle: {
-    make: string | null;
-    model: string | null;
-    registration: string | null;
-  } | null,
-): string | null {
-  if (!vehicle) return null;
-  const makeModel = [vehicle.make, vehicle.model].filter(Boolean).join(" ");
-  return makeModel || vehicle.registration;
-}
+import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
 
 function formatServiceLabel(
   bookingServices:
@@ -49,7 +38,7 @@ export default async function CalendarPage() {
   const { data: bookings } = await supabase
     .from("bookings")
     .select(
-      "id, booking_date, end_date, status, notes, customers(full_name), vehicles(make, model, registration), booking_services(services(name))",
+      "id, booking_date, end_date, status, notes, total_price, customers(full_name), booking_vehicles(vehicles(make, model)), booking_services(services(name))",
     )
     .neq("status", "cancelled")
     .order("booking_date", { ascending: true });
@@ -57,10 +46,13 @@ export default async function CalendarPage() {
   const events: CalendarEvent[] =
     bookings?.map((booking) => {
       const customer = getCustomerRelation(booking.customers);
-      const vehicle = getRelation(booking.vehicles);
       const bookingServices = Array.isArray(booking.booking_services)
         ? booking.booking_services
         : [];
+      const bookingVehicles = Array.isArray(booking.booking_vehicles)
+        ? booking.booking_vehicles
+        : [];
+      const vehicleLabel = formatBookingVehiclesLabel(bookingVehicles);
       const endDate = booking.end_date ?? booking.booking_date;
       return {
         id: booking.id,
@@ -72,7 +64,11 @@ export default async function CalendarPage() {
           booking.end_date,
         ),
         serviceLabel: formatServiceLabel(bookingServices),
-        vehicleLabel: formatVehicleLabel(vehicle),
+        vehicleLabel: vehicleLabel === "—" ? null : vehicleLabel,
+        priceLabel:
+          Number(booking.total_price) > 0
+            ? `€${Number(booking.total_price).toFixed(2)}`
+            : null,
         notes: booking.notes?.trim() || null,
         backgroundColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
         borderColor: STATUS_COLORS[booking.status] ?? "#3b82f6",

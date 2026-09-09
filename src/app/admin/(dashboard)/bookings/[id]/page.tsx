@@ -15,7 +15,7 @@ export default async function BookingDetailPage({
       supabase
         .from("bookings")
         .select(
-          "*, customers(*), vehicles(*), booking_services(*, services(id, name))",
+          "*, customers(*), booking_vehicles(vehicle_id), booking_services(*, services(id, name))",
         )
         .eq("id", id)
         .single(),
@@ -31,15 +31,23 @@ export default async function BookingDetailPage({
   const customer = Array.isArray(bookingDetail.customers)
     ? bookingDetail.customers[0]
     : bookingDetail.customers;
-  const vehicle = Array.isArray(bookingDetail.vehicles)
-    ? bookingDetail.vehicles[0] ?? null
-    : bookingDetail.vehicles;
 
   if (!customer) notFound();
 
+  const { data: customerVehicles } = await supabase
+    .from("vehicles")
+    .select("*")
+    .eq("customer_id", customer.id)
+    .order("created_at", { ascending: true });
+
+  const bookingVehicles = Array.isArray(bookingDetail.booking_vehicles)
+    ? bookingDetail.booking_vehicles
+    : [];
+  const assignedVehicleIds = bookingVehicles.map((row) => row.vehicle_id);
+
   const {
     customers: _customers,
-    vehicles: _vehicles,
+    booking_vehicles: _bookingVehicles,
     booking_services: bookingServices,
     ...booking
   } = bookingDetail;
@@ -48,7 +56,8 @@ export default async function BookingDetailPage({
     <BookingDetail
       booking={booking}
       customer={customer}
-      vehicle={vehicle}
+      assignedVehicleIds={assignedVehicleIds}
+      customerVehicles={customerVehicles ?? []}
       bookingServices={bookingServices ?? []}
       availableServices={availableServices ?? []}
     />

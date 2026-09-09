@@ -2,15 +2,21 @@
 
 import { useEffect, useState, useTransition } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   addBookingService,
+  addBookingVehicle,
   deleteBooking,
   removeBookingService,
+  removeBookingVehicle,
   updateBooking,
   updateBookingStatus,
 } from "@/app/actions/admin/bookings";
+import {
+  CustomerVehiclesPanel,
+} from "@/components/admin/customer-vehicles-panel";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import type { Tables } from "@/lib/supabase/types";
 import {
@@ -45,16 +51,19 @@ const STATUS_OPTIONS = Object.keys(BOOKING_STATUS_LABELS);
 export function BookingDetail({
   booking,
   customer,
-  vehicle,
+  assignedVehicleIds,
+  customerVehicles,
   bookingServices,
   availableServices,
 }: {
   booking: Booking;
   customer: Customer;
-  vehicle: Vehicle | null;
+  assignedVehicleIds: string[];
+  customerVehicles: Vehicle[];
   bookingServices: BookingService[];
   availableServices: Service[];
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [addServiceId, setAddServiceId] = useState("");
   const [chargedAmount, setChargedAmount] = useState("");
@@ -77,6 +86,30 @@ export function BookingDetail({
       );
       if (result.success) toast.success(result.message);
       else toast.error(result.message);
+    });
+  }
+
+  function handleAssignVehicle(vehicleId: string, source: "select" | "add") {
+    startTransition(async () => {
+      const result = await addBookingVehicle(booking.id, vehicleId);
+      if (result.success) {
+        if (source === "select") toast.success(result.message);
+        router.refresh();
+      } else {
+        toast.error(result.message);
+      }
+    });
+  }
+
+  function handleUnassignVehicle(vehicleId: string) {
+    startTransition(async () => {
+      const result = await removeBookingVehicle(booking.id, vehicleId);
+      if (result.success) {
+        toast.success(result.message);
+        router.refresh();
+      } else {
+        toast.error(result.message);
+      }
     });
   }
 
@@ -211,22 +244,20 @@ export function BookingDetail({
 
         <Card>
           <CardHeader>
-            <CardTitle>Vehicle</CardTitle>
+            <CardTitle>Vehicles</CardTitle>
           </CardHeader>
-          <CardContent className="text-sm">
-            {vehicle ? (
-              <div className="space-y-1">
-                <p className="text-white">
-                  {[vehicle.make, vehicle.model].filter(Boolean).join(" ")}
-                </p>
-                <p className="text-white/60">
-                  {vehicle.registration ?? "No registration"} ·{" "}
-                  {vehicle.vehicle_type ?? "—"}
-                </p>
-              </div>
-            ) : (
-              <p className="text-white/50">No vehicle assigned.</p>
-            )}
+          <CardContent>
+            <CustomerVehiclesPanel
+              mode="assign"
+              customerId={customer.id}
+              vehicles={customerVehicles}
+              assignedVehicleIds={assignedVehicleIds}
+              onAssign={handleAssignVehicle}
+              onUnassign={handleUnassignVehicle}
+              idPrefix="booking_detail_vehicle"
+              assignDisabled={isPending}
+              onUpdated={() => router.refresh()}
+            />
           </CardContent>
         </Card>
       </div>

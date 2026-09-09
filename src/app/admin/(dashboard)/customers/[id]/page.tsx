@@ -26,7 +26,7 @@ export default async function CustomerDetailPage({
       .order("created_at", { ascending: false }),
     supabase
       .from("bookings")
-      .select("*, vehicles(make, model, registration)")
+      .select("*, booking_vehicles(vehicles(make, model))")
       .eq("customer_id", id)
       .order("booking_date", { ascending: false }),
   ]);

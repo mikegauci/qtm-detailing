@@ -80,6 +80,42 @@ export type Database = {
           },
         ]
       }
+      booking_vehicles: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          vehicle_id: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          vehicle_id: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "booking_vehicles_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "booking_vehicles_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bookings: {
         Row: {
           booking_date: string
@@ -683,7 +719,6 @@ export type Database = {
           make: string | null
           model: string | null
           photo_url: string | null
-          registration: string | null
           storage_path: string | null
           vehicle_type: string | null
         }
@@ -694,7 +729,6 @@ export type Database = {
           make?: string | null
           model?: string | null
           photo_url?: string | null
-          registration?: string | null
           storage_path?: string | null
           vehicle_type?: string | null
         }
@@ -705,7 +739,6 @@ export type Database = {
           make?: string | null
           model?: string | null
           photo_url?: string | null
-          registration?: string | null
           storage_path?: string | null
           vehicle_type?: string | null
         }

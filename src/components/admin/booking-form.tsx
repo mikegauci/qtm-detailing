@@ -5,9 +5,10 @@ import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { createBooking } from "@/app/actions/admin/bookings";
-import { createCustomer } from "@/app/actions/admin/customers";
 import type { Tables } from "@/lib/supabase/types";
 import { formatCustomerOptionLabel } from "@/lib/utils/booking";
+import { AddCustomerForm } from "@/components/admin/add-customer-form";
+import { CustomerVehiclesPanel } from "@/components/admin/customer-vehicles-panel";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,8 +37,11 @@ export function BookingForm({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [customerId, setCustomerId] = useState<string>("");
-  const [vehicleId, setVehicleId] = useState<string>("");
+  const [selectedVehicleIds, setSelectedVehicleIds] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
+  const [servicePrices, setServicePrices] = useState<Record<string, string>>(
+    {},
+  );
   const [showNewCustomer, setShowNewCustomer] = useState(false);
 
   const customerVehicles = useMemo(() => {
@@ -46,50 +50,30 @@ export function BookingForm({
   }, [customers, customerId]);
 
   const totalPrice = useMemo(() => {
-    return services
-      .filter((s) => selectedServices.includes(s.id))
-      .reduce((sum, s) => sum + Number(s.price), 0);
-  }, [services, selectedServices]);
+    return selectedServices.reduce((sum, serviceId) => {
+      const raw = servicePrices[serviceId]?.trim() ?? "";
+      if (!raw) return sum;
+      const price = Number(raw);
+      return sum + (Number.isFinite(price) ? price : 0);
+    }, 0);
+  }, [selectedServices, servicePrices]);
 
   function toggleService(serviceId: string) {
-    setSelectedServices((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId],
-    );
+    setSelectedServices((prev) => {
+      if (prev.includes(serviceId)) {
+        setServicePrices((prices) => {
+          const next = { ...prices };
+          delete next[serviceId];
+          return next;
+        });
+        return prev.filter((id) => id !== serviceId);
+      }
+      return [...prev, serviceId];
+    });
   }
 
-  function handleCreateCustomer() {
-    const form = document.getElementById(
-      "new-customer-fields",
-    ) as HTMLDivElement | null;
-    if (!form) return;
-
-    const fullName = (
-      form.querySelector('[name="full_name"]') as HTMLInputElement
-    ).value;
-    const email = (
-      form.querySelector('[name="email"]') as HTMLInputElement
-    ).value;
-    const phone = (
-      form.querySelector('[name="phone"]') as HTMLInputElement
-    ).value;
-
-    startTransition(async () => {
-      const result = await createCustomer({
-        full_name: fullName,
-        email: email || null,
-        phone: phone || null,
-      });
-      if (result.success && result.id) {
-        toast.success(result.message);
-        setCustomerId(result.id);
-        setShowNewCustomer(false);
-        router.refresh();
-      } else {
-        toast.error(result.message);
-      }
-    });
+  function setServicePrice(serviceId: string, value: string) {
+    setServicePrices((prev) => ({ ...prev, [serviceId]: value }));
   }
 
   function handleSubmit(formData: FormData) {
@@ -102,14 +86,30 @@ export function BookingForm({
       return;
     }
 
+    const servicePricesPayload: Record<string, number> = {};
+    for (const serviceId of selectedServices) {
+      const raw = servicePrices[serviceId]?.trim() ?? "";
+      if (raw) {
+        const price = Number(raw);
+        if (!Number.isFinite(price) || price < 0) {
+          toast.error("Enter a valid price for each selected service.");
+          return;
+        }
+        servicePricesPayload[serviceId] = price;
+      } else {
+        servicePricesPayload[serviceId] = 0;
+      }
+    }
+
     startTransition(async () => {
       const result = await createBooking({
         customer_id: customerId,
-        vehicle_id: vehicleId || null,
+        vehicle_ids: selectedVehicleIds,
         booking_date: formData.get("booking_date") as string,
         end_date: (formData.get("end_date") as string) || null,
         notes: (formData.get("notes") as string) || null,
         service_ids: selectedServices,
+        service_prices: servicePricesPayload,
       });
 
       if (result.success && result.id) {
@@ -125,7 +125,7 @@ export function BookingForm({
     <div className="space-y-6">
       <AdminPageHeader backHref="/admin/bookings" title="New Booking" />
 
-      <form action={handleSubmit} className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>Customer & Vehicle</CardTitle>
@@ -145,40 +145,22 @@ export function BookingForm({
               </div>
 
               {showNewCustomer ? (
-                <div
-                  id="new-customer-fields"
-                  className="space-y-3 rounded-lg border border-white/10 p-4"
-                >
-                  <div className="space-y-1">
-                    <Label htmlFor="new_full_name">Full name</Label>
-                    <Input id="new_full_name" name="full_name" required />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="new_email">Email (optional)</Label>
-                    <Input id="new_email" name="email" type="email" />
-                  </div>
-                  <div className="space-y-1">
-                    <Label htmlFor="new_phone">Phone</Label>
-                    <Input id="new_phone" name="phone" />
-                  </div>
-                  <p className="text-xs text-white/50">
-                    Phone or email required.
-                  </p>
-                  <Button
-                    type="button"
-                    size="sm"
-                    disabled={isPending}
-                    onClick={handleCreateCustomer}
-                  >
-                    Create customer
-                  </Button>
-                </div>
+                <AddCustomerForm
+                  idPrefix="booking_customer"
+                  onSuccess={async ({ id, vehicleId }) => {
+                    setCustomerId(id);
+                    setSelectedVehicleIds([vehicleId]);
+                    setShowNewCustomer(false);
+                    router.refresh();
+                  }}
+                  onCancel={() => setShowNewCustomer(false)}
+                />
               ) : (
                 <Select
                   value={customerId}
                   onValueChange={(value) => {
                     setCustomerId(value);
-                    setVehicleId("");
+                    setSelectedVehicleIds([]);
                   }}
                 >
                   <SelectTrigger className="w-full">
@@ -195,36 +177,30 @@ export function BookingForm({
               )}
             </div>
 
-            {customerId && (
-              <div className="space-y-2">
-                <Label>Vehicle (optional)</Label>
-                <Select
-                  value={vehicleId || "none"}
-                  onValueChange={(value) =>
-                    setVehicleId(value === "none" ? "" : value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select vehicle" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">No vehicle</SelectItem>
-                    {customerVehicles.map((vehicle) => (
-                      <SelectItem key={vehicle.id} value={vehicle.id}>
-                        {[vehicle.make, vehicle.model]
-                          .filter(Boolean)
-                          .join(" ") ||
-                          vehicle.registration ||
-                          "Unnamed"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            {customerId && !showNewCustomer && (
+              <CustomerVehiclesPanel
+                mode="assign"
+                customerId={customerId}
+                vehicles={customerVehicles}
+                assignedVehicleIds={selectedVehicleIds}
+                onAssign={async (id, _source) => {
+                  setSelectedVehicleIds((prev) =>
+                    prev.includes(id) ? prev : [...prev, id],
+                  );
+                }}
+                onUnassign={async (id) => {
+                  setSelectedVehicleIds((prev) =>
+                    prev.filter((vehicleId) => vehicleId !== id),
+                  );
+                }}
+                idPrefix="booking_vehicle"
+                onUpdated={() => router.refresh()}
+              />
             )}
           </CardContent>
         </Card>
 
+        <form action={handleSubmit} className="contents">
         <Card>
           <CardHeader>
             <CardTitle>Schedule</CardTitle>
@@ -258,39 +234,64 @@ export function BookingForm({
           </CardHeader>
           <CardContent>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {services.map((service) => (
-                <label
-                  key={service.id}
-                  className={`flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors ${
-                    selectedServices.includes(service.id)
-                      ? "border-brand-purple-500/50 bg-brand-purple-600/10"
-                      : "border-white/10 hover:border-white/20"
-                  }`}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedServices.includes(service.id)}
-                    onChange={() => toggleService(service.id)}
-                    className="rounded"
-                  />
-                  <div className="flex-1">
-                    <p className="font-medium text-white">{service.name}</p>
-                    <p className="text-sm text-white/50">
-                      €{Number(service.price).toFixed(2)}
-                    </p>
+              {services.map((service) => {
+                const isSelected = selectedServices.includes(service.id);
+
+                return (
+                  <div
+                    key={service.id}
+                    className={`rounded-lg border p-3 transition-colors ${
+                      isSelected
+                        ? "border-brand-purple-500/50 bg-brand-purple-600/10"
+                        : "border-white/10 hover:border-white/20"
+                    }`}
+                  >
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleService(service.id)}
+                        className="rounded"
+                      />
+                      <p className="flex-1 font-medium text-white">
+                        {service.name}
+                      </p>
+                    </label>
+                    {isSelected && (
+                      <div className="mt-3 space-y-1 pl-7">
+                        <Label htmlFor={`service_price_${service.id}`}>
+                          Price
+                        </Label>
+                        <Input
+                          id={`service_price_${service.id}`}
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          placeholder="0.00"
+                          value={servicePrices[service.id] ?? ""}
+                          onChange={(event) =>
+                            setServicePrice(service.id, event.target.value)
+                          }
+                        />
+                      </div>
+                    )}
                   </div>
-                </label>
-              ))}
+                );
+              })}
             </div>
 
             {services.length === 0 && (
               <p className="text-sm text-white/50">No active services found.</p>
             )}
 
-            <div className="mt-6 flex items-center justify-between border-t border-white/10 pt-4">
-              <p className="text-lg font-semibold text-white">
-                Total: €{totalPrice.toFixed(2)}
-              </p>
+            <div
+              className={`mt-6 flex items-center border-t border-white/10 pt-4 ${totalPrice > 0 ? "justify-between" : "justify-end"}`}
+            >
+              {totalPrice > 0 && (
+                <p className="text-lg font-semibold text-white">
+                  Total: €{totalPrice.toFixed(2)}
+                </p>
+              )}
               <Button type="submit" disabled={isPending}>
                 {isPending ? (
                   <>
@@ -304,7 +305,8 @@ export function BookingForm({
             </div>
           </CardContent>
         </Card>
-      </form>
+        </form>
+      </div>
     </div>
   );
 }

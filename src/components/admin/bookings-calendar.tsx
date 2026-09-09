@@ -20,6 +20,7 @@ export type CalendarEvent = {
   dateLabel: string;
   serviceLabel: string | null;
   vehicleLabel: string | null;
+  priceLabel: string | null;
   notes: string | null;
   backgroundColor: string;
   borderColor: string;
@@ -31,6 +32,10 @@ function CalendarEventContent({ arg }: { arg: EventContentArg }) {
     | null
     | undefined;
   const vehicleLabel = arg.event.extendedProps.vehicleLabel as
+    | string
+    | null
+    | undefined;
+  const priceLabel = arg.event.extendedProps.priceLabel as
     | string
     | null
     | undefined;
@@ -49,6 +54,11 @@ function CalendarEventContent({ arg }: { arg: EventContentArg }) {
       {vehicleLabel && (
         <p className="truncate text-[10px] opacity-75 sm:text-[11px]">
           {vehicleLabel}
+        </p>
+      )}
+      {priceLabel && (
+        <p className="truncate text-[10px] font-medium opacity-90 sm:text-[11px]">
+          {priceLabel}
         </p>
       )}
       {notes && (
@@ -139,6 +149,11 @@ export function BookingsCalendar({
           {selectedEvent.vehicleLabel && (
             <p className="mt-0.5 text-sm text-white/60">
               {selectedEvent.vehicleLabel}
+            </p>
+          )}
+          {selectedEvent.priceLabel && (
+            <p className="mt-0.5 text-sm font-medium text-white/80">
+              {selectedEvent.priceLabel}
             </p>
           )}
           {selectedEvent.notes && (

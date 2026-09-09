@@ -39,4 +39,9 @@ export const contentNav = [
 
 export const settingsNav = [
   { label: "Google Drive", href: "/admin/settings/google-drive", icon: Settings },
+  {
+    label: "Google Calendar",
+    href: "/admin/settings/google-calendar",
+    icon: Calendar,
+  },
 ] as const;

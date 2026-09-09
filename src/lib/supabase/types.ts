@@ -88,6 +88,7 @@ export type Database = {
           customer_id: string
           end_date: string | null
           end_time: string
+          google_event_id: string | null
           id: string
           notes: string | null
           start_time: string
@@ -102,6 +103,7 @@ export type Database = {
           customer_id: string
           end_date?: string | null
           end_time: string
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           start_time: string
@@ -116,6 +118,7 @@ export type Database = {
           customer_id?: string
           end_date?: string | null
           end_time?: string
+          google_event_id?: string | null
           id?: string
           notes?: string | null
           start_time?: string

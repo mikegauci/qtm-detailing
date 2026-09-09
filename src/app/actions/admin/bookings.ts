@@ -5,6 +5,10 @@ import { requireAdmin } from "@/lib/supabase/admin";
 import { revalidateBookings } from "@/lib/content/revalidate-cms";
 import type { Enums } from "@/lib/supabase/types";
 import {
+  removeGoogleCalendarEvent,
+  syncBookingToGoogleCalendar,
+} from "@/lib/google-calendar";
+import {
   DEFAULT_BOOKING_END_TIME,
   DEFAULT_BOOKING_START_TIME,
   generateConfirmationCode,
@@ -80,6 +84,7 @@ export async function createBooking(data: BookingInput): Promise<BookingActionRe
   }
 
   revalidateBookings();
+  await syncBookingToGoogleCalendar(booking.id);
   return { success: true, message: "Booking created.", id: booking.id };
 }
 
@@ -142,6 +147,7 @@ export async function updateBooking(
     customerId: booking?.customer_id,
   });
 
+  await syncBookingToGoogleCalendar(id);
   return { success: true, message: "Booking updated." };
 }
 
@@ -204,11 +210,18 @@ export async function updateBookingStatus(
   }
 
   revalidateBookings({ bookingId: id });
+  await syncBookingToGoogleCalendar(id);
   return { success: true, message: "Booking status updated." };
 }
 
 export async function deleteBooking(id: string): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
+
+  const { data: existing } = await supabase
+    .from("bookings")
+    .select("google_event_id")
+    .eq("id", id)
+    .maybeSingle();
 
   await supabase.from("booking_services").delete().eq("booking_id", id);
 
@@ -218,6 +231,7 @@ export async function deleteBooking(id: string): Promise<BookingActionResult> {
     return { success: false, message: error.message };
   }
 
+  await removeGoogleCalendarEvent(existing?.google_event_id);
   revalidateBookings();
   return { success: true, message: "Booking deleted." };
 }
@@ -268,6 +282,7 @@ export async function addBookingService(
     .eq("id", bookingId);
 
   revalidateBookings({ bookingId, scope: "list" });
+  await syncBookingToGoogleCalendar(bookingId);
   return { success: true, message: "Service added to booking." };
 }
 
@@ -300,5 +315,6 @@ export async function removeBookingService(
     .eq("id", bookingId);
 
   revalidateBookings({ bookingId, scope: "list" });
+  await syncBookingToGoogleCalendar(bookingId);
   return { success: true, message: "Service removed from booking." };
 }

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/supabase/admin";
 import { BookingDetail } from "@/components/admin/booking-detail";
+import { requireAdmin } from "@/lib/supabase/admin";
+import type { Tables } from "@/lib/supabase/types";
 
 export default async function BookingDetailPage({
   params,
@@ -40,9 +41,10 @@ export default async function BookingDetailPage({
     .eq("customer_id", customer.id)
     .order("created_at", { ascending: true });
 
-  const bookingVehicles = Array.isArray(bookingDetail.booking_vehicles)
-    ? bookingDetail.booking_vehicles
-    : [];
+  const bookingVehicles: Pick<Tables<"booking_vehicles">, "vehicle_id">[] =
+    Array.isArray(bookingDetail.booking_vehicles)
+      ? bookingDetail.booking_vehicles
+      : [];
   const assignedVehicleIds = bookingVehicles.map((row) => row.vehicle_id);
 
   const {

@@ -18,7 +18,11 @@ import {
   galleryCategories,
   getGalleryPhotoLabel,
 } from "@/lib/content/gallery-categories";
-import type { GalleryCategory, GalleryPhoto } from "@/types/content";
+import type {
+  GalleryCategory,
+  GalleryPhoto,
+  GalleryPhotoCategory,
+} from "@/types/content";
 import type { SectionHeadingContent } from "@/types/page-sections";
 import type { GalleryPhotoTypeFilter } from "@/lib/content/gallery-photo-utils";
 import { GALLERY_PAGE_SIZE } from "@/lib/content/gallery-photo-utils";
@@ -40,6 +44,7 @@ type GalleryPageContentProps = {
   photos: GalleryPhoto[];
   filteredCount: number;
   carNames: string[];
+  availableCategories: GalleryPhotoCategory[];
   filters: {
     category: GalleryCategory;
     selectedCar: string;
@@ -71,12 +76,14 @@ function buildGalleryUrl(
 
 function FilterPill({
   active,
+  disabled = false,
   onClick,
   children,
   variant = "purple",
   size = "md",
 }: {
   active: boolean;
+  disabled?: boolean;
   onClick: () => void;
   children: ReactNode;
   variant?: "purple" | "cyan";
@@ -86,19 +93,23 @@ function FilterPill({
     <button
       type="button"
       aria-pressed={active}
+      aria-disabled={disabled}
+      disabled={disabled}
       onClick={onClick}
       className={cn(
         "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-full transition-colors",
         size === "md"
           ? "min-h-10 px-4 py-2 text-sm font-medium"
           : "min-h-9 px-3 py-1.5 text-sm",
-        active
-          ? variant === "purple"
-            ? "bg-brand-purple-600 text-white"
-            : "border border-brand-cyan-400/40 bg-brand-cyan-500/20 text-brand-cyan-300"
-          : variant === "purple"
-            ? "border border-border-subtle text-muted-foreground hover:border-brand-purple-400/50 hover:text-foreground"
-            : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
+        disabled
+          ? "cursor-not-allowed border border-border-subtle/50 text-muted-foreground/40 opacity-40"
+          : active
+            ? variant === "purple"
+              ? "bg-brand-purple-600 text-white"
+              : "border border-brand-cyan-400/40 bg-brand-cyan-500/20 text-brand-cyan-300"
+            : variant === "purple"
+              ? "border border-border-subtle text-muted-foreground hover:border-brand-purple-400/50 hover:text-foreground"
+              : "border border-border-subtle text-muted-foreground hover:border-brand-cyan-400/30 hover:text-foreground",
       )}
     >
       {children}
@@ -261,6 +272,7 @@ export function GalleryPageContent({
   photos,
   filteredCount,
   carNames,
+  availableCategories,
   filters,
   totalPages,
   currentPage,
@@ -309,8 +321,6 @@ export function GalleryPageContent({
   const handleCategoryChange = (nextCategory: GalleryCategory) => {
     navigate({
       category: nextCategory === "all" ? undefined : nextCategory,
-      car: undefined,
-      type: undefined,
       page: undefined,
     });
   };
@@ -342,15 +352,22 @@ export function GalleryPageContent({
 
           <FadeIn delay={0.1}>
             <FilterScrollRow className="mb-6">
-              {galleryCategories.map((cat) => (
-                <FilterPill
-                  key={cat.id}
-                  active={filters.category === cat.id}
-                  onClick={() => handleCategoryChange(cat.id)}
-                >
-                  {cat.label}
-                </FilterPill>
-              ))}
+              {galleryCategories.map((cat) => {
+                const disabled =
+                  cat.id !== "all" &&
+                  !availableCategories.includes(cat.id as GalleryPhotoCategory);
+
+                return (
+                  <FilterPill
+                    key={cat.id}
+                    active={filters.category === cat.id}
+                    disabled={disabled}
+                    onClick={() => handleCategoryChange(cat.id)}
+                  >
+                    {cat.label}
+                  </FilterPill>
+                );
+              })}
             </FilterScrollRow>
 
             {carNames.length > 0 && (

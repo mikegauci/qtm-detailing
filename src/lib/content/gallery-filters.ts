@@ -1,4 +1,8 @@
-import type { GalleryCategory, GalleryPhoto } from "@/types/content";
+import type {
+  GalleryCategory,
+  GalleryPhoto,
+  GalleryPhotoCategory,
+} from "@/types/content";
 import { isGalleryPhotoCategory } from "@/lib/content/gallery-categories";
 import {
   filterPhotosByType,
@@ -66,6 +70,18 @@ export function getGalleryCarNames(
   return Array.from(
     new Set(categoryPhotos.map((photo) => photo.carName).filter(Boolean)),
   ).sort() as string[];
+}
+
+export function getAvailableGalleryCategories(
+  photos: GalleryPhoto[],
+  selectedCar: string,
+): GalleryPhotoCategory[] {
+  const carPhotos =
+    selectedCar === "all"
+      ? photos
+      : photos.filter((photo) => photo.carName === selectedCar);
+
+  return Array.from(new Set(carPhotos.map((photo) => photo.category)));
 }
 
 export function getComparisonPhotos(

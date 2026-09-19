@@ -8,6 +8,7 @@ import {
 } from "@/lib/content/cms-defaults";
 import {
   filterGalleryPhotos,
+  getAvailableGalleryCategories,
   getGalleryCarNames,
   parseGalleryFilters,
   type GalleryFilterParams,
@@ -55,6 +56,10 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
   const currentPage = Math.min(filters.currentPage, totalPages);
   const paginatedPhotos = paginatePhotos(filteredPhotos, currentPage);
   const carNames = getGalleryCarNames(allPhotos, filters.category);
+  const availableCategories = getAvailableGalleryCategories(
+    allPhotos,
+    filters.selectedCar,
+  );
 
   return (
     <>
@@ -63,6 +68,7 @@ export default async function GalleryPage({ searchParams }: GalleryPageProps) {
           photos={paginatedPhotos}
           filteredCount={filteredCount}
           carNames={carNames}
+          availableCategories={availableCategories}
           filters={filters}
           totalPages={totalPages}
           currentPage={currentPage}

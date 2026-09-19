@@ -180,6 +180,26 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  .bookings-calendar {
+    --fc-page-bg-color: var(--color-surface-raised);
+    --fc-neutral-bg-color: rgb(255 255 255 / 0.06);
+    --fc-neutral-text-color: rgb(255 255 255 / 0.7);
+    --fc-border-color: rgb(255 255 255 / 0.1);
+    --fc-button-text-color: #fff;
+    --fc-button-bg-color: rgb(255 255 255 / 0.1);
+    --fc-button-border-color: rgb(255 255 255 / 0.2);
+    --fc-button-hover-bg-color: rgb(255 255 255 / 0.15);
+    --fc-button-hover-border-color: rgb(255 255 255 / 0.25);
+    --fc-button-active-bg-color: rgb(124 58 237 / 0.3);
+    --fc-button-active-border-color: rgb(176 124 230 / 0.4);
+    --fc-event-text-color: #fff;
+    --fc-today-bg-color: rgb(124 58 237 / 0.12);
+    --fc-more-link-bg-color: rgb(255 255 255 / 0.08);
+    --fc-more-link-text-color: rgb(255 255 255 / 0.8);
+    --fc-now-indicator-color: #b07ce6;
+    --fc-highlight-color: rgb(176 124 230 / 0.15);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

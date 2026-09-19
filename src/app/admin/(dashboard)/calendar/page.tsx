@@ -1,15 +1,21 @@
-import { addDays, format, parseISO } from "date-fns";
+import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
 import {
   getCustomerRelation,
   getRelation,
 } from "@/lib/admin/supabase-relations";
+import { syncBookingStatusesFromDates } from "@/lib/admin/sync-booking-statuses";
 import {
   BookingsCalendar,
   type CalendarEvent,
 } from "@/components/admin/bookings-calendar";
-import { formatBookingDateRange } from "@/lib/utils/booking";
+import {
+  CALENDAR_STATUS_COLORS,
+  formatBookingDateRange,
+  getCalendarDisplayStatus,
+} from "@/lib/utils/booking";
 import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
+import { getBusinessToday, parseDateKey } from "@/lib/utils/dates";
 
 function formatServiceLabel(
   bookingServices:
@@ -24,24 +30,63 @@ function formatServiceLabel(
   return names.length > 0 ? names.join(", ") : null;
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  booked: "#3b82f6",
-  in_progress: "#f59e0b",
-  completed: "#10b981",
-  paid: "#a855f7",
-  cancelled: "#ef4444",
-};
-
 export default async function CalendarPage() {
   const { supabase } = await requireAdmin();
+  const today = getBusinessToday();
+  const initialWeekStart = format(
+    startOfWeek(parseDateKey(today), { weekStartsOn: 0 }),
+    "yyyy-MM-dd",
+  );
 
-  const { data: bookings } = await supabase
+  const { data: bookings, error } = await supabase
     .from("bookings")
     .select(
       "id, booking_date, end_date, status, notes, total_price, customers(full_name), booking_vehicles(vehicles(make, model)), booking_services(services(name))",
     )
-    .neq("status", "cancelled")
     .order("booking_date", { ascending: true });
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Calendar</h1>
+          <p className="mt-1 text-sm text-white/60">
+            Month and week views of scheduled booking date ranges.
+          </p>
+        </div>
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+          Could not load bookings. {error.message}
+        </div>
+      </div>
+    );
+  }
+
+  let statusUpdates: Awaited<
+    ReturnType<typeof syncBookingStatusesFromDates>
+  > = new Map();
+
+  try {
+    statusUpdates = await syncBookingStatusesFromDates(
+      supabase,
+      bookings ?? [],
+      today,
+    );
+  } catch (syncError) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-white">Calendar</h1>
+          <p className="mt-1 text-sm text-white/60">
+            Month and week views of scheduled booking date ranges.
+          </p>
+        </div>
+        <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+          Could not sync booking statuses.{" "}
+          {syncError instanceof Error ? syncError.message : "Try again."}
+        </div>
+      </div>
+    );
+  }
 
   const events: CalendarEvent[] =
     bookings?.map((booking) => {
@@ -54,6 +99,13 @@ export default async function CalendarPage() {
         : [];
       const vehicleLabel = formatBookingVehiclesLabel(bookingVehicles);
       const endDate = booking.end_date ?? booking.booking_date;
+      const status = statusUpdates.get(booking.id) ?? booking.status;
+      const displayStatus = getCalendarDisplayStatus(
+        status,
+        booking.booking_date,
+        booking.end_date,
+        today,
+      );
       return {
         id: booking.id,
         title: customer?.full_name ?? "Booking",
@@ -70,8 +122,8 @@ export default async function CalendarPage() {
             ? `€${Number(booking.total_price).toFixed(2)}`
             : null,
         notes: booking.notes?.trim() || null,
-        backgroundColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
-        borderColor: STATUS_COLORS[booking.status] ?? "#3b82f6",
+        backgroundColor: CALENDAR_STATUS_COLORS[displayStatus] ?? "#3b82f6",
+        borderColor: CALENDAR_STATUS_COLORS[displayStatus] ?? "#3b82f6",
       };
     }) ?? [];
 
@@ -84,7 +136,11 @@ export default async function CalendarPage() {
         </p>
       </div>
 
-      <BookingsCalendar events={events} />
+      <BookingsCalendar
+        events={events}
+        today={today}
+        initialWeekStart={initialWeekStart}
+      />
     </div>
   );
 }

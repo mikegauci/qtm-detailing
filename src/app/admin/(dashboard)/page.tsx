@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { format } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
+import { getBusinessToday } from "@/lib/utils/dates";
 import { getCustomerRelation } from "@/lib/admin/supabase-relations";
 import {
   BOOKING_STATUS_COLORS,
@@ -13,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default async function AdminDashboardPage() {
   const { supabase } = await requireAdmin();
-  const today = format(new Date(), "yyyy-MM-dd");
+  const today = getBusinessToday();
 
   const [
     { count: todayBookingsCount },

@@ -25,6 +25,22 @@ export const BOOKING_STATUS_COLORS: Record<string, string> = {
   cancelled: "bg-red-500/20 text-red-300 border-red-500/30",
 };
 
+export const CALENDAR_STATUS_COLORS: Record<string, string> = {
+  booked: "#3b82f6",
+  in_progress: "#f59e0b",
+  completed: "#10b981",
+  paid: "#a855f7",
+  cancelled: "#ef4444",
+};
+
+export const CALENDAR_LEGEND_STATUSES = [
+  "booked",
+  "in_progress",
+  "completed",
+  "paid",
+  "cancelled",
+] as const;
+
 export const LEAD_STATUS_LABELS: Record<string, string> = {
   new: "New",
   contacted: "Contacted",
@@ -45,6 +61,78 @@ export function getBookingEndDate(
   endDate?: string | null,
 ): string {
   return endDate ?? startDate;
+}
+
+export function isBookingActiveOnDate(
+  date: string,
+  bookingDate: string,
+  endDate?: string | null,
+): boolean {
+  const end = getBookingEndDate(bookingDate, endDate);
+  return date >= bookingDate && date <= end;
+}
+
+export function isBookingPast(
+  today: string,
+  bookingDate: string,
+  endDate?: string | null,
+): boolean {
+  const end = getBookingEndDate(bookingDate, endDate);
+  return today > end;
+}
+
+export function getCalendarDisplayStatus(
+  status: string,
+  bookingDate: string,
+  endDate: string | null | undefined,
+  today: string,
+): string {
+  if (status === "cancelled" || status === "paid") {
+    return status;
+  }
+
+  if (
+    isBookingPast(today, bookingDate, endDate) &&
+    (status === "booked" || status === "in_progress")
+  ) {
+    return "completed";
+  }
+
+  if (
+    status === "booked" &&
+    isBookingActiveOnDate(today, bookingDate, endDate)
+  ) {
+    return "in_progress";
+  }
+
+  return status;
+}
+
+export function getAutoSyncedBookingStatus(
+  status: string,
+  bookingDate: string,
+  endDate: string | null | undefined,
+  today: string,
+): "in_progress" | "completed" | null {
+  if (status !== "booked" && status !== "in_progress") {
+    return null;
+  }
+
+  const nextStatus = getCalendarDisplayStatus(
+    status,
+    bookingDate,
+    endDate,
+    today,
+  );
+
+  if (
+    (nextStatus === "in_progress" || nextStatus === "completed") &&
+    nextStatus !== status
+  ) {
+    return nextStatus;
+  }
+
+  return null;
 }
 
 export function validateBookingDateRange(

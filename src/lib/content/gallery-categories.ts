@@ -29,6 +29,15 @@ export function normalizeGalleryPhotoCategory(
   return isGalleryPhotoCategory(value) ? value : "exterior";
 }
 
+export function getGalleryPhotoCategoryLabel(
+  category: string | null | undefined,
+): string {
+  return (
+    galleryPhotoCategoryOptions.find((option) => option.id === category)
+      ?.label ?? "Exterior"
+  );
+}
+
 export const galleryCategories: { id: GalleryCategory; label: string }[] = [
   { id: "all", label: "All Work" },
   ...galleryPhotoCategoryOptions,

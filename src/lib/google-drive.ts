@@ -4,6 +4,50 @@ import { createClient } from "@/lib/supabase/server";
 const PROVIDER = "google_drive";
 const SCOPES = ["https://www.googleapis.com/auth/drive.readonly"];
 
+export const DRIVE_CONNECTION_EXPIRED_MESSAGE =
+  "Google Drive connection expired. Reconnect in Settings to continue.";
+
+export class DriveConnectionExpiredError extends Error {
+  constructor(message = DRIVE_CONNECTION_EXPIRED_MESSAGE) {
+    super(message);
+    this.name = "DriveConnectionExpiredError";
+  }
+}
+
+function isInvalidGrantError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+
+  const error = err as {
+    message?: string;
+    cause?: { message?: string };
+    response?: { data?: { error?: string } };
+  };
+
+  return (
+    error.message === "invalid_grant" ||
+    error.cause?.message === "invalid_grant" ||
+    error.response?.data?.error === "invalid_grant"
+  );
+}
+
+async function clearDriveConnection(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.from("integration_tokens").delete().eq("provider", PROVIDER);
+}
+
+async function withDriveErrorHandling<T>(fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn();
+  } catch (err) {
+    if (isInvalidGrantError(err)) {
+      await clearDriveConnection();
+      throw new DriveConnectionExpiredError();
+    }
+
+    throw err;
+  }
+}
+
 function getOAuthClient() {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
@@ -100,24 +144,26 @@ export type DriveImage = {
 };
 
 export async function listFolders(parentId?: string): Promise<DriveFolder[]> {
-  const drive = await getDriveClient();
-  const query = [
-    "mimeType = 'application/vnd.google-apps.folder'",
-    "trashed = false",
-    parentId ? `'${parentId}' in parents` : "'root' in parents",
-  ].join(" and ");
+  return withDriveErrorHandling(async () => {
+    const drive = await getDriveClient();
+    const query = [
+      "mimeType = 'application/vnd.google-apps.folder'",
+      "trashed = false",
+      parentId ? `'${parentId}' in parents` : "'root' in parents",
+    ].join(" and ");
 
-  const response = await drive.files.list({
-    q: query,
-    fields: "files(id, name)",
-    orderBy: "name",
-    pageSize: 100,
+    const response = await drive.files.list({
+      q: query,
+      fields: "files(id, name)",
+      orderBy: "name",
+      pageSize: 100,
+    });
+
+    return (response.data.files ?? []).map((file) => ({
+      id: file.id!,
+      name: file.name ?? "Untitled folder",
+    }));
   });
-
-  return (response.data.files ?? []).map((file) => ({
-    id: file.id!,
-    name: file.name ?? "Untitled folder",
-  }));
 }
 
 export function getDriveRootFolderName(): string {
@@ -125,26 +171,28 @@ export function getDriveRootFolderName(): string {
 }
 
 export async function findFolderByPath(path: string): Promise<DriveFolder | null> {
-  const segments = path
-    .split("/")
-    .map((segment) => segment.trim())
-    .filter(Boolean);
+  return withDriveErrorHandling(async () => {
+    const segments = path
+      .split("/")
+      .map((segment) => segment.trim())
+      .filter(Boolean);
 
-  if (segments.length === 0) return null;
+    if (segments.length === 0) return null;
 
-  let parentId: string | undefined;
-  let folder: DriveFolder | null = null;
+    let parentId: string | undefined;
+    let folder: DriveFolder | null = null;
 
-  for (const name of segments) {
-    folder = await findFolderByName(name, parentId);
-    if (!folder) return null;
-    parentId = folder.id;
-  }
+    for (const name of segments) {
+      folder = await findFolderByName(name, parentId);
+      if (!folder) return null;
+      parentId = folder.id;
+    }
 
-  return folder;
+    return folder;
+  });
 }
 
-export async function findFolderByName(
+async function findFolderByName(
   name: string,
   parentId?: string,
 ): Promise<DriveFolder | null> {
@@ -175,77 +223,83 @@ export async function findFolderByName(
 export async function listImagesInFolder(
   folderId: string,
 ): Promise<DriveImage[]> {
-  const drive = await getDriveClient();
-  const query = [
-    `'${folderId}' in parents`,
-    "trashed = false",
-    "(mimeType contains 'image/')",
-  ].join(" and ");
+  return withDriveErrorHandling(async () => {
+    const drive = await getDriveClient();
+    const query = [
+      `'${folderId}' in parents`,
+      "trashed = false",
+      "(mimeType contains 'image/')",
+    ].join(" and ");
 
-  const response = await drive.files.list({
-    q: query,
-    fields: "files(id, name, mimeType, thumbnailLink)",
-    orderBy: "name",
-    pageSize: 100,
+    const response = await drive.files.list({
+      q: query,
+      fields: "files(id, name, mimeType, thumbnailLink)",
+      orderBy: "name",
+      pageSize: 100,
+    });
+
+    return (response.data.files ?? []).map((file) => ({
+      id: file.id!,
+      name: file.name ?? "Untitled",
+      mimeType: file.mimeType ?? "image/jpeg",
+      thumbnailLink: file.thumbnailLink ?? undefined,
+    }));
   });
-
-  return (response.data.files ?? []).map((file) => ({
-    id: file.id!,
-    name: file.name ?? "Untitled",
-    mimeType: file.mimeType ?? "image/jpeg",
-    thumbnailLink: file.thumbnailLink ?? undefined,
-  }));
 }
 
 export async function downloadFile(fileId: string): Promise<Buffer> {
-  const drive = await getDriveClient();
-  const response = await drive.files.get(
-    { fileId, alt: "media" },
-    { responseType: "arraybuffer" },
-  );
+  return withDriveErrorHandling(async () => {
+    const drive = await getDriveClient();
+    const response = await drive.files.get(
+      { fileId, alt: "media" },
+      { responseType: "arraybuffer" },
+    );
 
-  return Buffer.from(response.data as ArrayBuffer);
+    return Buffer.from(response.data as ArrayBuffer);
+  });
 }
 
 export async function getFileThumbnail(
   fileId: string,
 ): Promise<{ data: Buffer; contentType: string } | null> {
-  const auth = await getAuthenticatedOAuthClient();
-  const drive = google.drive({ version: "v3", auth });
-  const accessToken = auth.credentials.access_token;
+  return withDriveErrorHandling(async () => {
+    const auth = await getAuthenticatedOAuthClient();
+    const drive = google.drive({ version: "v3", auth });
+    const accessToken = auth.credentials.access_token;
 
-  const { data: file } = await drive.files.get({
-    fileId,
-    fields: "thumbnailLink,mimeType",
-  });
-
-  if (file.thumbnailLink && accessToken) {
-    const response = await fetch(file.thumbnailLink, {
-      headers: { Authorization: `Bearer ${accessToken}` },
+    const { data: file } = await drive.files.get({
+      fileId,
+      fields: "thumbnailLink,mimeType",
     });
 
-    if (response.ok) {
-      const data = Buffer.from(await response.arrayBuffer());
-      return {
-        data,
-        contentType: response.headers.get("content-type") ?? "image/jpeg",
-      };
+    if (file.thumbnailLink && accessToken) {
+      const response = await fetch(file.thumbnailLink, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (response.ok) {
+        const data = Buffer.from(await response.arrayBuffer());
+        return {
+          data,
+          contentType: response.headers.get("content-type") ?? "image/jpeg",
+        };
+      }
     }
-  }
 
-  try {
-    const sharp = (await import("sharp")).default;
-    const original = await downloadFile(fileId);
-    const data = await sharp(original)
-      .rotate()
-      .resize(120, 120, { fit: "cover" })
-      .jpeg({ quality: 75 })
-      .toBuffer();
+    try {
+      const sharp = (await import("sharp")).default;
+      const original = await downloadFile(fileId);
+      const data = await sharp(original)
+        .rotate()
+        .resize(120, 120, { fit: "cover" })
+        .jpeg({ quality: 75 })
+        .toBuffer();
 
-    return { data, contentType: "image/jpeg" };
-  } catch {
-    return null;
-  }
+      return { data, contentType: "image/jpeg" };
+    } catch {
+      return null;
+    }
+  });
 }
 
 export async function saveDriveTokens(tokens: {

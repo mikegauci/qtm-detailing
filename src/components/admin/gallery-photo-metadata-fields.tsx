@@ -17,6 +17,7 @@ type GalleryPhotoMetadataFieldsProps = {
   onPhotoTypeChange: (value: "before" | "after") => void;
   onCategoryChange: (value: string) => void;
   compact?: boolean;
+  layout?: "stacked" | "inline";
   className?: string;
 };
 
@@ -26,19 +27,36 @@ export function GalleryPhotoMetadataFields({
   onPhotoTypeChange,
   onCategoryChange,
   compact = false,
+  layout = "stacked",
   className,
 }: GalleryPhotoMetadataFieldsProps) {
+  const fieldSpacing = compact ? "space-y-1.5" : "space-y-2";
+  const labelClassName = compact ? "text-xs text-white/60" : undefined;
+
   return (
-    <div className={cn("grid grid-cols-1 gap-4 sm:grid-cols-2", className)}>
-      <div className="space-y-2">
-        <Label className={compact ? "text-xs text-white/60" : undefined}>
+    <div
+      className={cn(
+        layout === "inline"
+          ? "flex shrink-0 items-center gap-3"
+          : "grid grid-cols-1 gap-4 sm:grid-cols-2",
+        className,
+      )}
+    >
+      <div
+        className={cn(
+          layout === "inline"
+            ? "flex items-center gap-2"
+            : fieldSpacing,
+        )}
+      >
+        <Label className={cn(labelClassName, layout === "inline" && "shrink-0")}>
           Type
         </Label>
         <Select
           value={photoType}
           onValueChange={(value) => onPhotoTypeChange(value as "before" | "after")}
         >
-          <SelectTrigger className={compact ? "h-8" : undefined}>
+          <SelectTrigger className={compact ? "h-8 w-[6.5rem]" : undefined}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -47,12 +65,18 @@ export function GalleryPhotoMetadataFields({
           </SelectContent>
         </Select>
       </div>
-      <div className="space-y-2">
-        <Label className={compact ? "text-xs text-white/60" : undefined}>
+      <div
+        className={cn(
+          layout === "inline"
+            ? "flex items-center gap-2"
+            : fieldSpacing,
+        )}
+      >
+        <Label className={cn(labelClassName, layout === "inline" && "shrink-0")}>
           Category
         </Label>
         <Select value={category} onValueChange={onCategoryChange}>
-          <SelectTrigger className={compact ? "h-8" : undefined}>
+          <SelectTrigger className={compact ? "h-8 w-[10.5rem]" : undefined}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>

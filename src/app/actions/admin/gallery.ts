@@ -5,11 +5,46 @@ import { revalidateGalleryContent } from "@/lib/content/revalidate-cms";
 import { queryGalleryPhotoRows, type GalleryQueryClient } from "@/lib/content/gallery-query";
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
-import { downloadFile } from "@/lib/google-drive";
+import {
+  DRIVE_CONNECTION_EXPIRED_MESSAGE,
+  DriveConnectionExpiredError,
+  downloadFile,
+} from "@/lib/google-drive";
 import type { ActionResult } from "@/types/action-result";
+import type {
+  DriveFolder,
+  DriveImage,
+  DriveQueryResult,
+} from "@/types/drive";
 import { requireAdmin } from "@/lib/supabase/admin";
 
-type GalleryActionResult = ActionResult<{ photoId?: string }>;
+function toDriveQueryResult<T>(
+  fn: () => Promise<T>,
+): Promise<DriveQueryResult<T>> {
+  return fn()
+    .then((data) => ({ success: true as const, data }))
+    .catch((err) => {
+      if (err instanceof DriveConnectionExpiredError) {
+        return {
+          success: false as const,
+          message: DRIVE_CONNECTION_EXPIRED_MESSAGE,
+          expired: true,
+        };
+      }
+
+      return {
+        success: false as const,
+        message:
+          err instanceof Error ? err.message : "Google Drive request failed.",
+      };
+    });
+}
+
+type GalleryActionResult = ActionResult<{
+  photoId?: string;
+  alreadyLinked?: boolean;
+  alreadyPublished?: boolean;
+}>;
 
 export async function linkDrivePhoto(input: {
   driveFileId: string;
@@ -21,14 +56,60 @@ export async function linkDrivePhoto(input: {
   try {
     const { supabase } = await requireAdmin();
 
+    const { data: existingPhotos, error: lookupError } = await supabase
+      .from("gallery_photos")
+      .select("id, publish_to_gallery, created_at")
+      .eq("drive_file_id", input.driveFileId)
+      .order("publish_to_gallery", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (lookupError) {
+      return { success: false, message: lookupError.message };
+    }
+
+    const existing = existingPhotos?.[0];
+    const metadata = {
+      drive_folder_id: input.driveFolderId,
+      drive_folder_name: input.driveFolderName,
+      photo_type: input.photoType,
+      category: input.category ?? "exterior",
+    };
+
+    if (existing) {
+      const { error: updateError } = await supabase
+        .from("gallery_photos")
+        .update(metadata)
+        .eq("id", existing.id);
+
+      if (updateError) {
+        return { success: false, message: updateError.message };
+      }
+
+      revalidatePath("/admin/gallery");
+
+      if (existing.publish_to_gallery) {
+        return {
+          success: true,
+          photoId: existing.id,
+          alreadyLinked: true,
+          alreadyPublished: true,
+          message: "Photo is already published to the gallery.",
+        };
+      }
+
+      return {
+        success: true,
+        photoId: existing.id,
+        alreadyLinked: true,
+        message: "Photo is already linked. Metadata updated.",
+      };
+    }
+
     const { data: photo, error } = await supabase
       .from("gallery_photos")
       .insert({
         drive_file_id: input.driveFileId,
-        drive_folder_id: input.driveFolderId,
-        drive_folder_name: input.driveFolderName,
-        photo_type: input.photoType,
-        category: input.category ?? "exterior",
+        ...metadata,
         photo_url: "",
         publish_to_gallery: false,
       })
@@ -47,74 +128,6 @@ export async function linkDrivePhoto(input: {
       message: err instanceof Error ? err.message : "Failed to link photo.",
     };
   }
-}
-
-export async function linkAndPublishDrivePhotos(input: {
-  driveFileIds: string[];
-  driveFolderId: string;
-  driveFolderName: string;
-  photoType: "before" | "after";
-  category?: string;
-  enhance?: boolean;
-  blankPlate?: boolean;
-}): Promise<GalleryActionResult> {
-  if (input.driveFileIds.length === 0) {
-    return { success: false, message: "No photos selected." };
-  }
-
-  let published = 0;
-  const errors: string[] = [];
-
-  for (const driveFileId of input.driveFileIds) {
-    const linkResult = await linkDrivePhoto({
-      driveFileId,
-      driveFolderId: input.driveFolderId,
-      driveFolderName: input.driveFolderName,
-      photoType: input.photoType,
-      category: input.category,
-    });
-
-    if (!linkResult.success || !linkResult.photoId) {
-      errors.push(linkResult.message);
-      continue;
-    }
-
-    const publishResult = await publishPhoto(linkResult.photoId, {
-      enhance: input.enhance,
-      blankPlate: input.blankPlate,
-    });
-    if (publishResult.success) {
-      published += 1;
-    } else {
-      await deletePhoto(linkResult.photoId);
-      errors.push(publishResult.message);
-    }
-  }
-
-  revalidatePath("/admin/gallery");
-  revalidateGalleryContent();
-
-  if (published === 0) {
-    return {
-      success: false,
-      message: errors[0] ?? "Failed to publish photos.",
-    };
-  }
-
-  if (errors.length > 0) {
-    return {
-      success: true,
-      message: `Published ${published} of ${input.driveFileIds.length} photos. Some failed.`,
-    };
-  }
-
-  return {
-    success: true,
-    message:
-      published === 1
-        ? "Photo published to gallery."
-        : `Published ${published} photos to gallery.`,
-  };
 }
 
 export async function publishAllPhotos(
@@ -319,24 +332,30 @@ export async function deletePhoto(photoId: string): Promise<GalleryActionResult>
   }
 }
 
-export async function listDriveFolders(parentId?: string) {
+export async function listDriveFolders(
+  parentId?: string,
+): Promise<DriveQueryResult<DriveFolder[]>> {
   const { listFolders } = await import("@/lib/google-drive");
   await requireAdmin();
-  return listFolders(parentId);
+  return toDriveQueryResult(() => listFolders(parentId));
 }
 
-export async function listDriveImages(folderId: string) {
+export async function listDriveImages(
+  folderId: string,
+): Promise<DriveQueryResult<DriveImage[]>> {
   const { listImagesInFolder } = await import("@/lib/google-drive");
   await requireAdmin();
-  return listImagesInFolder(folderId);
+  return toDriveQueryResult(() => listImagesInFolder(folderId));
 }
 
-export async function findDriveRootFolder() {
+export async function findDriveRootFolder(): Promise<
+  DriveQueryResult<DriveFolder | null>
+> {
   const { findFolderByPath, getDriveRootFolderName } = await import(
     "@/lib/google-drive"
   );
   await requireAdmin();
-  return findFolderByPath(getDriveRootFolderName());
+  return toDriveQueryResult(() => findFolderByPath(getDriveRootFolderName()));
 }
 
 export async function getGalleryPhotos(supabase?: GalleryQueryClient) {

@@ -19,29 +19,54 @@ export function useDriveBrowser(options: UseDriveBrowserOptions = {}) {
   const [images, setImages] = useState<DriveImage[]>([]);
   const [folderStack, setFolderStack] = useState<DriveFolder[]>([]);
   const [loadingDrive, setLoadingDrive] = useState(false);
+  const [connectionExpired, setConnectionExpired] = useState(false);
 
   const currentFolder = folderStack[folderStack.length - 1];
   const canGoBack = folderStack.length > 1;
 
-  const loadFolderContents = useCallback(async (stack: DriveFolder[]) => {
-    setLoadingDrive(true);
-    try {
-      const folder = stack[stack.length - 1];
-      const parentId = folder?.id;
-
-      const [childFolders, folderImages] = await Promise.all([
-        listDriveFolders(parentId),
-        parentId ? listDriveImages(parentId) : Promise.resolve([]),
-      ]);
-
-      setFolders(childFolders);
-      setImages(folderImages);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to load folder");
-    } finally {
-      setLoadingDrive(false);
+  const handleDriveError = useCallback((message: string, expired?: boolean) => {
+    if (expired) {
+      setConnectionExpired(true);
     }
+    toast.error(message);
   }, []);
+
+  const loadFolderContents = useCallback(
+    async (stack: DriveFolder[]) => {
+      setLoadingDrive(true);
+      try {
+        const folder = stack[stack.length - 1];
+        const parentId = folder?.id;
+
+        const [foldersResult, imagesResult] = await Promise.all([
+          listDriveFolders(parentId),
+          parentId
+            ? listDriveImages(parentId)
+            : Promise.resolve({ success: true as const, data: [] }),
+        ]);
+
+        if (!foldersResult.success) {
+          handleDriveError(foldersResult.message, foldersResult.expired);
+          return;
+        }
+
+        if (!imagesResult.success) {
+          handleDriveError(imagesResult.message, imagesResult.expired);
+          return;
+        }
+
+        setFolders(foldersResult.data);
+        setImages(imagesResult.data);
+      } catch (err) {
+        toast.error(
+          err instanceof Error ? err.message : "Failed to load folder",
+        );
+      } finally {
+        setLoadingDrive(false);
+      }
+    },
+    [handleDriveError],
+  );
 
   const openFolder = useCallback(
     async (folder: DriveFolder, stack?: DriveFolder[]) => {
@@ -62,18 +87,43 @@ export function useDriveBrowser(options: UseDriveBrowserOptions = {}) {
   const initialize = useCallback(async () => {
     setLoadingDrive(true);
     try {
-      const rootFolder = await findDriveRootFolder();
+      const rootResult = await findDriveRootFolder();
+      if (!rootResult.success) {
+        handleDriveError(rootResult.message, rootResult.expired);
+        return;
+      }
+
+      const rootFolder = rootResult.data;
       if (rootFolder) {
         setFolderStack([rootFolder]);
-        const [childFolders, folderImages] = await Promise.all([
+        const [foldersResult, imagesResult] = await Promise.all([
           listDriveFolders(rootFolder.id),
           listDriveImages(rootFolder.id),
         ]);
-        setFolders(childFolders);
-        setImages(folderImages);
+
+        if (!foldersResult.success) {
+          handleDriveError(foldersResult.message, foldersResult.expired);
+          return;
+        }
+
+        if (!imagesResult.success) {
+          handleDriveError(imagesResult.message, imagesResult.expired);
+          return;
+        }
+
+        setFolders(foldersResult.data);
+        setImages(imagesResult.data);
       } else {
-        const rootFolders = await listDriveFolders();
-        setFolders(rootFolders);
+        const rootFoldersResult = await listDriveFolders();
+        if (!rootFoldersResult.success) {
+          handleDriveError(
+            rootFoldersResult.message,
+            rootFoldersResult.expired,
+          );
+          return;
+        }
+
+        setFolders(rootFoldersResult.data);
         setImages([]);
         toast.message(
           `"${rootFolderName}" folder not found — showing Drive root.`,
@@ -86,13 +136,14 @@ export function useDriveBrowser(options: UseDriveBrowserOptions = {}) {
     } finally {
       setLoadingDrive(false);
     }
-  }, [rootFolderName]);
+  }, [handleDriveError, rootFolderName]);
 
   const reset = useCallback(() => {
     setFolders([]);
     setImages([]);
     setFolderStack([]);
     setLoadingDrive(false);
+    setConnectionExpired(false);
   }, []);
 
   return {
@@ -101,6 +152,7 @@ export function useDriveBrowser(options: UseDriveBrowserOptions = {}) {
     folderStack,
     currentFolder,
     loadingDrive,
+    connectionExpired,
     canGoBack,
     openFolder,
     goBack,

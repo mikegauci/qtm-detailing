@@ -22,6 +22,7 @@ type EnhancePromptDialogProps = {
   title: string;
   photoCount?: number;
   confirmLabel?: string;
+  defaultEnhance?: boolean;
   onConfirm: (result: EnhancePromptResult) => void;
 };
 
@@ -31,17 +32,18 @@ export function EnhancePromptDialog({
   title,
   photoCount = 1,
   confirmLabel = "Continue",
+  defaultEnhance = false,
   onConfirm,
 }: EnhancePromptDialogProps) {
-  const [enhance, setEnhance] = useState(true);
+  const [enhance, setEnhance] = useState(defaultEnhance);
   const [blankPlate, setBlankPlate] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setEnhance(true);
+      setEnhance(defaultEnhance);
       setBlankPlate(false);
     }
-  }, [open]);
+  }, [defaultEnhance, open]);
 
   const photoLabel =
     photoCount === 1 ? "1 photo" : `${photoCount} photos`;

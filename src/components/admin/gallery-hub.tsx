@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useTransition,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   HardDrive,
@@ -30,14 +37,53 @@ import type { Tables } from "@/lib/supabase/types";
 import { DriveConnectPrompt } from "@/components/admin/drive-connect-prompt";
 import { GalleryPhotoMetadataFields } from "@/components/admin/gallery-photo-metadata-fields";
 import { LinkedPhotosPanel } from "@/components/admin/linked-photos-panel";
+import { LinkedDrivePhotoOverlay } from "@/components/admin/linked-drive-photo-overlay";
 import { SelectionCheckBadge } from "@/components/admin/selection-check-badge";
 import { ViewToggle } from "@/components/admin/view-toggle";
 import { DriveBrowser } from "@/components/admin/drive-browser";
 import { DriveThumbnail } from "@/components/admin/drive-thumbnail";
 import { Button } from "@/components/ui/button";
+import {
+  buildLinkedPhotosByDriveId,
+  isDriveFilePublished,
+} from "@/lib/cms/linked-drive-photos";
+import { getGalleryPhotoCategoryLabel } from "@/lib/content/gallery-categories";
 import { cn } from "@/lib/utils";
 import { useDriveBrowser } from "@/hooks/use-drive-browser";
 import type { DriveFolder } from "@/types/drive";
+
+function buildPublishSummary(
+  published: number,
+  skipped: number,
+  failed: number,
+  isEnhance: boolean,
+): string | null {
+  if (published === 0 && skipped === 0 && failed === 0) {
+    return null;
+  }
+
+  if (published === 0 && skipped > 0 && failed === 0) {
+    return "Selected photos are already published.";
+  }
+
+  const parts: string[] = [];
+  if (published > 0) {
+    const verb = isEnhance ? "Enhanced" : "Published";
+    parts.push(
+      published === 1 ? `${verb} 1 photo` : `${verb} ${published} photos`,
+    );
+  }
+  if (skipped > 0) {
+    parts.push(
+      skipped === 1 ? "1 already published" : `${skipped} already published`,
+    );
+  }
+  if (failed > 0) {
+    parts.push(failed === 1 ? "1 failed" : `${failed} failed`);
+  }
+
+  return `${parts.join(", ")}.`;
+}
 
 type GalleryView = "drive" | "linked";
 
@@ -69,11 +115,13 @@ export function GalleryHub({
     folderStack,
     currentFolder,
     loadingDrive,
+    connectionExpired,
     canGoBack,
     openFolder: openDriveFolder,
     goBack: goBackDrive,
     initialize: initializeDriveBrowser,
   } = useDriveBrowser({ rootFolderName });
+  const showDriveConnectPrompt = !driveConnected || connectionExpired;
   const [selectedImageIds, setSelectedImageIds] = useState<Set<string>>(
     new Set(),
   );
@@ -85,6 +133,7 @@ export function GalleryHub({
     title: "Publish to gallery",
     confirmLabel: "Publish",
     successMessage: "published" as "published" | "enhanced",
+    defaultEnhance: false,
   });
   const [pendingPhotoCount, setPendingPhotoCount] = useState(1);
   const [publishQueue, setPublishQueue] = useState<UploadQueueItem[]>([]);
@@ -98,6 +147,19 @@ export function GalleryHub({
   const draftCount = photos.filter(
     (photo) => !photo.publish_to_gallery && photo.drive_file_id,
   ).length;
+
+  const linkedPhotosByDriveId = useMemo(
+    () => buildLinkedPhotosByDriveId(photos),
+    [photos],
+  );
+
+  const publishableImages = useMemo(
+    () =>
+      images.filter(
+        (image) => !isDriveFilePublished(linkedPhotosByDriveId, image.id),
+      ),
+    [images, linkedPhotosByDriveId],
+  );
 
   useEffect(() => {
     const nextView = searchParams.get("view") === "linked" ? "linked" : "drive";
@@ -114,7 +176,15 @@ export function GalleryHub({
 
   const clearSelection = () => setSelectedImageIds(new Set());
 
+  const selectAllImages = () => {
+    setSelectedImageIds(new Set(publishableImages.map((image) => image.id)));
+  };
+
   const toggleImageSelection = (imageId: string) => {
+    if (isDriveFilePublished(linkedPhotosByDriveId, imageId)) {
+      return;
+    }
+
     setSelectedImageIds((current) => {
       const next = new Set(current);
       if (next.has(imageId)) {
@@ -140,11 +210,23 @@ export function GalleryHub({
   };
 
   useEffect(() => {
-    if (!driveConnected || initializedRef.current || view !== "drive") return;
+    if (
+      !driveConnected ||
+      connectionExpired ||
+      initializedRef.current ||
+      view !== "drive"
+    ) {
+      return;
+    }
 
     initializedRef.current = true;
     void initializeDriveBrowser();
-  }, [driveConnected, initializeDriveBrowser, view]);
+  }, [
+    connectionExpired,
+    driveConnected,
+    initializeDriveBrowser,
+    view,
+  ]);
 
   const refreshPhotos = () => {
     startTransition(async () => {
@@ -153,29 +235,24 @@ export function GalleryHub({
     });
   };
 
-  const handleLink = () => {
-    if (selectedCount !== 1 || !currentFolder) {
-      toast.error("Select one image to link as draft.");
+  const handlePublishSelected = () => {
+    if (!currentFolder) {
+      toast.error("Select a folder first.");
       return;
     }
 
-    const driveFileId = Array.from(selectedImageIds)[0];
+    const publishableIds = Array.from(selectedImageIds).filter(
+      (driveFileId) => !isDriveFilePublished(linkedPhotosByDriveId, driveFileId),
+    );
 
-    startTransition(async () => {
-      const result = await linkDrivePhoto({
-        driveFileId,
-        driveFolderId: currentFolder.id,
-        driveFolderName: currentFolder.name,
-        photoType,
-        category,
-      });
-      if (result.success) {
-        toast.success(result.message);
-        clearSelection();
-        refreshPhotos();
-      } else {
-        toast.error(result.message);
-      }
+    if (publishableIds.length === 0) {
+      toast.error("Selected photos are already published.");
+      return;
+    }
+
+    openEnhanceDialog({
+      type: "drive",
+      driveFileIds: publishableIds,
     });
   };
 
@@ -185,16 +262,17 @@ export function GalleryHub({
       title: string;
       confirmLabel: string;
       successMessage: "published" | "enhanced";
+      defaultEnhance?: boolean;
     },
   ) => {
     pendingPublishRef.current = action;
-    setEnhanceDialogConfig(
-      config ?? {
-        title: "Publish to gallery",
-        confirmLabel: "Publish",
-        successMessage: "published",
-      },
-    );
+    setEnhanceDialogConfig({
+      title: "Publish to gallery",
+      confirmLabel: "Publish",
+      successMessage: "published",
+      defaultEnhance: false,
+      ...config,
+    });
     setPendingPhotoCount(
       action.type === "single"
         ? 1
@@ -219,27 +297,45 @@ export function GalleryHub({
 
     startTransition(async () => {
       let successCount = 0;
+      let publishedCount = 0;
+      let skippedCount = 0;
+      let failedCount = 0;
 
       const processItem = createQueueItemProcessor({
         queue,
         setQueue: setPublishQueue,
         setProgress: setPublishProgress,
-        onSuccess: () => {
-          successCount += 1;
-        },
+        onSuccess:
+          action.type === "drive"
+            ? undefined
+            : () => {
+                successCount += 1;
+              },
       });
 
       if (action.type === "single") {
         const item = queue[0];
         if (!item) return;
-        await processItem(item, () =>
-          publishPhoto(action.photoId, processing),
-        );
+        if (
+          !(await processItem(item, () =>
+            publishPhoto(action.photoId, processing),
+          ))
+        ) {
+          failedCount += 1;
+        }
       } else if (action.type === "bulk") {
         for (const [index, photoId] of action.photoIds.entries()) {
-          await processItem(queue[index], () =>
-            publishPhoto(photoId, processing),
-          );
+          const item = queue[index];
+          if (!item) {
+            continue;
+          }
+          if (
+            !(await processItem(item, () =>
+              publishPhoto(photoId, processing),
+            ))
+          ) {
+            failedCount += 1;
+          }
         }
       } else {
         if (!currentFolder) {
@@ -250,7 +346,12 @@ export function GalleryHub({
         }
 
         for (const [index, driveFileId] of action.driveFileIds.entries()) {
-          await processItem(queue[index], async () => {
+          const item = queue[index];
+          if (!item) {
+            continue;
+          }
+
+          const processed = await processItem(item, async () => {
             const linkResult = await linkDrivePhoto({
               driveFileId,
               driveFolderId: currentFolder.id,
@@ -263,17 +364,31 @@ export function GalleryHub({
               return linkResult;
             }
 
+            if (linkResult.alreadyPublished) {
+              skippedCount += 1;
+              return { success: true, message: linkResult.message };
+            }
+
             const publishResult = await publishPhoto(
               linkResult.photoId,
               processing,
             );
 
-            if (!publishResult.success) {
+            if (publishResult.success) {
+              publishedCount += 1;
+              return publishResult;
+            }
+
+            if (!linkResult.alreadyLinked) {
               await deletePhoto(linkResult.photoId);
             }
 
             return publishResult;
           });
+
+          if (!processed) {
+            failedCount += 1;
+          }
         }
       }
 
@@ -281,34 +396,36 @@ export function GalleryHub({
       setPublishProgress({ current: 0, total: 0 });
       setIsAiProcessing(false);
 
-      if (successCount > 0) {
-        const isEnhance = enhanceDialogConfig.successMessage === "enhanced";
-        toast.success(
-          isEnhance
-            ? successCount === 1
-              ? "Photo enhanced."
-              : `Enhanced ${successCount} photos.`
-            : successCount === 1
-              ? "Photo published to gallery."
-              : `Published ${successCount} photos to gallery.`,
-        );
+      const isEnhance = enhanceDialogConfig.successMessage === "enhanced";
+      const summary =
+        action.type === "drive"
+          ? buildPublishSummary(
+              publishedCount,
+              skippedCount,
+              failedCount,
+              isEnhance,
+            )
+          : buildPublishSummary(
+              successCount,
+              0,
+              failedCount,
+              isEnhance,
+            );
+
+      if (summary) {
+        if (publishedCount > 0 || successCount > 0) {
+          toast.success(summary);
+        } else if (skippedCount > 0 && failedCount === 0) {
+          toast.message(summary);
+        }
+      }
+
+      if (publishedCount > 0 || successCount > 0 || skippedCount > 0) {
         refreshPhotos();
         if (action.type === "drive") {
           clearSelection();
-          setGalleryView("linked");
         }
       }
-    });
-  };
-
-  const handlePublishAllSelected = () => {
-    if (selectedCount < 2 || !currentFolder) {
-      return;
-    }
-
-    openEnhanceDialog({
-      type: "drive",
-      driveFileIds: Array.from(selectedImageIds),
     });
   };
 
@@ -331,6 +448,7 @@ export function GalleryHub({
         title: "Enhance photo",
         confirmLabel: "Enhance",
         successMessage: "enhanced",
+        defaultEnhance: true,
       },
     );
   };
@@ -408,17 +526,23 @@ export function GalleryHub({
         <div className="min-w-0 space-y-4 rounded-xl border border-white/10 bg-surface-raised/40 p-4 sm:space-y-5 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <h2 className="text-lg font-semibold">Google Drive Browser</h2>
-            {!driveConnected && (
+            {showDriveConnectPrompt && (
               <Button asChild size="sm">
-                <a href="/api/google-drive/auth">Connect Drive</a>
+                <a href="/api/google-drive/auth">
+                  {connectionExpired ? "Reconnect Drive" : "Connect Drive"}
+                </a>
               </Button>
             )}
           </div>
 
-          {!driveConnected ? (
+          {showDriveConnectPrompt ? (
             <DriveConnectPrompt
               showButton={false}
-              message="Connect Google Drive in Settings to browse and link photos."
+              message={
+                connectionExpired
+                  ? "Your Google Drive connection expired. Reconnect to browse and link photos."
+                  : "Connect Google Drive in Settings to browse and link photos."
+              }
               className="py-0 text-left"
             />
           ) : (
@@ -441,20 +565,93 @@ export function GalleryHub({
                   canGoBack={canGoBack}
                   onOpenFolder={openFolder}
                   onGoBack={goBack}
-                  imageGridClassName="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
+                  imageGridClassName="grid grid-cols-3 gap-2 sm:gap-3 lg:grid-cols-4 xl:grid-cols-5"
+                  toolbar={
+                    currentFolder && images.length > 0 ? (
+                      <div className="sticky top-0 z-10 -mx-1 mb-4 flex flex-col gap-2 rounded-b-xl border border-white/10 bg-surface-raised/95 px-3 py-2 backdrop-blur-sm sm:flex-row sm:items-center sm:gap-3 sm:px-4">
+                        <GalleryPhotoMetadataFields
+                          photoType={photoType}
+                          category={category}
+                          onPhotoTypeChange={setPhotoType}
+                          onCategoryChange={setCategory}
+                          compact
+                          layout="inline"
+                        />
+                        <div className="flex items-center justify-between gap-2 sm:ml-auto">
+                          <div className="flex min-w-0 items-center gap-2 text-sm">
+                            {selectedCount > 0 ? (
+                              <>
+                                <span className="whitespace-nowrap font-medium text-white">
+                                  {selectedCount} of {publishableImages.length}{" "}
+                                  selected
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={clearSelection}
+                                  className="whitespace-nowrap text-brand-purple-300 transition-colors hover:text-white"
+                                >
+                                  Clear
+                                </button>
+                              </>
+                            ) : (
+                              <span className="whitespace-nowrap text-white/50">
+                                Select photos to publish
+                              </span>
+                            )}
+                            {selectedCount < publishableImages.length && (
+                              <button
+                                type="button"
+                                onClick={selectAllImages}
+                                className="whitespace-nowrap text-brand-purple-300 transition-colors hover:text-white"
+                              >
+                                Select all
+                              </button>
+                            )}
+                          </div>
+                          <Button
+                            size="sm"
+                            className="shrink-0"
+                            onClick={handlePublishSelected}
+                            disabled={isPending || selectedCount === 0}
+                          >
+                            <Upload className="mr-1.5 h-4 w-4" />
+                            {selectedCount === 1 ? "Publish" : "Publish All"}
+                          </Button>
+                        </div>
+                      </div>
+                    ) : undefined
+                  }
                   renderImage={(image) => {
                     const isSelected = selectedImageIds.has(image.id);
+                    const linkedPhoto = linkedPhotosByDriveId.get(image.id);
+                    const isPublishedLink = linkedPhoto?.publish_to_gallery === true;
+                    const linkedTypeLabel =
+                      linkedPhoto?.photo_type === "after" ? "After" : "Before";
+                    const linkedCategoryLabel = linkedPhoto
+                      ? getGalleryPhotoCategoryLabel(linkedPhoto.category)
+                      : null;
                     return (
                       <button
                         key={image.id}
                         type="button"
                         aria-pressed={isSelected}
+                        disabled={isPublishedLink}
+                        aria-label={
+                          linkedPhoto && linkedCategoryLabel
+                            ? `${image.name}, linked as ${linkedTypeLabel} ${linkedCategoryLabel}${isPublishedLink ? ", already published" : ""}`
+                            : image.name
+                        }
                         onClick={() => toggleImageSelection(image.id)}
                         className={cn(
                           "relative min-w-0 overflow-hidden rounded-xl border-2 transition-colors",
+                          isPublishedLink && "cursor-default opacity-90",
                           isSelected
                             ? "border-brand-purple-400 ring-2 ring-brand-purple-400/30"
-                            : "border-white/10 hover:border-white/25",
+                            : linkedPhoto
+                              ? "border-brand-cyan-400/40 hover:border-brand-cyan-400/60"
+                              : "border-white/10 hover:border-white/25",
+                          isPublishedLink &&
+                            "hover:border-brand-cyan-400/40",
                         )}
                       >
                         <DriveThumbnail
@@ -462,47 +659,18 @@ export function GalleryHub({
                           name={image.name}
                           size="lg"
                         />
+                        {linkedPhoto && (
+                          <LinkedDrivePhotoOverlay
+                            photoType={linkedPhoto.photo_type}
+                            category={linkedPhoto.category}
+                            published={linkedPhoto.publish_to_gallery}
+                          />
+                        )}
                         {isSelected && <SelectionCheckBadge selected size="sm" />}
                       </button>
                     );
                   }}
                 />
-              )}
-
-              {selectedCount > 0 && currentFolder && !isPublishing && (
-                <div className="space-y-4 border-t border-white/10 pt-5">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-white/70">
-                      {selectedCount} photo{selectedCount === 1 ? "" : "s"}{" "}
-                      selected
-                    </p>
-                    {selectedCount > 1 && (
-                      <Button
-                        className="w-full sm:w-auto"
-                        onClick={handlePublishAllSelected}
-                        disabled={isPending}
-                      >
-                        <Upload className="mr-1 h-4 w-4" />
-                        Publish All
-                      </Button>
-                    )}
-                  </div>
-                  <GalleryPhotoMetadataFields
-                    photoType={photoType}
-                    category={category}
-                    onPhotoTypeChange={setPhotoType}
-                    onCategoryChange={setCategory}
-                  />
-                  {selectedCount === 1 && (
-                    <Button
-                      className="w-full sm:w-auto"
-                      onClick={handleLink}
-                      disabled={isPending}
-                    >
-                      Link Photo
-                    </Button>
-                  )}
-                </div>
               )}
             </>
           )}
@@ -538,6 +706,7 @@ export function GalleryHub({
         title={enhanceDialogConfig.title}
         photoCount={pendingPhotoCount}
         confirmLabel={enhanceDialogConfig.confirmLabel}
+        defaultEnhance={enhanceDialogConfig.defaultEnhance}
         onConfirm={runPendingPublish}
       />
     </>

@@ -9,3 +9,7 @@ export type DriveImage = {
   mimeType?: string;
   thumbnailLink?: string;
 };
+
+export type DriveQueryResult<T> =
+  | { success: true; data: T }
+  | { success: false; message: string; expired?: boolean };

@@ -12,10 +12,9 @@ import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   SortableContext,
   arrayMove,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useSortableRow } from "@/components/admin/sortable-row";
 import { GripVertical, ImageIcon, Loader2, Upload, X } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -168,19 +167,9 @@ function SortableImageItem({
   onZoomChange: (zoom: number) => void;
   onRemove: () => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: image.url });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow(
+    image.url,
+  );
 
   return (
     <div
@@ -194,7 +183,7 @@ function SortableImageItem({
         onFocalChange={onFocalChange}
         onZoomChange={onZoomChange}
         onRemove={onRemove}
-        dragHandle={{ attributes, listeners }}
+        dragHandle={dragHandleProps ?? undefined}
       />
     </div>
   );

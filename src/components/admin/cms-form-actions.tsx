@@ -1,7 +1,8 @@
 "use client";
 
-import { Loader2, Trash2 } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 type CmsFormActionsProps = {
   isPending: boolean;
@@ -18,13 +19,7 @@ export function CmsFormActions({
 }: CmsFormActionsProps) {
   return (
     <div className="flex gap-2">
-      <Button type="submit" disabled={isPending}>
-        {isPending ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          saveLabel
-        )}
-      </Button>
+      <SubmitButton isPending={isPending} label={saveLabel} />
       {onDelete ? (
         <Button
           type="button"

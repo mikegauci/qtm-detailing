@@ -1,14 +1,14 @@
-export const ENHANCE_PROMPT = `Enhance the existing image while preserving the original vehicle, composition, camera angle, background, proportions, colors, reflections, and all visible details.
+const ENHANCE_PROMPT = `Enhance the existing image while preserving the original vehicle, composition, camera angle, background, proportions, colors, reflections, and all visible details.
 
 Make the image look cleaner, sharper, and slightly more refined, with realistic professional lighting, improved clarity, cleaner surfaces, and subtle detail enhancement. Keep the result natural and believable. Do not over-polish, over-sharpen, add excessive gloss, or make the image look AI-generated or heavily edited.
 
 Do not add, remove, reposition, redesign, or alter anything else in the image.`;
 
-export const BLANK_PLATE_PROMPT = `If a vehicle registration/number plate is visible, remove all letters, numbers, logos, and markings from it and replace them with a clean, plain white blank plate while keeping the original plate shape, size, position, perspective, and lighting.
+const BLANK_PLATE_PROMPT = `If a vehicle registration/number plate is visible, remove all letters, numbers, logos, and markings from it and replace them with a clean, plain white blank plate while keeping the original plate shape, size, position, perspective, and lighting.
 
 Do not add, remove, reposition, redesign, or alter anything else in the image.`;
 
-export const COMBINED_PROMPT = `Enhance the existing image while preserving the original vehicle, composition, camera angle, background, proportions, colors, reflections, and all visible details.
+const COMBINED_PROMPT = `Enhance the existing image while preserving the original vehicle, composition, camera angle, background, proportions, colors, reflections, and all visible details.
 
 Make the image look cleaner, sharper, and slightly more refined, with realistic professional lighting, improved clarity, cleaner surfaces, and subtle detail enhancement. Keep the result natural and believable. Do not over-polish, over-sharpen, add excessive gloss, or make the image look AI-generated or heavily edited.
 

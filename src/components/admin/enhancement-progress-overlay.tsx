@@ -19,7 +19,7 @@ type EnhancementProgressOverlayProps = {
   errorMessage?: string;
 };
 
-export function EnhancementProgressOverlay({
+function EnhancementProgressOverlay({
   status,
   current,
   total,

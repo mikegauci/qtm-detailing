@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 
-export const BUSINESS_TIMEZONE = "Europe/Malta";
+const BUSINESS_TIMEZONE = "Europe/Malta";
 
 export function getBusinessToday(): string {
   return new Intl.DateTimeFormat("en-CA", {

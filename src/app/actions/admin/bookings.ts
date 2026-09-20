@@ -31,6 +31,29 @@ type BookingInput = {
 
 type BookingSupabase = Awaited<ReturnType<typeof requireAdmin>>["supabase"];
 
+async function recalcBookingTotal(
+  supabase: BookingSupabase,
+  bookingId: string,
+) {
+  const { data: bookingServices } = await supabase
+    .from("booking_services")
+    .select("price_snapshot")
+    .eq("booking_id", bookingId);
+
+  const totalPrice =
+    bookingServices?.reduce((sum, s) => sum + Number(s.price_snapshot), 0) ?? 0;
+
+  await supabase
+    .from("bookings")
+    .update({ total_price: totalPrice })
+    .eq("id", bookingId);
+}
+
+async function afterBookingServicesChange(bookingId: string) {
+  revalidateBookings({ bookingId, scope: "list" });
+  await syncBookingToGoogleCalendar(bookingId);
+}
+
 async function syncBookingPrimaryVehicle(
   supabase: BookingSupabase,
   bookingId: string,
@@ -390,21 +413,8 @@ export async function addBookingService(
     return { success: false, message: error.message };
   }
 
-  const { data: bookingServices } = await supabase
-    .from("booking_services")
-    .select("price_snapshot")
-    .eq("booking_id", bookingId);
-
-  const totalPrice =
-    bookingServices?.reduce((sum, s) => sum + Number(s.price_snapshot), 0) ?? 0;
-
-  await supabase
-    .from("bookings")
-    .update({ total_price: totalPrice })
-    .eq("id", bookingId);
-
-  revalidateBookings({ bookingId, scope: "list" });
-  await syncBookingToGoogleCalendar(bookingId);
+  await recalcBookingTotal(supabase, bookingId);
+  await afterBookingServicesChange(bookingId);
   return { success: true, message: "Service added to booking." };
 }
 
@@ -423,21 +433,8 @@ export async function removeBookingService(
     return { success: false, message: error.message };
   }
 
-  const { data: bookingServices } = await supabase
-    .from("booking_services")
-    .select("price_snapshot")
-    .eq("booking_id", bookingId);
-
-  const totalPrice =
-    bookingServices?.reduce((sum, s) => sum + Number(s.price_snapshot), 0) ?? 0;
-
-  await supabase
-    .from("bookings")
-    .update({ total_price: totalPrice })
-    .eq("id", bookingId);
-
-  revalidateBookings({ bookingId, scope: "list" });
-  await syncBookingToGoogleCalendar(bookingId);
+  await recalcBookingTotal(supabase, bookingId);
+  await afterBookingServicesChange(bookingId);
   return { success: true, message: "Service removed from booking." };
 }
 

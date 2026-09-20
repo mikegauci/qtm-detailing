@@ -2,13 +2,9 @@ import Link from "next/link";
 import { format } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getBusinessToday } from "@/lib/utils/dates";
-import { getCustomerRelation } from "@/lib/admin/supabase-relations";
-import {
-  BOOKING_STATUS_COLORS,
-  BOOKING_STATUS_LABELS,
-  formatBookingDateRange,
-  LEAD_STATUS_LABELS,
-} from "@/lib/utils/booking";
+import { getRelation } from "@/lib/admin/supabase-relations";
+import { formatBookingDateRange, LEAD_STATUS_LABELS } from "@/lib/utils/booking";
+import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -17,19 +13,12 @@ export default async function AdminDashboardPage() {
   const today = getBusinessToday();
 
   const [
-    { count: todayBookingsCount },
     { count: newLeadsCount },
     { count: inProgressCount },
     { data: inventoryItems },
     { data: recentLeads },
     { data: todayBookings },
   ] = await Promise.all([
-    supabase
-      .from("bookings")
-      .select("*", { count: "exact", head: true })
-      .lte("booking_date", today)
-      .or(`end_date.gte.${today},and(end_date.is.null,booking_date.eq.${today})`)
-      .neq("status", "cancelled"),
     supabase
       .from("leads")
       .select("*", { count: "exact", head: true })
@@ -63,10 +52,12 @@ export default async function AdminDashboardPage() {
         item.quantity <= item.low_stock_threshold,
     ) ?? [];
 
+  const todayBookingsCount = todayBookings?.length ?? 0;
+
   const stats = [
     {
       label: "Today's Bookings",
-      value: todayBookingsCount ?? 0,
+      value: todayBookingsCount,
       href: "/admin/bookings",
     },
     {
@@ -159,7 +150,7 @@ export default async function AdminDashboardPage() {
             {todayBookings?.length ? (
               <ul className="divide-y divide-white/10">
                 {todayBookings.map((booking) => {
-                  const customer = getCustomerRelation(booking.customers);
+                  const customer = getRelation(booking.customers);
                   return (
                     <li key={booking.id} className="py-3 first:pt-0 last:pb-0">
                       <Link
@@ -177,11 +168,7 @@ export default async function AdminDashboardPage() {
                             )}
                           </p>
                         </div>
-                        <span
-                          className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${BOOKING_STATUS_COLORS[booking.status]}`}
-                        >
-                          {BOOKING_STATUS_LABELS[booking.status]}
-                        </span>
+                        <BookingStatusBadge status={booking.status} />
                       </Link>
                     </li>
                   );

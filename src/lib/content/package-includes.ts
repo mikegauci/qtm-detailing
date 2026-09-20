@@ -27,7 +27,7 @@ function applyImplicitIncludes(
   return result;
 }
 
-export function buildIncludesFromIncludedServices(
+function buildIncludesFromIncludedServices(
   includedServices: string[],
   comparisonFeatures: string[],
 ): boolean[] {
@@ -42,7 +42,7 @@ export function buildIncludesFromIncludedServices(
   return applyImplicitIncludes(includes, comparisonFeatures);
 }
 
-export function getPackageServiceSlug(packageName: string): string | undefined {
+function getPackageServiceSlug(packageName: string): string | undefined {
   return PACKAGE_TO_SERVICE_SLUG[packageName];
 }
 

@@ -1,13 +1,17 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/supabase/admin";
-import { getCustomerRelation } from "@/lib/admin/supabase-relations";
+import { getRelation } from "@/lib/admin/supabase-relations";
 import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
+import { formatBookingDateRange } from "@/lib/utils/booking";
 import {
-  BOOKING_STATUS_COLORS,
-  BOOKING_STATUS_LABELS,
-  formatBookingDateRange,
-} from "@/lib/utils/booking";
+  AdminDataTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+} from "@/components/admin/admin-data-table";
+import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
 import { Button } from "@/components/ui/button";
 
 export default async function BookingsPage() {
@@ -35,73 +39,10 @@ export default async function BookingsPage() {
         </Button>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/5 text-left text-white/60">
-              <th className="px-4 py-3 font-medium">Code</th>
-              <th className="px-4 py-3 font-medium">Customer</th>
-              <th className="px-4 py-3 font-medium">Dates</th>
-              <th className="px-4 py-3 font-medium">Vehicle</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Total</th>
-              <th className="px-4 py-3 font-medium"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings?.map((booking) => {
-              const customer = getCustomerRelation(booking.customers);
-              const bookingVehicles = Array.isArray(booking.booking_vehicles)
-                ? booking.booking_vehicles
-                : [];
-              return (
-              <tr
-                key={booking.id}
-                className="border-b border-white/5 hover:bg-white/5"
-              >
-                <td className="px-4 py-3 font-mono text-xs text-white/70">
-                  {booking.confirmation_code}
-                </td>
-                <td className="px-4 py-3">
-                  <p className="font-medium text-white">
-                    {customer?.full_name}
-                  </p>
-                  <p className="text-xs text-white/50">
-                    {customer?.email ?? customer?.phone ?? "—"}
-                  </p>
-                </td>
-                <td className="px-4 py-3 text-white/70">
-                  {formatBookingDateRange(
-                    booking.booking_date,
-                    booking.end_date,
-                  )}
-                </td>
-                <td className="px-4 py-3 text-white/70">
-                  {formatBookingVehiclesLabel(bookingVehicles)}
-                </td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${BOOKING_STATUS_COLORS[booking.status]}`}
-                  >
-                    {BOOKING_STATUS_LABELS[booking.status]}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-white/70">
-                  €{Number(booking.total_price).toFixed(2)}
-                </td>
-                <td className="px-4 py-3">
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/bookings/${booking.id}`}>View</Link>
-                  </Button>
-                </td>
-              </tr>
-            );
-            })}
-          </tbody>
-        </table>
-
-        {!bookings?.length && (
-          <p className="px-4 py-12 text-center text-sm text-white/50">
+      <AdminDataTable
+        isEmpty={!bookings?.length}
+        emptyMessage={
+          <>
             No bookings yet.{" "}
             <Link
               href="/admin/bookings/new"
@@ -110,9 +51,62 @@ export default async function BookingsPage() {
               Create the first one
             </Link>
             .
-          </p>
-        )}
-      </div>
+          </>
+        }
+      >
+        <AdminTableHead>
+          <AdminTableHeaderCell>Code</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Customer</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Dates</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Vehicle</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Status</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Total</AdminTableHeaderCell>
+          <AdminTableHeaderCell aria-hidden="true">&nbsp;</AdminTableHeaderCell>
+        </AdminTableHead>
+        <tbody>
+          {bookings?.map((booking) => {
+            const customer = getRelation(booking.customers);
+            const bookingVehicles = Array.isArray(booking.booking_vehicles)
+              ? booking.booking_vehicles
+              : [];
+            return (
+              <AdminTableRow key={booking.id}>
+                <AdminTableCell className="font-mono text-xs text-white/70">
+                  {booking.confirmation_code}
+                </AdminTableCell>
+                <AdminTableCell>
+                  <p className="font-medium text-white">
+                    {customer?.full_name}
+                  </p>
+                  <p className="text-xs text-white/50">
+                    {customer?.email ?? customer?.phone ?? "—"}
+                  </p>
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
+                  {formatBookingDateRange(
+                    booking.booking_date,
+                    booking.end_date,
+                  )}
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
+                  {formatBookingVehiclesLabel(bookingVehicles)}
+                </AdminTableCell>
+                <AdminTableCell>
+                  <BookingStatusBadge status={booking.status} />
+                </AdminTableCell>
+                <AdminTableCell className="text-white/70">
+                  €{Number(booking.total_price).toFixed(2)}
+                </AdminTableCell>
+                <AdminTableCell>
+                  <Button asChild size="sm" variant="outline">
+                    <Link href={`/admin/bookings/${booking.id}`}>View</Link>
+                  </Button>
+                </AdminTableCell>
+              </AdminTableRow>
+            );
+          })}
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }

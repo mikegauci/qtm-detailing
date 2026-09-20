@@ -130,49 +130,6 @@ export async function linkDrivePhoto(input: {
   }
 }
 
-export async function publishAllPhotos(
-  photoIds: string[],
-  options?: ImageProcessingOptions,
-): Promise<GalleryActionResult> {
-  if (photoIds.length === 0) {
-    return { success: false, message: "No photos to publish." };
-  }
-
-  let published = 0;
-  const errors: string[] = [];
-
-  for (const photoId of photoIds) {
-    const result = await publishPhoto(photoId, options);
-    if (result.success) {
-      published += 1;
-    } else {
-      errors.push(result.message);
-    }
-  }
-
-  if (published === 0) {
-    return {
-      success: false,
-      message: errors[0] ?? "Failed to publish photos.",
-    };
-  }
-
-  if (errors.length > 0) {
-    return {
-      success: true,
-      message: `Published ${published} of ${photoIds.length} photos. Some failed.`,
-    };
-  }
-
-  return {
-    success: true,
-    message:
-      published === 1
-        ? "Photo published to gallery."
-        : `Published ${published} photos to gallery.`,
-  };
-}
-
 export async function publishPhoto(
   photoId: string,
   options?: ImageProcessingOptions,
@@ -268,30 +225,6 @@ export async function updatePhotoMetadata(input: {
     return {
       success: false,
       message: err instanceof Error ? err.message : "Failed to update photo.",
-    };
-  }
-}
-
-export async function unpublishPhoto(photoId: string): Promise<GalleryActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-
-    const { error } = await supabase
-      .from("gallery_photos")
-      .update({ publish_to_gallery: false })
-      .eq("id", photoId);
-
-    if (error) {
-      return { success: false, message: error.message };
-    }
-
-    revalidatePath("/admin/gallery");
-    revalidateGalleryContent();
-    return { success: true, message: "Photo removed from public gallery." };
-  } catch (err) {
-    return {
-      success: false,
-      message: err instanceof Error ? err.message : "Failed to unpublish photo.",
     };
   }
 }

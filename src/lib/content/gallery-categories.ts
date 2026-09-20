@@ -43,7 +43,7 @@ export const galleryCategories: { id: GalleryCategory; label: string }[] = [
   ...galleryPhotoCategoryOptions,
 ];
 
-export const GALLERY_PHOTO_FALLBACK_LABEL = "Gallery photo";
+const GALLERY_PHOTO_FALLBACK_LABEL = "Gallery photo";
 
 export function getGalleryPhotoLabel(photo: { carName?: string }): string {
   return photo.carName ?? GALLERY_PHOTO_FALLBACK_LABEL;

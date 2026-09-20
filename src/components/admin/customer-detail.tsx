@@ -19,10 +19,7 @@ import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
 import { DeleteCustomerButton } from "@/components/admin/delete-customer-button";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import type { Tables } from "@/lib/supabase/types";
-import {
-  BOOKING_STATUS_COLORS,
-  BOOKING_STATUS_LABELS,
-} from "@/lib/utils/booking";
+import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -361,11 +358,10 @@ export function CustomerDetail({
                         {formatBookingVehiclesLabel(booking.booking_vehicles)}
                       </td>
                       <td className="py-3">
-                        <span
-                          className={`rounded-full border px-2 py-0.5 text-xs ${BOOKING_STATUS_COLORS[booking.status]}`}
-                        >
-                          {BOOKING_STATUS_LABELS[booking.status]}
-                        </span>
+                        <BookingStatusBadge
+                          status={booking.status}
+                          className="px-2 py-0.5"
+                        />
                       </td>
                       <td className="py-3">
                         <Input

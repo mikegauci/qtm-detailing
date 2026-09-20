@@ -1,9 +1,6 @@
 import { addDays, format, parseISO, startOfWeek } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
-import {
-  getCustomerRelation,
-  getRelation,
-} from "@/lib/admin/supabase-relations";
+import { getRelation } from "@/lib/admin/supabase-relations";
 import { syncBookingStatusesFromDates } from "@/lib/admin/sync-booking-statuses";
 import {
   BookingsCalendar,
@@ -90,7 +87,7 @@ export default async function CalendarPage() {
 
   const events: CalendarEvent[] =
     bookings?.map((booking) => {
-      const customer = getCustomerRelation(booking.customers);
+      const customer = getRelation(booking.customers);
       const bookingServices = Array.isArray(booking.booking_services)
         ? booking.booking_services
         : [];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { Pencil, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   createInventoryItem,
@@ -9,6 +9,15 @@ import {
   restockInventoryItem,
   updateInventoryItem,
 } from "@/app/actions/admin/inventory";
+import {
+  AdminDataTable,
+  AdminTableCell,
+  AdminTableHead,
+  AdminTableHeaderCell,
+  AdminTableRow,
+} from "@/components/admin/admin-data-table";
+import { InventoryItemFields } from "@/components/admin/inventory-item-fields";
+import { SubmitButton } from "@/components/ui/submit-button";
 import type { Tables } from "@/lib/supabase/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,8 +28,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 
 type InventoryItem = Tables<"inventory_items">;
 
@@ -111,90 +118,52 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
               <DialogTitle>Add inventory item</DialogTitle>
             </DialogHeader>
             <form action={handleCreate} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="create_name">Name</Label>
-                <Input id="create_name" name="name" required />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create_quantity">Quantity</Label>
-                  <Input
-                    id="create_quantity"
-                    name="quantity"
-                    type="number"
-                    min="0"
-                    defaultValue="0"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create_unit">Unit</Label>
-                  <Input id="create_unit" name="unit" placeholder="bottles, rolls" />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="create_category">Category</Label>
-                  <Input id="create_category" name="category" />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="create_threshold">Low stock threshold</Label>
-                  <Input
-                    id="create_threshold"
-                    name="low_stock_threshold"
-                    type="number"
-                    min="0"
-                  />
-                </div>
-              </div>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  "Create item"
-                )}
-              </Button>
+              <InventoryItemFields idPrefix="create" />
+              <SubmitButton
+                isPending={isPending}
+                label="Create item"
+              />
             </form>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-white/10">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-white/10 bg-white/5 text-left text-white/60">
-              <th className="px-4 py-3 font-medium">Name</th>
-              <th className="px-4 py-3 font-medium">Category</th>
-              <th className="px-4 py-3 font-medium">Quantity</th>
-              <th className="px-4 py-3 font-medium">Threshold</th>
-              <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map((item) => (
-              <tr
-                key={item.id}
-                className="border-b border-white/5 hover:bg-white/5"
-              >
-                <td className="px-4 py-3 font-medium text-white">{item.name}</td>
-                <td className="px-4 py-3 text-white/70">
-                  {item.category ?? "—"}
-                </td>
-                <td className="px-4 py-3 text-white/70">
-                  {item.quantity} {item.unit ?? ""}
-                </td>
-                <td className="px-4 py-3 text-white/70">
-                  {item.low_stock_threshold ?? "—"}
-                </td>
-                <td className="px-4 py-3">
-                  {isLowStock(item) ? (
-                    <Badge variant="warning">Low stock</Badge>
-                  ) : (
-                    <Badge variant="success">OK</Badge>
-                  )}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex gap-1">
+      <AdminDataTable
+        isEmpty={items.length === 0}
+        emptyMessage="No inventory items yet."
+      >
+        <AdminTableHead>
+          <AdminTableHeaderCell>Name</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Category</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Quantity</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Threshold</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Status</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Actions</AdminTableHeaderCell>
+        </AdminTableHead>
+        <tbody>
+          {items.map((item) => (
+            <AdminTableRow key={item.id}>
+              <AdminTableCell className="font-medium text-white">
+                {item.name}
+              </AdminTableCell>
+              <AdminTableCell className="text-white/70">
+                {item.category ?? "—"}
+              </AdminTableCell>
+              <AdminTableCell className="text-white/70">
+                {item.quantity} {item.unit ?? ""}
+              </AdminTableCell>
+              <AdminTableCell className="text-white/70">
+                {item.low_stock_threshold ?? "—"}
+              </AdminTableCell>
+              <AdminTableCell>
+                {isLowStock(item) ? (
+                  <Badge variant="warning">Low stock</Badge>
+                ) : (
+                  <Badge variant="success">OK</Badge>
+                )}
+              </AdminTableCell>
+              <AdminTableCell>
+                <div className="flex gap-1">
                     <Button
                       size="icon-sm"
                       variant="ghost"
@@ -220,60 +189,11 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
                           <DialogTitle>Edit item</DialogTitle>
                         </DialogHeader>
                         <form action={handleUpdate} className="space-y-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="edit_name">Name</Label>
-                            <Input
-                              id="edit_name"
-                              name="name"
-                              defaultValue={item.name}
-                              required
-                            />
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="edit_quantity">Quantity</Label>
-                              <Input
-                                id="edit_quantity"
-                                name="quantity"
-                                type="number"
-                                min="0"
-                                defaultValue={item.quantity}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="edit_unit">Unit</Label>
-                              <Input
-                                id="edit_unit"
-                                name="unit"
-                                defaultValue={item.unit ?? ""}
-                              />
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor="edit_category">Category</Label>
-                              <Input
-                                id="edit_category"
-                                name="category"
-                                defaultValue={item.category ?? ""}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="edit_threshold">
-                                Low stock threshold
-                              </Label>
-                              <Input
-                                id="edit_threshold"
-                                name="low_stock_threshold"
-                                type="number"
-                                min="0"
-                                defaultValue={item.low_stock_threshold ?? ""}
-                              />
-                            </div>
-                          </div>
-                          <Button type="submit" disabled={isPending}>
-                            Save changes
-                          </Button>
+                          <InventoryItemFields idPrefix="edit" item={item} />
+                          <SubmitButton
+                            isPending={isPending}
+                            label="Save changes"
+                          />
                         </form>
                       </DialogContent>
                     </Dialog>
@@ -287,18 +207,11 @@ export function InventoryManager({ items }: { items: InventoryItem[] }) {
                       <Trash2 className="h-4 w-4 text-red-400" />
                     </Button>
                   </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {items.length === 0 && (
-          <p className="px-4 py-12 text-center text-sm text-white/50">
-            No inventory items yet.
-          </p>
-        )}
-      </div>
+              </AdminTableCell>
+            </AdminTableRow>
+          ))}
+        </tbody>
+      </AdminDataTable>
     </div>
   );
 }

@@ -7,11 +7,17 @@ import { EditorTabBar } from "@/components/admin/editor-tab-bar";
 import {
   getFirstSectionId,
   getSectionConfig,
-  hasPreview,
   PAGE_COPY_NAV,
   PAGE_KEYS,
   type PageKey,
 } from "@/components/admin/page-copy-config";
+import {
+  createPageCopyState,
+  PREVIEW_SECTION_KEYS,
+  type PageCopyEditorInitialProps,
+  type PageCopySectionKey,
+  type PageCopyState,
+} from "@/components/admin/page-copy-state";
 import { PageSeoFields } from "@/components/admin/page-seo-fields";
 import { SaveSectionButton } from "@/components/admin/save-section-button";
 import { SectionHeadingFields } from "@/components/admin/section-heading-fields";
@@ -45,26 +51,7 @@ import type {
   WhyQtmContent,
 } from "@/types/page-sections";
 
-export type PageCopyEditorProps = {
-  hero: HeroContent;
-  whyQtm: WhyQtmContent;
-  ctaBand: CtaBandContent;
-  featuredServices: SectionHeadingContent;
-  packagesHeading: SectionHeadingContent;
-  packages: AdminPackageFormState[];
-  servicesHero: SectionHeadingContent;
-  faqHeading: SectionHeadingContent;
-  pricingInfo: PricingInfoContent;
-  aboutIntro: AboutIntroContent;
-  processSteps: ProcessStepsContent;
-  contactHero: SectionHeadingContent;
-  galleryHero: SectionHeadingContent;
-  homeSeo: PageSeoContent;
-  servicesSeo: PageSeoContent;
-  aboutSeo: PageSeoContent;
-  contactSeo: PageSeoContent;
-  gallerySeo: PageSeoContent;
-};
+export type PageCopyEditorProps = PageCopyEditorInitialProps;
 
 function FieldGroup({
   title,
@@ -264,30 +251,52 @@ export function PageCopyEditor({
   const [activeSection, setActiveSection] = useState(() =>
     getFirstSectionId("home"),
   );
-
-  const [heroContent, setHeroContent] = useState(hero);
-  const [whyContent, setWhyContent] = useState(whyQtm);
-  const [ctaContent, setCtaContent] = useState(ctaBand);
-  const [featuredServicesContent, setFeaturedServicesContent] =
-    useState(featuredServices);
-  const [servicesHeroContent, setServicesHeroContent] = useState(servicesHero);
-  const [faqHeadingContent, setFaqHeadingContent] = useState(faqHeading);
-  const [pricingInfoContent, setPricingInfoContent] = useState(pricingInfo);
-  const [aboutIntroContent, setAboutIntroContent] = useState(aboutIntro);
-  const [processStepsContent, setProcessStepsContent] = useState(processSteps);
-  const [contactHeroContent, setContactHeroContent] = useState(contactHero);
-  const [galleryHeroContent, setGalleryHeroContent] = useState(galleryHero);
-  const [homeSeoContent, setHomeSeoContent] = useState(homeSeo);
-  const [servicesSeoContent, setServicesSeoContent] = useState(servicesSeo);
-  const [aboutSeoContent, setAboutSeoContent] = useState(aboutSeo);
-  const [contactSeoContent, setContactSeoContent] = useState(contactSeo);
-  const [gallerySeoContent, setGallerySeoContent] = useState(gallerySeo);
+  const [sectionState, setSectionState] = useState<PageCopyState>(() =>
+    createPageCopyState({
+      hero,
+      whyQtm,
+      ctaBand,
+      featuredServices,
+      packagesHeading,
+      packages,
+      servicesHero,
+      faqHeading,
+      pricingInfo,
+      aboutIntro,
+      processSteps,
+      contactHero,
+      galleryHero,
+      homeSeo,
+      servicesSeo,
+      aboutSeo,
+      contactSeo,
+      gallerySeo,
+    }),
+  );
 
   const { save, isSaving } = usePageSectionSave();
 
+  const sectionKey = `${activePage}:${activeSection}` as PageCopySectionKey;
   const pageConfig = PAGE_COPY_NAV[activePage];
   const sectionConfig = getSectionConfig(activePage, activeSection);
-  const showPreview = hasPreview(activePage, activeSection);
+  const showPreview = PREVIEW_SECTION_KEYS.has(sectionKey);
+
+  function patchSection<K extends PageCopySectionKey>(
+    key: K,
+    updater: (prev: PageCopyState[K]) => PageCopyState[K],
+  ) {
+    setSectionState((prev) => ({
+      ...prev,
+      [key]: updater(prev[key]),
+    }));
+  }
+
+  function setSection<K extends PageCopySectionKey>(
+    key: K,
+    value: PageCopyState[K],
+  ) {
+    setSectionState((prev) => ({ ...prev, [key]: value }));
+  }
   const showSectionTabs = pageConfig.sections.length > 1;
 
   const pageTabs = PAGE_KEYS.map((page) => {
@@ -337,7 +346,8 @@ export function PageCopyEditor({
   }
 
   function renderSectionEditor() {
-    if (activePage === "home" && activeSection === "hero") {
+    switch (sectionKey) {
+      case "home:hero":
       return (
         <>
           <FieldGroup
@@ -347,9 +357,9 @@ export function PageCopyEditor({
             <div className="space-y-2">
               <Label>Eyebrow</Label>
               <Input
-                value={heroContent.eyebrow}
+                value={sectionState["home:hero"].eyebrow}
                 onChange={(e) =>
-                  setHeroContent((p) => ({ ...p, eyebrow: e.target.value }))
+                  patchSection("home:hero", (p) => ({ ...p, eyebrow: e.target.value }))
                 }
               />
             </div>
@@ -357,9 +367,9 @@ export function PageCopyEditor({
               <div className="space-y-2">
                 <Label>Title line 1 (gradient)</Label>
                 <Input
-                  value={heroContent.titleLine1}
+                  value={sectionState["home:hero"].titleLine1}
                   onChange={(e) =>
-                    setHeroContent((p) => ({
+                    patchSection("home:hero", (p) => ({
                       ...p,
                       titleLine1: e.target.value,
                     }))
@@ -369,9 +379,9 @@ export function PageCopyEditor({
               <div className="space-y-2">
                 <Label>Title line 2</Label>
                 <Input
-                  value={heroContent.titleLine2}
+                  value={sectionState["home:hero"].titleLine2}
                   onChange={(e) =>
-                    setHeroContent((p) => ({
+                    patchSection("home:hero", (p) => ({
                       ...p,
                       titleLine2: e.target.value,
                     }))
@@ -384,9 +394,9 @@ export function PageCopyEditor({
           <FieldGroup title="Description">
             <Textarea
               rows={4}
-              value={heroContent.description}
+              value={sectionState["home:hero"].description}
               onChange={(e) =>
-                setHeroContent((p) => ({ ...p, description: e.target.value }))
+                patchSection("home:hero", (p) => ({ ...p, description: e.target.value }))
               }
             />
           </FieldGroup>
@@ -398,18 +408,18 @@ export function PageCopyEditor({
             <div className="grid gap-4 sm:grid-cols-2">
               <CmsImageField
                 label="Mobile image"
-                value={heroContent.mobileImage}
+                value={sectionState["home:hero"].mobileImage}
                 onChange={(url) =>
-                  setHeroContent((p) => ({ ...p, mobileImage: url }))
+                  patchSection("home:hero", (p) => ({ ...p, mobileImage: url }))
                 }
                 folder="hero"
                 filename="hero-mobile"
               />
               <CmsImageField
                 label="Desktop image"
-                value={heroContent.desktopImage}
+                value={sectionState["home:hero"].desktopImage}
                 onChange={(url) =>
-                  setHeroContent((p) => ({ ...p, desktopImage: url }))
+                  patchSection("home:hero", (p) => ({ ...p, desktopImage: url }))
                 }
                 folder="hero"
                 filename="hero-desktop"
@@ -422,16 +432,16 @@ export function PageCopyEditor({
             description="Primary and secondary actions below the hero"
           >
             <CtaFields
-              primary={heroContent.primaryCta}
-              secondary={heroContent.secondaryCta}
+              primary={sectionState["home:hero"].primaryCta}
+              secondary={sectionState["home:hero"].secondaryCta}
               onPrimaryChange={(field, value) =>
-                setHeroContent((p) => ({
+                patchSection("home:hero", (p) => ({
                   ...p,
                   primaryCta: { ...p.primaryCta, [field]: value },
                 }))
               }
               onSecondaryChange={(field, value) =>
-                setHeroContent((p) => ({
+                patchSection("home:hero", (p) => ({
                   ...p,
                   secondaryCta: { ...p.secondaryCta, [field]: value },
                 }))
@@ -442,14 +452,12 @@ export function PageCopyEditor({
           <SaveSectionButton
             label="Save hero"
             isSaving={isSaving("home", "hero")}
-            onClick={() => save("home", "hero", heroContent)}
+            onClick={() => save("home", "hero", sectionState["home:hero"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "home" && activeSection === "why-qtm") {
+      case "home:why-qtm":
       return (
         <>
           <FieldGroup
@@ -457,9 +465,9 @@ export function PageCopyEditor({
             description="Heading and intro text above the reason cards"
           >
             <SectionHeadingFields
-              content={whyContent}
+              content={sectionState["home:why-qtm"]}
               onChange={(content) =>
-                setWhyContent({ ...whyContent, ...content })
+                patchSection("home:why-qtm", (p) => ({ ...p, ...content }))
               }
             />
           </FieldGroup>
@@ -469,7 +477,7 @@ export function PageCopyEditor({
             description="Expand each card to edit its copy"
           >
             <Accordion type="single" collapsible className="w-full">
-              {whyContent.reasons.map((reason, index) => (
+              {sectionState["home:why-qtm"].reasons.map((reason, index) => (
                 <AccordionItem
                   key={index}
                   value={`reason-${index}`}
@@ -486,7 +494,7 @@ export function PageCopyEditor({
                       <Input
                         value={reason.title}
                         onChange={(e) =>
-                          setWhyContent((p) => ({
+                          patchSection("home:why-qtm", (p) => ({
                             ...p,
                             reasons: p.reasons.map((r, i) =>
                               i === index
@@ -503,7 +511,7 @@ export function PageCopyEditor({
                         rows={3}
                         value={reason.description}
                         onChange={(e) =>
-                          setWhyContent((p) => ({
+                          patchSection("home:why-qtm", (p) => ({
                             ...p,
                             reasons: p.reasons.map((r, i) =>
                               i === index
@@ -523,33 +531,31 @@ export function PageCopyEditor({
           <SaveSectionButton
             label="Save why QTM"
             isSaving={isSaving("home", "why-qtm")}
-            onClick={() => save("home", "why-qtm", whyContent)}
+            onClick={() => save("home", "why-qtm", sectionState["home:why-qtm"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "home" && activeSection === "featured-services") {
+      case "home:featured-services":
       return (
         <>
           <SectionHeadingFields
-            content={featuredServicesContent}
-            onChange={setFeaturedServicesContent}
+            content={sectionState["home:featured-services"]}
+            onChange={(content) =>
+              setSection("home:featured-services", content)
+            }
           />
           <SaveSectionButton
             label="Save featured services"
             isSaving={isSaving("home", "featured-services")}
             onClick={() =>
-              save("home", "featured-services", featuredServicesContent)
+              save("home", "featured-services", sectionState["home:featured-services"])
             }
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "home" && activeSection === "packages") {
+      case "home:packages":
       return (
         <HomePackagesEditor
           key={packages
@@ -562,9 +568,7 @@ export function PageCopyEditor({
           packages={packages}
         />
       );
-    }
-
-    if (activePage === "home" && activeSection === "cta-band") {
+      case "home:cta-band":
       return (
         <>
           {sectionConfig?.note ? (
@@ -577,9 +581,9 @@ export function PageCopyEditor({
             <div className="space-y-2">
               <Label>Title</Label>
               <Input
-                value={ctaContent.title}
+                value={sectionState["home:cta-band"].title}
                 onChange={(e) =>
-                  setCtaContent((p) => ({ ...p, title: e.target.value }))
+                  patchSection("home:cta-band", (p) => ({ ...p, title: e.target.value }))
                 }
               />
             </div>
@@ -587,9 +591,9 @@ export function PageCopyEditor({
               <Label>Description</Label>
               <Textarea
                 rows={3}
-                value={ctaContent.description}
+                value={sectionState["home:cta-band"].description}
                 onChange={(e) =>
-                  setCtaContent((p) => ({
+                  patchSection("home:cta-band", (p) => ({
                     ...p,
                     description: e.target.value,
                   }))
@@ -600,16 +604,16 @@ export function PageCopyEditor({
 
           <FieldGroup title="Buttons">
             <CtaFields
-              primary={ctaContent.primaryCta}
-              secondary={ctaContent.secondaryCta}
+              primary={sectionState["home:cta-band"].primaryCta}
+              secondary={sectionState["home:cta-band"].secondaryCta}
               onPrimaryChange={(field, value) =>
-                setCtaContent((p) => ({
+                patchSection("home:cta-band", (p) => ({
                   ...p,
                   primaryCta: { ...p.primaryCta, [field]: value },
                 }))
               }
               onSecondaryChange={(field, value) =>
-                setCtaContent((p) => ({
+                patchSection("home:cta-band", (p) => ({
                   ...p,
                   secondaryCta: { ...p.secondaryCta, [field]: value },
                 }))
@@ -620,39 +624,35 @@ export function PageCopyEditor({
           <SaveSectionButton
             label="Save CTA band"
             isSaving={isSaving("home", "cta-band")}
-            onClick={() => save("home", "cta-band", ctaContent)}
+            onClick={() => save("home", "cta-band", sectionState["home:cta-band"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "services" && activeSection === "hero") {
+      case "services:hero":
       return (
         <>
           <SectionHeadingFields
-            content={servicesHeroContent}
-            onChange={setServicesHeroContent}
+            content={sectionState["services:hero"]}
+            onChange={(content) => setSection("services:hero", content)}
           />
           <SaveSectionButton
             label="Save hero"
             isSaving={isSaving("services", "hero")}
-            onClick={() => save("services", "hero", servicesHeroContent)}
+            onClick={() => save("services", "hero", sectionState["services:hero"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "services" && activeSection === "pricing-info") {
+      case "services:pricing-info":
       return (
         <>
           <div className="space-y-2">
             <Label>Title</Label>
             <Input
-              value={pricingInfoContent.title}
+              value={sectionState["services:pricing-info"].title}
               onChange={(e) =>
-                setPricingInfoContent((p) => ({
+                patchSection("services:pricing-info", (p) => ({
                   ...p,
                   title: e.target.value,
                 }))
@@ -663,9 +663,9 @@ export function PageCopyEditor({
             <Label>Paragraphs (one per line)</Label>
             <Textarea
               rows={8}
-              value={pricingInfoContent.paragraphs.join("\n")}
+              value={sectionState["services:pricing-info"].paragraphs.join("\n")}
               onChange={(e) =>
-                setPricingInfoContent((p) => ({
+                patchSection("services:pricing-info", (p) => ({
                   ...p,
                   paragraphs: e.target.value
                     .split("\n")
@@ -679,47 +679,43 @@ export function PageCopyEditor({
             label="Save pricing info"
             isSaving={isSaving("services", "pricing-info")}
             onClick={() =>
-              save("services", "pricing-info", pricingInfoContent)
+              save("services", "pricing-info", sectionState["services:pricing-info"])
             }
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "services" && activeSection === "faq-heading") {
+      case "services:faq-heading":
       return (
         <>
           <SectionHeadingFields
-            content={faqHeadingContent}
-            onChange={setFaqHeadingContent}
+            content={sectionState["services:faq-heading"]}
+            onChange={(content) => setSection("services:faq-heading", content)}
           />
           <SaveSectionButton
             label="Save FAQ heading"
             isSaving={isSaving("services", "faq-heading")}
-            onClick={() => save("services", "faq-heading", faqHeadingContent)}
+            onClick={() => save("services", "faq-heading", sectionState["services:faq-heading"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "about" && activeSection === "intro") {
+      case "about:intro":
       return (
         <>
           <SectionHeadingFields
-            content={aboutIntroContent}
+            content={sectionState["about:intro"]}
             onChange={(content) =>
-              setAboutIntroContent({ ...aboutIntroContent, ...content })
+              patchSection("about:intro", (p) => ({ ...p, ...content }))
             }
           />
           <div className="space-y-2">
             <Label>Mission paragraph</Label>
             <Textarea
               rows={4}
-              value={aboutIntroContent.mission}
+              value={sectionState["about:intro"].mission}
               onChange={(e) =>
-                setAboutIntroContent((p) => ({
+                patchSection("about:intro", (p) => ({
                   ...p,
                   mission: e.target.value,
                 }))
@@ -729,18 +725,18 @@ export function PageCopyEditor({
           <div className="grid gap-3 sm:grid-cols-2">
             <CmsImageField
               label="Mobile image"
-              value={aboutIntroContent.mobileImage}
+              value={sectionState["about:intro"].mobileImage}
               onChange={(url) =>
-                setAboutIntroContent((p) => ({ ...p, mobileImage: url }))
+                patchSection("about:intro", (p) => ({ ...p, mobileImage: url }))
               }
               folder="about"
               filename="about-page-mobile"
             />
             <CmsImageField
               label="Desktop image"
-              value={aboutIntroContent.desktopImage}
+              value={sectionState["about:intro"].desktopImage}
               onChange={(url) =>
-                setAboutIntroContent((p) => ({ ...p, desktopImage: url }))
+                patchSection("about:intro", (p) => ({ ...p, desktopImage: url }))
               }
               folder="about"
               filename="about-page"
@@ -749,23 +745,21 @@ export function PageCopyEditor({
           <SaveSectionButton
             label="Save intro"
             isSaving={isSaving("about", "intro")}
-            onClick={() => save("about", "intro", aboutIntroContent)}
+            onClick={() => save("about", "intro", sectionState["about:intro"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "about" && activeSection === "process-steps") {
+      case "about:process-steps":
       return (
         <>
           <SectionHeadingFields
-            content={processStepsContent}
+            content={sectionState["about:process-steps"]}
             onChange={(content) =>
-              setProcessStepsContent({ ...processStepsContent, ...content })
+              patchSection("about:process-steps", (p) => ({ ...p, ...content }))
             }
           />
-          {processStepsContent.steps.map((step, index) => (
+          {sectionState["about:process-steps"].steps.map((step, index) => (
             <div
               key={step.step}
               className="space-y-3 rounded-lg border border-white/10 p-4"
@@ -774,7 +768,7 @@ export function PageCopyEditor({
               <Input
                 value={step.title}
                 onChange={(e) =>
-                  setProcessStepsContent((p) => ({
+                  patchSection("about:process-steps", (p) => ({
                     ...p,
                     steps: p.steps.map((s, i) =>
                       i === index ? { ...s, title: e.target.value } : s,
@@ -786,7 +780,7 @@ export function PageCopyEditor({
                 rows={2}
                 value={step.description}
                 onChange={(e) =>
-                  setProcessStepsContent((p) => ({
+                  patchSection("about:process-steps", (p) => ({
                     ...p,
                     steps: p.steps.map((s, i) =>
                       i === index
@@ -801,91 +795,65 @@ export function PageCopyEditor({
           <SaveSectionButton
             label="Save process"
             isSaving={isSaving("about", "process-steps")}
-            onClick={() => save("about", "process-steps", processStepsContent)}
+            onClick={() => save("about", "process-steps", sectionState["about:process-steps"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "contact" && activeSection === "hero") {
+      case "contact:hero":
       return (
         <>
           <SectionHeadingFields
-            content={contactHeroContent}
-            onChange={setContactHeroContent}
+            content={sectionState["contact:hero"]}
+            onChange={(content) => setSection("contact:hero", content)}
           />
           <SaveSectionButton
             label="Save hero"
             isSaving={isSaving("contact", "hero")}
-            onClick={() => save("contact", "hero", contactHeroContent)}
+            onClick={() => save("contact", "hero", sectionState["contact:hero"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
-    }
-
-    if (activePage === "gallery" && activeSection === "hero") {
+      case "gallery:hero":
       return (
         <>
           <SectionHeadingFields
-            content={galleryHeroContent}
-            onChange={setGalleryHeroContent}
+            content={sectionState["gallery:hero"]}
+            onChange={(content) => setSection("gallery:hero", content)}
           />
           <SaveSectionButton
             label="Save hero"
             isSaving={isSaving("gallery", "hero")}
-            onClick={() => save("gallery", "hero", galleryHeroContent)}
+            onClick={() => save("gallery", "hero", sectionState["gallery:hero"])}
             className="border-t border-white/10 pt-4"
           />
         </>
       );
+      case "home:seo":
+      case "services:seo":
+      case "about:seo":
+      case "contact:seo":
+      case "gallery:seo":
+        return renderSeoEditor(activePage, sectionState[sectionKey], (content) =>
+          setSection(sectionKey, content),
+        );
+      default:
+        return null;
     }
-
-    if (activeSection === "seo") {
-      if (activePage === "home") {
-        return renderSeoEditor("home", homeSeoContent, setHomeSeoContent);
-      }
-      if (activePage === "services") {
-        return renderSeoEditor(
-          "services",
-          servicesSeoContent,
-          setServicesSeoContent,
-        );
-      }
-      if (activePage === "about") {
-        return renderSeoEditor("about", aboutSeoContent, setAboutSeoContent);
-      }
-      if (activePage === "contact") {
-        return renderSeoEditor(
-          "contact",
-          contactSeoContent,
-          setContactSeoContent,
-        );
-      }
-      if (activePage === "gallery") {
-        return renderSeoEditor(
-          "gallery",
-          gallerySeoContent,
-          setGallerySeoContent,
-        );
-      }
-    }
-
-    return null;
   }
 
   function renderPreview() {
-    if (activePage === "home" && activeSection === "hero") {
-      return <HeroPreview content={heroContent} />;
+    switch (sectionKey) {
+      case "home:hero":
+        return <HeroPreview content={sectionState["home:hero"]} />;
+      case "home:why-qtm":
+        return <WhyQtmPreview content={sectionState["home:why-qtm"]} />;
+      case "home:cta-band":
+        return <CtaBandPreview content={sectionState["home:cta-band"]} />;
+      default:
+        return null;
     }
-    if (activePage === "home" && activeSection === "why-qtm") {
-      return <WhyQtmPreview content={whyContent} />;
-    }
-    if (activePage === "home" && activeSection === "cta-band") {
-      return <CtaBandPreview content={ctaContent} />;
-    }
-    return null;
   }
 
   return (

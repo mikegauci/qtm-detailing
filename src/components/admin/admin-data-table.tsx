@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 type AdminDataTableProps = {
   children: ReactNode;
-  emptyMessage?: string;
+  emptyMessage?: ReactNode;
   isEmpty?: boolean;
   className?: string;
 };

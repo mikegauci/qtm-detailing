@@ -89,5 +89,3 @@ export function ServiceImageSlider({
     <InteractiveSlider images={images} alt={alt} className={className} />
   );
 }
-
-export { ServiceImageSliderFallback };

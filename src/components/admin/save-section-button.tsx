@@ -1,7 +1,6 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { cn } from "@/lib/utils";
 
 type SaveSectionButtonProps = {
@@ -19,9 +18,12 @@ export function SaveSectionButton({
 }: SaveSectionButtonProps) {
   return (
     <div className={cn("flex justify-end", className)}>
-      <Button onClick={onClick} disabled={isSaving}>
-        {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : label}
-      </Button>
+      <SubmitButton
+        type="button"
+        onClick={onClick}
+        isPending={isSaving}
+        label={label}
+      />
     </div>
   );
 }

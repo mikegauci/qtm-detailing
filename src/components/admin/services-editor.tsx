@@ -11,11 +11,10 @@ import type { SyntheticListenerMap } from "@dnd-kit/core/dist/hooks/utilities";
 import {
   SortableContext,
   arrayMove,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import { GripVertical } from "lucide-react";
+import { useSortableRow } from "@/components/admin/sortable-row";
 import { toast } from "sonner";
 import {
   deleteService,
@@ -126,19 +125,9 @@ function SortableServiceRow({
   isSelected: boolean;
   onSelect: () => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: service.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
+  const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow(
+    service.id,
+  );
 
   return (
     <div
@@ -150,7 +139,7 @@ function SortableServiceRow({
         service={service}
         isSelected={isSelected}
         onSelect={onSelect}
-        dragHandle={{ attributes, listeners }}
+        dragHandle={dragHandleProps ?? undefined}
       />
     </div>
   );

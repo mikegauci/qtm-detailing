@@ -63,7 +63,7 @@ export function getBookingEndDate(
   return endDate ?? startDate;
 }
 
-export function isBookingActiveOnDate(
+function isBookingActiveOnDate(
   date: string,
   bookingDate: string,
   endDate?: string | null,
@@ -72,7 +72,7 @@ export function isBookingActiveOnDate(
   return date >= bookingDate && date <= end;
 }
 
-export function isBookingPast(
+function isBookingPast(
   today: string,
   bookingDate: string,
   endDate?: string | null,

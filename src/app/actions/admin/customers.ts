@@ -223,27 +223,6 @@ export async function createVehicle(data: {
   return { success: true, message: "Vehicle added.", id: vehicle.id };
 }
 
-export async function updateVehicle(
-  id: string,
-  customerId: string,
-  data: {
-    make?: string | null;
-    model?: string | null;
-    vehicle_type?: string | null;
-  },
-): Promise<CustomerActionResult> {
-  const { supabase } = await requireAdmin();
-
-  const { error } = await supabase.from("vehicles").update(data).eq("id", id);
-
-  if (error) {
-    return { success: false, message: error.message };
-  }
-
-  revalidateCustomers({ customerId });
-  return { success: true, message: "Vehicle updated." };
-}
-
 export async function deleteVehicle(
   id: string,
   customerId: string,

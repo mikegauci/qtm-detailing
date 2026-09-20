@@ -1,6 +1,6 @@
 import { addDays, format, parseISO } from "date-fns";
 import { google } from "googleapis";
-import { getCustomerRelation, getRelation } from "@/lib/admin/supabase-relations";
+import { getRelation } from "@/lib/admin/supabase-relations";
 import { getOptionalSiteUrl } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/types";
@@ -16,7 +16,7 @@ const SCOPES = [
 const CALENDAR_NAME = "QTM Bookings";
 const CALENDAR_TIMEZONE = "Europe/Malta";
 
-export const GOOGLE_CALENDAR_SHARE_EMAILS = [
+const GOOGLE_CALENDAR_SHARE_EMAILS = [
   "mikegauci@gmail.com",
   "max.messina13@gmail.com",
 ] as const;
@@ -31,7 +31,7 @@ const STATUS_COLOR_IDS: Record<string, string> = {
 const BOOKING_SYNC_SELECT =
   "id, booking_date, end_date, status, notes, confirmation_code, google_event_id, customers(full_name), booking_vehicles(vehicles(make, model)), booking_services(services(name))";
 
-export type GoogleCalendarMetadata = {
+type GoogleCalendarMetadata = {
   calendar_id?: string;
   calendar_name?: string;
   connected_email?: string;
@@ -176,6 +176,24 @@ function isConflict(err: unknown): boolean {
   return googleStatus(err) === 409;
 }
 
+async function upsertCalendarTokens(input: {
+  access_token?: string | null;
+  refresh_token?: string | null;
+  expires_at?: string | null;
+  metadata?: Json | null;
+}) {
+  const stored = await loadStoredTokens();
+  const supabase = await createClient();
+  await supabase.from("integration_tokens").upsert({
+    provider: PROVIDER,
+    access_token: input.access_token ?? stored?.access_token ?? null,
+    refresh_token: input.refresh_token ?? stored?.refresh_token ?? null,
+    expires_at: input.expires_at ?? stored?.expires_at ?? null,
+    metadata: input.metadata ?? stored?.metadata ?? null,
+    updated_at: new Date().toISOString(),
+  });
+}
+
 async function getAuthenticatedOAuthClient() {
   const client = getOAuthClient();
   const stored = await loadStoredTokens();
@@ -193,15 +211,12 @@ async function getAuthenticatedOAuthClient() {
   });
 
   client.on("tokens", async (tokens) => {
-    const supabase = await createClient();
-    await supabase.from("integration_tokens").upsert({
-      provider: PROVIDER,
+    await upsertCalendarTokens({
       access_token: tokens.access_token ?? stored.access_token,
       refresh_token: tokens.refresh_token ?? stored.refresh_token,
       expires_at: tokens.expiry_date
         ? new Date(tokens.expiry_date).toISOString()
         : stored.expires_at,
-      updated_at: new Date().toISOString(),
     });
   });
 
@@ -213,21 +228,16 @@ export async function saveCalendarTokens(tokens: {
   refresh_token?: string | null;
   expiry_date?: number | null;
 }) {
-  const stored = await loadStoredTokens();
-  const supabase = await createClient();
-  await supabase.from("integration_tokens").upsert({
-    provider: PROVIDER,
-    access_token: tokens.access_token ?? stored?.access_token ?? null,
-    refresh_token: tokens.refresh_token ?? stored?.refresh_token ?? null,
+  await upsertCalendarTokens({
+    access_token: tokens.access_token,
+    refresh_token: tokens.refresh_token,
     expires_at: tokens.expiry_date
       ? new Date(tokens.expiry_date).toISOString()
-      : stored?.expires_at ?? null,
-    metadata: stored?.metadata ?? null,
-    updated_at: new Date().toISOString(),
+      : null,
   });
 }
 
-export async function isCalendarConnected(): Promise<boolean> {
+async function isCalendarConnected(): Promise<boolean> {
   const stored = await loadStoredTokens();
   return Boolean(stored?.refresh_token || stored?.access_token);
 }
@@ -363,7 +373,7 @@ function buildEventBody(booking: {
     | null;
 }) {
   const customerName =
-    getCustomerRelation(booking.customers)?.full_name ?? "Booking";
+    getRelation(booking.customers)?.full_name ?? "Booking";
   const serviceLabel = formatServiceLabel(booking.booking_services);
   const vehicleLabel = formatBookingVehiclesLabel(booking.booking_vehicles);
   const endDate = booking.end_date ?? booking.booking_date;

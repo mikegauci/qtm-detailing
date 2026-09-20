@@ -121,7 +121,7 @@ async function getAuthenticatedOAuthClient() {
   return client;
 }
 
-export async function getDriveClient() {
+async function getDriveClient() {
   const client = await getAuthenticatedOAuthClient();
   return google.drive({ version: "v3", auth: client });
 }

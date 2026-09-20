@@ -17,7 +17,7 @@ function comparePhotos(a: GalleryPhoto, b: GalleryPhoto): number {
   return a.id.localeCompare(b.id);
 }
 
-export function getProjectPhotos(
+function getProjectPhotos(
   photo: GalleryPhoto,
   photos: GalleryPhoto[],
 ): GalleryPhoto[] {

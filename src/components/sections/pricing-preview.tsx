@@ -1,5 +1,5 @@
-import { Check, X } from "lucide-react";
 import type { Package } from "@/types/content";
+import { FeatureList } from "@/components/ui/feature-list";
 import type { SectionHeadingContent } from "@/types/page-sections";
 import { PageSection } from "@/components/layout/page-section";
 import { SectionHeading, CTAButton } from "@/components/ui/section-heading";
@@ -59,26 +59,12 @@ export function PricingPreviewSection({
                 <p className="mt-2 text-sm text-muted-foreground">
                   {pkg.description}
                 </p>
-                <ul className="mt-6 flex-1 space-y-3">
-                  {pkg.features.map((feature) => (
-                    <li
-                      key={`included-${feature}`}
-                      className="flex items-start gap-2 text-sm text-muted-foreground"
-                    >
-                      <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-cyan-400" />
-                      {feature}
-                    </li>
-                  ))}
-                  {pkg.excludedFeatures.map((feature) => (
-                    <li
-                      key={`excluded-${feature}`}
-                      className="flex items-start gap-2 text-sm text-muted-foreground/70"
-                    >
-                      <X className="mt-0.5 h-4 w-4 shrink-0 text-red-400" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
+                <FeatureList
+                  included={pkg.features}
+                  excluded={pkg.excludedFeatures}
+                  className="mt-6 flex-1 space-y-3"
+                  includedIconClassName="text-brand-cyan-400"
+                />
                 <CTAButton
                   href={quoteUrl}
                   variant={pkg.popular ? "primary" : "outline"}

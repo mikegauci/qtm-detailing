@@ -24,11 +24,3 @@ export async function requireAdmin() {
 
   return { supabase, user };
 }
-
-export async function getOptionalUser() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  return { supabase, user };
-}

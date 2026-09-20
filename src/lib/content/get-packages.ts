@@ -1,4 +1,4 @@
-import type { Package, Service } from "@/types/content";
+import type { Package } from "@/types/content";
 import { CMS_CACHE_TAGS } from "@/lib/content/cache-tags";
 import { createCmsCache } from "@/lib/content/create-cms-cache";
 import { resolvePackageFeatures, resolvePackageExcludedFeatures, resolvePackageIncludes } from "@/lib/content/package-includes";
@@ -11,7 +11,7 @@ function parseIncludedServices(features: string[] | null): string[] {
     .map((feature) => feature.slice("Includes: ".length));
 }
 
-export function buildIncludedServicesBySlug(
+function buildIncludedServicesBySlug(
   services: { slug: string; features: string[] | null }[],
 ): Map<string, string[]> {
   return new Map(
@@ -19,16 +19,6 @@ export function buildIncludedServicesBySlug(
       service.slug,
       parseIncludedServices(service.features),
     ]),
-  );
-}
-
-export function buildIncludedServicesBySlugFromServices(
-  services: Service[],
-): Map<string, string[]> {
-  return new Map(
-    services
-      .filter((service) => service.category === "bundle")
-      .map((service) => [service.slug, service.includedServices ?? []]),
   );
 }
 
@@ -68,21 +58,6 @@ function mapDbPackage(
     ),
     excludedFeatures: resolvePackageExcludedFeatures(storedExcluded),
     includes: resolvedIncludes,
-  };
-}
-
-export function resolvePackageRecord(
-  row: Tables<"packages">,
-  comparisonFeatures: string[],
-  includedServicesBySlug: Map<string, string[]>,
-): Tables<"packages"> {
-  const mapped = mapDbPackage(row, comparisonFeatures, includedServicesBySlug);
-
-  return {
-    ...row,
-    features: mapped.features,
-    excluded_features: mapped.excludedFeatures,
-    includes: mapped.includes,
   };
 }
 

@@ -39,22 +39,27 @@ export function parseGalleryFilters(
   return { category, selectedCar, photoTypeFilter, currentPage };
 }
 
+function byCategory(photos: GalleryPhoto[], category: GalleryCategory) {
+  return category === "all"
+    ? photos
+    : photos.filter((photo) => photo.category === category);
+}
+
+function byCar(photos: GalleryPhoto[], car: string) {
+  return car === "all"
+    ? photos
+    : photos.filter((photo) => photo.carName === car);
+}
+
 export function filterGalleryPhotos(
   photos: GalleryPhoto[],
   filters: ReturnType<typeof parseGalleryFilters>,
 ): GalleryPhoto[] {
-  const categoryPhotos =
-    filters.category === "all"
-      ? photos
-      : photos.filter((photo) => photo.category === filters.category);
-
-  const byCar =
-    filters.selectedCar === "all"
-      ? categoryPhotos
-      : categoryPhotos.filter((photo) => photo.carName === filters.selectedCar);
-
   return sortPhotosForDisplay(
-    filterPhotosByType(byCar, filters.photoTypeFilter),
+    filterPhotosByType(
+      byCar(byCategory(photos, filters.category), filters.selectedCar),
+      filters.photoTypeFilter,
+    ),
   );
 }
 
@@ -62,13 +67,8 @@ export function getGalleryCarNames(
   photos: GalleryPhoto[],
   category: GalleryCategory,
 ): string[] {
-  const categoryPhotos =
-    category === "all"
-      ? photos
-      : photos.filter((photo) => photo.category === category);
-
   return Array.from(
-    new Set(categoryPhotos.map((photo) => photo.carName).filter(Boolean)),
+    new Set(byCategory(photos, category).map((photo) => photo.carName).filter(Boolean)),
   ).sort() as string[];
 }
 
@@ -76,12 +76,7 @@ export function getAvailableGalleryCategories(
   photos: GalleryPhoto[],
   selectedCar: string,
 ): GalleryPhotoCategory[] {
-  const carPhotos =
-    selectedCar === "all"
-      ? photos
-      : photos.filter((photo) => photo.carName === selectedCar);
-
-  return Array.from(new Set(carPhotos.map((photo) => photo.category)));
+  return Array.from(new Set(byCar(photos, selectedCar).map((photo) => photo.category)));
 }
 
 export function getComparisonPhotos(
@@ -89,12 +84,5 @@ export function getComparisonPhotos(
   category: GalleryCategory,
   selectedCar: string,
 ): GalleryPhoto[] {
-  const categoryPhotos =
-    category === "all"
-      ? photos
-      : photos.filter((photo) => photo.category === category);
-
-  return selectedCar === "all"
-    ? categoryPhotos
-    : categoryPhotos.filter((photo) => photo.carName === selectedCar);
+  return byCar(byCategory(photos, category), selectedCar);
 }

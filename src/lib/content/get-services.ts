@@ -89,8 +89,3 @@ export async function getServices(options?: {
 
   return getAllServicesCached();
 }
-
-export async function getServiceBySlug(slug: string): Promise<Service | undefined> {
-  const services = await getServices();
-  return services.find((s) => s.slug === slug);
-}

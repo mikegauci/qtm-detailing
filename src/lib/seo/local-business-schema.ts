@@ -3,7 +3,7 @@ import type { SiteConfig } from "@/types/content";
 import { buildOpeningHoursSpecification } from "@/lib/seo/opening-hours";
 import { getProductionSiteUrl, joinSiteUrl } from "@/lib/seo/site-url";
 
-export function getLocalBusinessId(baseUrl: string): string {
+function getLocalBusinessId(baseUrl: string): string {
   return `${baseUrl}/#business`;
 }
 

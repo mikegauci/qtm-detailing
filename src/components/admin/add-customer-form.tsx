@@ -1,8 +1,8 @@
 "use client";
 
 import { useRef, useTransition } from "react";
-import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { SubmitButton } from "@/components/ui/submit-button";
 import {
   createCustomer,
   createVehicle,
@@ -126,21 +126,14 @@ export function AddCustomerForm({
         </div>
       </div>
       <div className="flex gap-2">
-        <Button
+        <SubmitButton
           type="button"
           size="sm"
-          disabled={isPending}
+          isPending={isPending}
+          label={submitLabel}
+          pendingLabel="Adding..."
           onClick={handleSubmit}
-        >
-          {isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Adding...
-            </>
-          ) : (
-            submitLabel
-          )}
-        </Button>
+        />
         {onCancel && (
           <Button
             type="button"

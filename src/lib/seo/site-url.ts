@@ -1,4 +1,3 @@
-import { getOptionalSiteUrl } from "@/lib/env";
 import type { SiteConfig } from "@/types/content";
 
 export function normalizeSiteUrl(url: string): string {
@@ -13,11 +12,6 @@ export function joinSiteUrl(base: string, path: string): string {
 /** Canonical production URL from CMS — used for metadata, schema, and sitemap. */
 export function getProductionSiteUrl(settings: SiteConfig): string {
   return normalizeSiteUrl(settings.url);
-}
-
-/** Optional SITE_URL env override — prefer getProductionSiteUrl for SEO output. */
-export function getSiteBaseUrl(settings: SiteConfig): string {
-  return normalizeSiteUrl(getOptionalSiteUrl() || settings.url);
 }
 
 export function isPreviewSiteHost(host: string): boolean {

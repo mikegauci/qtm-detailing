@@ -1,5 +1,5 @@
-import { Check } from "lucide-react";
 import { cn, formatPrice } from "@/lib/utils";
+import { FeatureList } from "@/components/ui/feature-list";
 import type { PricingItem } from "@/types/pricing";
 
 type PricingCardProps = {
@@ -68,22 +68,13 @@ export function PricingCard({ item, className }: PricingCardProps) {
         </div>
 
         {hasIncludes && (
-          <ul
+          <FeatureList
+            included={item.includes}
             className={cn(
               "mt-6 grid gap-2 lg:mt-0",
               item.includes!.length >= 4 ? "sm:grid-cols-2" : "grid-cols-1",
             )}
-          >
-            {item.includes!.map((feature) => (
-              <li
-                key={feature}
-                className="flex items-start gap-2 text-sm text-muted-foreground"
-              >
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-purple-400" />
-                {feature}
-              </li>
-            ))}
-          </ul>
+          />
         )}
       </div>
 

@@ -6,7 +6,7 @@ import {
   normalizeSiteUrl,
 } from "@/lib/seo/site-url";
 
-export function getProductionHosts(settings: SiteConfig): Set<string> {
+function getProductionHosts(settings: SiteConfig): Set<string> {
   const hosts = new Set<string>(["qtmdetailing.mt", "www.qtmdetailing.mt"]);
 
   for (const candidate of [getProductionSiteUrl(settings), settings.url]) {
@@ -20,7 +20,7 @@ export function getProductionHosts(settings: SiteConfig): Set<string> {
   return hosts;
 }
 
-export async function getRequestHost(): Promise<string | null> {
+async function getRequestHost(): Promise<string | null> {
   const headerStore = await headers();
   return headerStore.get("host")?.split(":")[0]?.toLowerCase() ?? null;
 }

@@ -18,14 +18,8 @@ import {
 
 type Vehicle = Tables<"vehicles">;
 
-export function formatVehicleLabel(vehicle: Pick<Vehicle, "make" | "model">) {
+function formatVehicleLabel(vehicle: Pick<Vehicle, "make" | "model">) {
   return [vehicle.make, vehicle.model].filter(Boolean).join(" ") || "Unnamed";
-}
-
-export function formatVehicleLabels(
-  vehicles: Pick<Vehicle, "make" | "model">[],
-) {
-  return vehicles.map(formatVehicleLabel).join(", ");
 }
 
 type BaseProps = {

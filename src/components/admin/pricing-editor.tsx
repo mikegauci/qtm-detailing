@@ -9,10 +9,9 @@ import {
 import {
   SortableContext,
   arrayMove,
-  useSortable,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+import { useSortableRow } from "@/components/admin/sortable-row";
 import {
   ChevronRight,
   GripVertical,
@@ -126,71 +125,18 @@ function itemPriceSummary(tiers: unknown): string {
   return `${formatPrice(min)} – ${formatPrice(max)}`;
 }
 
-function SortableItemRow({
+function PricingItemRowContent({
   item,
   isSelected,
   onSelect,
+  dragHandleProps,
 }: {
   item: Tables<"pricing_items">;
   isSelected: boolean;
   onSelect: () => void;
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: item.id });
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
-      className={cn(isDragging && "opacity-60")}
-    >
-      <div
-        className={cn(
-          "flex items-center gap-2 rounded-lg border border-white/10 bg-surface-base",
-          isSelected && "border-brand-purple-400/40 bg-white/5",
-        )}
-      >
-        <button
-          type="button"
-          className="cursor-grab touch-none px-2 py-3 text-white/40 hover:text-white/70 active:cursor-grabbing"
-          aria-label={`Reorder ${item.title}`}
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onSelect}
-          className="flex min-w-0 flex-1 items-center justify-between gap-3 py-3 pr-3 text-left hover:bg-white/5"
-        >
-          <p className="truncate font-medium">{item.title}</p>
-          <span className="shrink-0 text-xs text-brand-cyan-400">
-            {itemPriceSummary(item.tiers)}
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function StaticItemRow({
-  item,
-  isSelected,
-  onSelect,
-}: {
-  item: Tables<"pricing_items">;
-  isSelected: boolean;
-  onSelect: () => void;
+  dragHandleProps?: NonNullable<
+    ReturnType<typeof useSortableRow>["dragHandleProps"]
+  >;
 }) {
   return (
     <div
@@ -199,9 +145,21 @@ function StaticItemRow({
         isSelected && "border-brand-purple-400/40 bg-white/5",
       )}
     >
-      <div className="px-2 py-3 text-white/20">
-        <GripVertical className="h-4 w-4" />
-      </div>
+      {dragHandleProps ? (
+        <button
+          type="button"
+          className="cursor-grab touch-none px-2 py-3 text-white/40 hover:text-white/70 active:cursor-grabbing"
+          aria-label={`Reorder ${item.title}`}
+          {...dragHandleProps.attributes}
+          {...dragHandleProps.listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      ) : (
+        <div className="px-2 py-3 text-white/20">
+          <GripVertical className="h-4 w-4" />
+        </div>
+      )}
       <button
         type="button"
         onClick={onSelect}
@@ -210,6 +168,123 @@ function StaticItemRow({
         <p className="truncate font-medium">{item.title}</p>
         <span className="shrink-0 text-xs text-brand-cyan-400">
           {itemPriceSummary(item.tiers)}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+function SortablePricingItemRow({
+  item,
+  isSelected,
+  onSelect,
+}: {
+  item: Tables<"pricing_items">;
+  isSelected: boolean;
+  onSelect: () => void;
+}) {
+  const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow(
+    item.id,
+  );
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(isDragging && "opacity-60")}
+    >
+      <PricingItemRowContent
+        item={item}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        dragHandleProps={dragHandleProps ?? undefined}
+      />
+    </div>
+  );
+}
+
+function PricingItemRow({
+  item,
+  isSelected,
+  onSelect,
+  sortable = false,
+}: {
+  item: Tables<"pricing_items">;
+  isSelected: boolean;
+  onSelect: () => void;
+  sortable?: boolean;
+}) {
+  if (sortable) {
+    return (
+      <SortablePricingItemRow
+        item={item}
+        isSelected={isSelected}
+        onSelect={onSelect}
+      />
+    );
+  }
+
+  return (
+    <PricingItemRowContent
+      item={item}
+      isSelected={isSelected}
+      onSelect={onSelect}
+    />
+  );
+}
+
+function SectionNavContent({
+  section,
+  isActive,
+  onSelect,
+  dragHandleProps,
+}: {
+  section: PricingSectionRow;
+  isActive: boolean;
+  onSelect: () => void;
+  dragHandleProps?: NonNullable<
+    ReturnType<typeof useSortableRow>["dragHandleProps"]
+  >;
+}) {
+  return (
+    <div
+      className={cn(
+        "flex items-center gap-1 rounded-lg border transition-colors",
+        isActive
+          ? "border-brand-purple-400/40 bg-brand-purple-500/10"
+          : "border-white/10 bg-surface-base hover:border-white/20",
+      )}
+    >
+      {dragHandleProps ? (
+        <button
+          type="button"
+          className="cursor-grab touch-none px-2 py-2.5 text-white/40 hover:text-white/70 active:cursor-grabbing"
+          aria-label={`Reorder ${section.heading ?? section.slug}`}
+          {...dragHandleProps.attributes}
+          {...dragHandleProps.listeners}
+        >
+          <GripVertical className="h-4 w-4" />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          "flex min-w-0 flex-1 items-center justify-between gap-2 py-2.5 text-left",
+          dragHandleProps ? "pr-3" : "rounded-lg px-3",
+        )}
+      >
+        <span className="truncate text-sm font-medium">
+          {section.heading || section.slug}
+        </span>
+        <span className="flex shrink-0 items-center gap-1 text-xs text-white/50">
+          {section.items.length}
+          <ChevronRight
+            className={cn(
+              "h-3.5 w-3.5 transition-transform",
+              isActive && "rotate-90 text-brand-purple-300",
+            )}
+          />
         </span>
       </button>
     </div>
@@ -225,60 +300,22 @@ function SortableSectionNav({
   isActive: boolean;
   onSelect: () => void;
 }) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: section.id });
+  const { setNodeRef, style, isDragging, dragHandleProps } = useSortableRow(
+    section.id,
+  );
 
   return (
     <div
       ref={setNodeRef}
-      style={{
-        transform: CSS.Transform.toString(transform),
-        transition,
-      }}
+      style={style}
       className={cn(isDragging && "opacity-60")}
     >
-      <div
-        className={cn(
-          "flex items-center gap-1 rounded-lg border transition-colors",
-          isActive
-            ? "border-brand-purple-400/40 bg-brand-purple-500/10"
-            : "border-white/10 bg-surface-base hover:border-white/20",
-        )}
-      >
-        <button
-          type="button"
-          className="cursor-grab touch-none px-2 py-2.5 text-white/40 hover:text-white/70 active:cursor-grabbing"
-          aria-label={`Reorder ${section.heading ?? section.slug}`}
-          {...attributes}
-          {...listeners}
-        >
-          <GripVertical className="h-4 w-4" />
-        </button>
-        <button
-          type="button"
-          onClick={onSelect}
-          className="flex min-w-0 flex-1 items-center justify-between gap-2 py-2.5 pr-3 text-left"
-        >
-          <span className="truncate text-sm font-medium">
-            {section.heading || section.slug}
-          </span>
-          <span className="flex shrink-0 items-center gap-1 text-xs text-white/50">
-            {section.items.length}
-            <ChevronRight
-              className={cn(
-                "h-3.5 w-3.5 transition-transform",
-                isActive && "rotate-90 text-brand-purple-300",
-              )}
-            />
-          </span>
-        </button>
-      </div>
+      <SectionNavContent
+        section={section}
+        isActive={isActive}
+        onSelect={onSelect}
+        dragHandleProps={dragHandleProps ?? undefined}
+      />
     </div>
   );
 }
@@ -606,20 +643,12 @@ export function PricingEditor({
   ) : (
     <div className="space-y-1.5">
       {sections.map((section) => (
-        <button
+        <SectionNavContent
           key={section.id}
-          type="button"
-          onClick={() => openSection(section)}
-          className={cn(
-            "flex w-full items-center justify-between rounded-lg border px-3 py-2.5 text-left text-sm font-medium transition-colors",
-            activeSectionId === section.id
-              ? "border-brand-purple-400/40 bg-brand-purple-500/10"
-              : "border-white/10 bg-surface-base hover:border-white/20",
-          )}
-        >
-          <span className="truncate">{section.heading || section.slug}</span>
-          <span className="text-xs text-white/50">{section.items.length}</span>
-        </button>
+          section={section}
+          isActive={activeSectionId === section.id}
+          onSelect={() => openSection(section)}
+        />
       ))}
     </div>
   );
@@ -638,11 +667,12 @@ export function PricingEditor({
         >
           <div className="space-y-2">
             {activeSection.items.map((item) => (
-              <SortableItemRow
+              <PricingItemRow
                 key={item.id}
                 item={item}
                 isSelected={selectedItemId === item.id}
                 onSelect={() => openItem(item)}
+                sortable
               />
             ))}
           </div>
@@ -651,7 +681,7 @@ export function PricingEditor({
     ) : activeSection ? (
       <div className="space-y-2">
         {activeSection.items.map((item) => (
-          <StaticItemRow
+          <PricingItemRow
             key={item.id}
             item={item}
             isSelected={selectedItemId === item.id}

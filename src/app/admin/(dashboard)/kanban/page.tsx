@@ -1,5 +1,5 @@
 import { requireAdmin } from "@/lib/supabase/admin";
-import { getCustomerRelation } from "@/lib/admin/supabase-relations";
+import { getRelation } from "@/lib/admin/supabase-relations";
 import { BookingsKanbanLazy } from "@/components/admin/lazy/bookings-kanban-lazy";
 
 export default async function KanbanPage() {
@@ -13,7 +13,7 @@ export default async function KanbanPage() {
 
   const kanbanBookings =
     bookings?.map((b) => {
-      const customer = getCustomerRelation(b.customers);
+      const customer = getRelation(b.customers);
       return {
         id: b.id,
         confirmation_code: b.confirmation_code,

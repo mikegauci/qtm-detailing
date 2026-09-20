@@ -6,7 +6,7 @@ type BookingVehicleRelation = {
   vehicles: VehicleRow | VehicleRow[] | null;
 };
 
-export function getVehiclesFromBookingRelation(
+function getVehiclesFromBookingRelation(
   bookingVehicles: BookingVehicleRelation[] | null | undefined,
 ): VehicleRow[] {
   return (bookingVehicles ?? [])

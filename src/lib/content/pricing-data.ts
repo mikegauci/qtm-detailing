@@ -6,10 +6,8 @@ import type {
 } from "@/types/pricing";
 
 export type {
-  PriceTier,
   PricingHero,
   PricingImportantInfo,
-  PricingItem,
   PricingSection,
 } from "@/types/pricing";
 

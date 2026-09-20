@@ -1,20 +1,25 @@
 "use server";
 
-import { revalidateAllContent } from "@/lib/content/revalidate-cms";
+import {
+  loadLinkedGalleryPhotoBuffer,
+  nextSortOrder,
+  reorderBySortOrder,
+  revalidateCmsContent,
+  withAdminAction,
+  type AdminSupabase,
+  type PricingItemRow,
+} from "@/lib/admin/cms-helpers";
 import {
   CMS_ASSETS_BUCKET,
   cmsAssetStoragePath,
   optimizeCmsImage,
 } from "@/lib/cms/upload-cms-asset";
 import { withCacheBuster } from "@/lib/cms/gallery-photo-url";
-import { loadGalleryPhotoBuffer } from "@/lib/cms/load-gallery-photo-buffer";
 import { processImageBuffer, type ImageProcessingOptions } from "@/lib/cms/process-image";
 import { defaultSiteConfig } from "@/lib/content/cms-defaults";
 import { mergeSiteConfig } from "@/lib/content/merge-site-config";
 import { downloadFile } from "@/lib/google-drive";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/supabase/admin";
-import type { Database } from "@/lib/supabase/types";
 import type { Json } from "@/lib/supabase/types";
 import type { ServiceImage } from "@/types/content";
 import { slugify } from "@/lib/utils";
@@ -114,23 +119,16 @@ export async function uploadCmsAssetFromLinked(
 ): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
+    const linked = await loadLinkedGalleryPhotoBuffer(supabase, galleryPhotoId);
 
-    const { data: photo, error: fetchError } = await supabase
-      .from("gallery_photos")
-      .select("*")
-      .eq("id", galleryPhotoId)
-      .single();
-
-    if (fetchError || !photo) {
-      return { success: false, message: "Linked photo not found." };
+    if ("error" in linked) {
+      return { success: false, message: linked.error };
     }
-
-    const buffer = await loadGalleryPhotoBuffer(photo);
 
     return saveCmsAssetBuffer(
       folder,
       filename ?? `asset-${Date.now()}`,
-      buffer,
+      linked.buffer,
     );
   } catch (err) {
     return {
@@ -238,31 +236,13 @@ export async function uploadServiceImageFromLinked(
 ): Promise<UploadActionResult> {
   try {
     const { supabase } = await requireAdmin();
+    const linked = await loadLinkedGalleryPhotoBuffer(supabase, galleryPhotoId);
 
-    const { data: photo, error: fetchError } = await supabase
-      .from("gallery_photos")
-      .select("*")
-      .eq("id", galleryPhotoId)
-      .single();
-
-    if (fetchError || !photo) {
-      return { success: false, message: "Linked photo not found." };
+    if ("error" in linked) {
+      return { success: false, message: linked.error };
     }
 
-    let buffer: Buffer;
-    if (photo.photo_url) {
-      const response = await fetch(photo.photo_url);
-      if (!response.ok) {
-        return { success: false, message: "Failed to load linked photo." };
-      }
-      buffer = Buffer.from(await response.arrayBuffer());
-    } else if (photo.drive_file_id) {
-      buffer = await downloadFile(photo.drive_file_id);
-    } else {
-      return { success: false, message: "Linked photo has no image source." };
-    }
-
-    return saveServiceImageBuffer(slug, buffer, processing);
+    return saveServiceImageBuffer(slug, linked.buffer, processing);
   } catch (err) {
     return {
       success: false,
@@ -270,10 +250,6 @@ export async function uploadServiceImageFromLinked(
         err instanceof Error ? err.message : "Failed to use linked photo.",
     };
   }
-}
-
-function revalidateContent() {
-  revalidateAllContent();
 }
 
 export async function upsertSiteSettings(
@@ -288,7 +264,7 @@ export async function upsertSiteSettings(
     });
 
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Site settings saved." };
   } catch (err) {
     return {
@@ -337,22 +313,15 @@ export async function upsertService(input: {
 
       if (error) return { success: false, message: error.message };
     } else {
-      const { data: lastService } = await supabase
-        .from("services")
-        .select("sort_order")
-        .order("sort_order", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
       const { error } = await supabase.from("services").insert({
         ...payload,
-        sort_order: (lastService?.sort_order ?? -1) + 1,
+        sort_order: await nextSortOrder(supabase, "services"),
       });
 
       if (error) return { success: false, message: error.message };
     }
 
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Service saved." };
   } catch (err) {
     return {
@@ -365,42 +334,28 @@ export async function upsertService(input: {
 export async function reorderServices(
   orderedIds: string[],
 ): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-
-    const results = await Promise.all(
-      orderedIds.map((id, index) =>
-        supabase.from("services").update({ sort_order: index }).eq("id", id),
-      ),
+  return withAdminAction("Failed to reorder services.", async (supabase) => {
+    const reorderError = await reorderBySortOrder(
+      supabase,
+      "services",
+      orderedIds,
     );
+    if (reorderError) {
+      return { success: false, message: reorderError.error };
+    }
 
-    const error = results.find((result) => result.error)?.error;
-    if (error) return { success: false, message: error.message };
-
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Services reordered." };
-  } catch (err) {
-    return {
-      success: false,
-      message:
-        err instanceof Error ? err.message : "Failed to reorder services.",
-    };
-  }
+  });
 }
 
 export async function deleteService(id: string): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
+  return withAdminAction("Failed to delete service.", async (supabase) => {
     const { error } = await supabase.from("services").delete().eq("id", id);
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Service deleted." };
-  } catch (err) {
-    return {
-      success: false,
-      message: err instanceof Error ? err.message : "Failed to delete service.",
-    };
-  }
+  });
 }
 
 export async function upsertFaq(input: {
@@ -426,7 +381,7 @@ export async function upsertFaq(input: {
       : await supabase.from("faqs").insert(payload);
 
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "FAQ saved." };
   } catch (err) {
     return {
@@ -441,7 +396,7 @@ export async function deleteFaq(id: string): Promise<ActionResult> {
     const { supabase } = await requireAdmin();
     const { error } = await supabase.from("faqs").delete().eq("id", id);
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "FAQ deleted." };
   } catch (err) {
     return {
@@ -474,7 +429,7 @@ export async function upsertTestimonial(input: {
       : await supabase.from("reviews").insert(payload);
 
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Testimonial saved." };
   } catch (err) {
     return {
@@ -490,7 +445,7 @@ export async function deleteTestimonial(id: string): Promise<ActionResult> {
     const { supabase } = await requireAdmin();
     const { error } = await supabase.from("reviews").delete().eq("id", id);
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Testimonial deleted." };
   } catch (err) {
     return {
@@ -519,7 +474,7 @@ export async function upsertPageSection(input: {
     );
 
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Page section saved." };
   } catch (err) {
     return {
@@ -529,8 +484,6 @@ export async function upsertPageSection(input: {
     };
   }
 }
-
-type AdminSupabase = SupabaseClient<Database>;
 
 export async function getAdminServices(supabase?: AdminSupabase) {
   const client = supabase ?? (await requireAdmin()).supabase;
@@ -599,7 +552,7 @@ export async function getAdminPricing(supabase?: AdminSupabase) {
       .order("sort_order", { ascending: true }),
   ]);
 
-  const itemsBySection = new Map<string, (typeof items extends (infer T)[] | null ? T : never)[]>();
+  const itemsBySection = new Map<string, PricingItemRow[]>();
   for (const item of items ?? []) {
     const list = itemsBySection.get(item.section_id) ?? [];
     list.push(item);
@@ -639,22 +592,15 @@ export async function upsertPricingSection(input: {
 
       if (error) return { success: false, message: error.message };
     } else {
-      const { data: lastSection } = await supabase
-        .from("pricing_sections")
-        .select("sort_order")
-        .order("sort_order", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
       const { error } = await supabase.from("pricing_sections").insert({
         ...payload,
-        sort_order: (lastSection?.sort_order ?? -1) + 1,
+        sort_order: await nextSortOrder(supabase, "pricing_sections"),
       });
 
       if (error) return { success: false, message: error.message };
     }
 
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Pricing section saved." };
   } catch (err) {
     return {
@@ -668,32 +614,19 @@ export async function upsertPricingSection(input: {
 export async function reorderPricingSections(
   orderedIds: string[],
 ): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-
-    const results = await Promise.all(
-      orderedIds.map((id, index) =>
-        supabase
-          .from("pricing_sections")
-          .update({ sort_order: index })
-          .eq("id", id),
-      ),
+  return withAdminAction("Failed to reorder pricing sections.", async (supabase) => {
+    const reorderError = await reorderBySortOrder(
+      supabase,
+      "pricing_sections",
+      orderedIds,
     );
+    if (reorderError) {
+      return { success: false, message: reorderError.error };
+    }
 
-    const error = results.find((result) => result.error)?.error;
-    if (error) return { success: false, message: error.message };
-
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Pricing sections reordered." };
-  } catch (err) {
-    return {
-      success: false,
-      message:
-        err instanceof Error
-          ? err.message
-          : "Failed to reorder pricing sections.",
-    };
-  }
+  });
 }
 
 export async function deletePricingSection(id: string): Promise<ActionResult> {
@@ -704,7 +637,7 @@ export async function deletePricingSection(id: string): Promise<ActionResult> {
       .delete()
       .eq("id", id);
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Pricing section deleted." };
   } catch (err) {
     return {
@@ -750,23 +683,18 @@ export async function upsertPricingItem(input: {
 
       if (error) return { success: false, message: error.message };
     } else {
-      const { data: lastItem } = await supabase
-        .from("pricing_items")
-        .select("sort_order")
-        .eq("section_id", input.section_id)
-        .order("sort_order", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
       const { error } = await supabase.from("pricing_items").insert({
         ...payload,
-        sort_order: (lastItem?.sort_order ?? -1) + 1,
+        sort_order: await nextSortOrder(supabase, "pricing_items", {
+          column: "section_id",
+          value: input.section_id,
+        }),
       });
 
       if (error) return { success: false, message: error.message };
     }
 
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Pricing item saved." };
   } catch (err) {
     return {
@@ -780,30 +708,19 @@ export async function upsertPricingItem(input: {
 export async function reorderPricingItems(
   orderedIds: string[],
 ): Promise<ActionResult> {
-  try {
-    const { supabase } = await requireAdmin();
-
-    const results = await Promise.all(
-      orderedIds.map((id, index) =>
-        supabase
-          .from("pricing_items")
-          .update({ sort_order: index })
-          .eq("id", id),
-      ),
+  return withAdminAction("Failed to reorder pricing items.", async (supabase) => {
+    const reorderError = await reorderBySortOrder(
+      supabase,
+      "pricing_items",
+      orderedIds,
     );
+    if (reorderError) {
+      return { success: false, message: reorderError.error };
+    }
 
-    const error = results.find((result) => result.error)?.error;
-    if (error) return { success: false, message: error.message };
-
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Pricing items reordered." };
-  } catch (err) {
-    return {
-      success: false,
-      message:
-        err instanceof Error ? err.message : "Failed to reorder pricing items.",
-    };
-  }
+  });
 }
 
 export async function deletePricingItem(id: string): Promise<ActionResult> {
@@ -811,7 +728,7 @@ export async function deletePricingItem(id: string): Promise<ActionResult> {
     const { supabase } = await requireAdmin();
     const { error } = await supabase.from("pricing_items").delete().eq("id", id);
     if (error) return { success: false, message: error.message };
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Pricing item deleted." };
   } catch (err) {
     return {
@@ -889,7 +806,7 @@ export async function saveHomePackagesSection(input: {
     const packageError = results.find((result) => result.error)?.error;
     if (packageError) return { success: false, message: packageError.message };
 
-    revalidateContent();
+    revalidateCmsContent();
     return { success: true, message: "Packages section saved." };
   } catch (err) {
     return {

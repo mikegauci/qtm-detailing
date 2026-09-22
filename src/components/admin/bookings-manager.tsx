@@ -124,12 +124,8 @@ export function BookingsManager({ bookings }: { bookings: Booking[] }) {
             Vehicle
           </AdminTableHeaderCell>
           <AdminTableHeaderCell>Status</AdminTableHeaderCell>
-          <AdminTableHeaderCell className="hidden sm:table-cell">
-            Deposit
-          </AdminTableHeaderCell>
-          <AdminTableHeaderCell className="hidden sm:table-cell">
-            Total
-          </AdminTableHeaderCell>
+          <AdminTableHeaderCell>Deposit</AdminTableHeaderCell>
+          <AdminTableHeaderCell>Total</AdminTableHeaderCell>
           <AdminTableHeaderCell aria-hidden="true" className="w-8" />
         </AdminTableHead>
         <tbody>
@@ -171,7 +167,6 @@ export function BookingsManager({ bookings }: { bookings: Booking[] }) {
                 </AdminTableCell>
                 <AdminTableCell
                   className={cn(
-                    "hidden sm:table-cell",
                     hasDeposit && !booking.deposit_paid
                       ? "text-white/40"
                       : "text-white/70",
@@ -181,7 +176,7 @@ export function BookingsManager({ bookings }: { bookings: Booking[] }) {
                     ? `€${Number(depositAmount).toFixed(2)}`
                     : "—"}
                 </AdminTableCell>
-                <AdminTableCell className="hidden text-white/70 sm:table-cell">
+                <AdminTableCell className="text-white/70">
                   €{Number(booking.total_price).toFixed(2)}
                 </AdminTableCell>
                 <AdminTableCell className="text-white/30">

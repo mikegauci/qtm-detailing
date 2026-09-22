@@ -1,6 +1,6 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import type { ComponentProps, KeyboardEvent, ReactNode } from "react";
 import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
@@ -47,12 +47,14 @@ export function AdminTableHead({ children }: { children: ReactNode }) {
 export function AdminTableHeaderCell({
   children,
   className,
-}: {
-  children: ReactNode;
-  className?: string;
+  ...props
+}: ComponentProps<"th"> & {
+  children?: ReactNode;
 }) {
   return (
-    <th className={cn("px-4 py-3 font-medium", className)}>{children}</th>
+    <th className={cn("px-4 py-3 font-medium", className)} {...props}>
+      {children}
+    </th>
   );
 }
 

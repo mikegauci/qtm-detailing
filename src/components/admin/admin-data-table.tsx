@@ -1,4 +1,7 @@
-import type { ReactNode } from "react";
+"use client";
+
+import type { KeyboardEvent, ReactNode } from "react";
+import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 type AdminDataTableProps = {
@@ -56,13 +59,38 @@ export function AdminTableHeaderCell({
 export function AdminTableRow({
   children,
   className,
+  href,
 }: {
   children: ReactNode;
   className?: string;
+  href?: string;
 }) {
+  const router = useRouter();
+
+  function handleNavigate() {
+    if (href) router.push(href);
+  }
+
+  function handleKeyDown(event: KeyboardEvent<HTMLTableRowElement>) {
+    if (!href) return;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      router.push(href);
+    }
+  }
+
   return (
     <tr
-      className={cn("border-b border-white/5 hover:bg-white/5", className)}
+      className={cn(
+        "border-b border-white/5",
+        href &&
+          "cursor-pointer hover:bg-white/5 focus-visible:bg-white/5 focus-visible:outline-none",
+        className,
+      )}
+      onClick={href ? handleNavigate : undefined}
+      onKeyDown={href ? handleKeyDown : undefined}
+      tabIndex={href ? 0 : undefined}
+      role={href ? "link" : undefined}
     >
       {children}
     </tr>

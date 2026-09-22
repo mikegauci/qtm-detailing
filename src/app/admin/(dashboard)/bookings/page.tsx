@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { ChevronRight, Plus } from "lucide-react";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getRelation } from "@/lib/admin/supabase-relations";
 import { formatBookingVehiclesLabel } from "@/lib/utils/booking-vehicles";
@@ -24,14 +24,14 @@ export default async function BookingsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Bookings</h1>
           <p className="mt-1 text-sm text-white/60">
             {bookings?.length ?? 0} booking{bookings?.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button asChild>
+        <Button asChild className="w-full sm:w-auto">
           <Link href="/admin/bookings/new">
             <Plus className="h-4 w-4" />
             New booking
@@ -58,10 +58,14 @@ export default async function BookingsPage() {
           <AdminTableHeaderCell>Code</AdminTableHeaderCell>
           <AdminTableHeaderCell>Customer</AdminTableHeaderCell>
           <AdminTableHeaderCell>Dates</AdminTableHeaderCell>
-          <AdminTableHeaderCell>Vehicle</AdminTableHeaderCell>
+          <AdminTableHeaderCell className="hidden md:table-cell">
+            Vehicle
+          </AdminTableHeaderCell>
           <AdminTableHeaderCell>Status</AdminTableHeaderCell>
-          <AdminTableHeaderCell>Total</AdminTableHeaderCell>
-          <AdminTableHeaderCell aria-hidden="true">&nbsp;</AdminTableHeaderCell>
+          <AdminTableHeaderCell className="hidden sm:table-cell">
+            Total
+          </AdminTableHeaderCell>
+          <AdminTableHeaderCell aria-hidden="true" className="w-8" />
         </AdminTableHead>
         <tbody>
           {bookings?.map((booking) => {
@@ -70,7 +74,10 @@ export default async function BookingsPage() {
               ? booking.booking_vehicles
               : [];
             return (
-              <AdminTableRow key={booking.id}>
+              <AdminTableRow
+                key={booking.id}
+                href={`/admin/bookings/${booking.id}`}
+              >
                 <AdminTableCell className="font-mono text-xs text-white/70">
                   {booking.confirmation_code}
                 </AdminTableCell>
@@ -88,19 +95,17 @@ export default async function BookingsPage() {
                     booking.end_date,
                   )}
                 </AdminTableCell>
-                <AdminTableCell className="text-white/70">
+                <AdminTableCell className="hidden text-white/70 md:table-cell">
                   {formatBookingVehiclesLabel(bookingVehicles)}
                 </AdminTableCell>
                 <AdminTableCell>
                   <BookingStatusBadge status={booking.status} />
                 </AdminTableCell>
-                <AdminTableCell className="text-white/70">
+                <AdminTableCell className="hidden text-white/70 sm:table-cell">
                   €{Number(booking.total_price).toFixed(2)}
                 </AdminTableCell>
-                <AdminTableCell>
-                  <Button asChild size="sm" variant="outline">
-                    <Link href={`/admin/bookings/${booking.id}`}>View</Link>
-                  </Button>
+                <AdminTableCell className="text-white/30">
+                  <ChevronRight className="h-4 w-4" aria-hidden />
                 </AdminTableCell>
               </AdminTableRow>
             );

@@ -11,7 +11,8 @@ import { joinSiteUrl } from "@/lib/seo/site-url";
 const PROVIDER = "google_calendar";
 const SCOPES = [
   "https://www.googleapis.com/auth/calendar",
-  "https://www.googleapis.com/auth/userinfo.email",
+  "openid",
+  "email",
 ];
 const CALENDAR_NAME = "QTM Bookings";
 const CALENDAR_TIMEZONE = "Europe/Malta";
@@ -70,9 +71,41 @@ export function getCalendarOAuthUrl(state?: string): string {
   return client.generateAuthUrl({
     access_type: "offline",
     prompt: "consent",
+    include_granted_scopes: true,
     scope: SCOPES,
     state,
   });
+}
+
+function isInvalidGrantError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+
+  const error = err as {
+    message?: string;
+    cause?: { message?: string };
+    response?: { data?: { error?: string } };
+  };
+
+  return (
+    error.message === "invalid_grant" ||
+    error.cause?.message === "invalid_grant" ||
+    error.response?.data?.error === "invalid_grant"
+  );
+}
+
+function getEmailFromIdToken(idToken?: string | null): string | null {
+  if (!idToken) return null;
+
+  try {
+    const payload = JSON.parse(
+      Buffer.from(idToken.split(".")[1], "base64url").toString("utf8"),
+    ) as { email?: string };
+    return typeof payload.email === "string"
+      ? payload.email.trim().toLowerCase()
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export async function exchangeCalendarCode(code: string) {
@@ -176,34 +209,66 @@ function isConflict(err: unknown): boolean {
   return googleStatus(err) === 409;
 }
 
-async function upsertCalendarTokens(input: {
-  access_token?: string | null;
-  refresh_token?: string | null;
-  expires_at?: string | null;
-  metadata?: Json | null;
-}) {
+async function upsertCalendarTokens(
+  input: {
+    access_token?: string | null;
+    refresh_token?: string | null;
+    expires_at?: string | null;
+    metadata?: Json | null;
+  },
+  options?: { replaceTokens?: boolean },
+) {
   const stored = await loadStoredTokens();
+  const replaceTokens = options?.replaceTokens ?? false;
   const supabase = await createClient();
   await supabase.from("integration_tokens").upsert({
     provider: PROVIDER,
-    access_token: input.access_token ?? stored?.access_token ?? null,
-    refresh_token: input.refresh_token ?? stored?.refresh_token ?? null,
-    expires_at: input.expires_at ?? stored?.expires_at ?? null,
+    access_token: replaceTokens
+      ? (input.access_token ?? null)
+      : (input.access_token ?? stored?.access_token ?? null),
+    refresh_token: replaceTokens
+      ? (input.refresh_token ?? null)
+      : (input.refresh_token ?? stored?.refresh_token ?? null),
+    expires_at: replaceTokens
+      ? (input.expires_at ?? null)
+      : (input.expires_at ?? stored?.expires_at ?? null),
     metadata: input.metadata ?? stored?.metadata ?? null,
     updated_at: new Date().toISOString(),
   });
+}
+
+async function clearInvalidCalendarConnection(): Promise<void> {
+  const stored = await loadStoredTokens();
+  if (!stored) return;
+
+  const metadata = {
+    ...parseMetadata(stored.metadata),
+    last_error: "Google Calendar connection expired. Reconnect to continue.",
+  };
+
+  const supabase = await createClient();
+  await supabase
+    .from("integration_tokens")
+    .update({
+      access_token: null,
+      refresh_token: null,
+      expires_at: null,
+      metadata: metadata as Json,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("provider", PROVIDER);
 }
 
 async function getAuthenticatedOAuthClient() {
   const client = getOAuthClient();
   const stored = await loadStoredTokens();
 
-  if (!stored?.access_token) {
+  if (!stored?.refresh_token && !stored?.access_token) {
     throw new Error("Google Calendar is not connected.");
   }
 
   client.setCredentials({
-    access_token: stored.access_token,
+    access_token: stored.access_token ?? undefined,
     refresh_token: stored.refresh_token ?? undefined,
     expiry_date: stored.expires_at
       ? new Date(stored.expires_at).getTime()
@@ -220,6 +285,19 @@ async function getAuthenticatedOAuthClient() {
     });
   });
 
+  try {
+    await client.getAccessToken();
+  } catch (err) {
+    if (isInvalidGrantError(err)) {
+      await clearInvalidCalendarConnection();
+      throw new Error(
+        "Google Calendar connection expired. Reconnect in Settings to continue.",
+      );
+    }
+
+    throw err;
+  }
+
   return client;
 }
 
@@ -227,14 +305,31 @@ export async function saveCalendarTokens(tokens: {
   access_token?: string | null;
   refresh_token?: string | null;
   expiry_date?: number | null;
+  id_token?: string | null;
 }) {
-  await upsertCalendarTokens({
-    access_token: tokens.access_token,
-    refresh_token: tokens.refresh_token,
-    expires_at: tokens.expiry_date
-      ? new Date(tokens.expiry_date).toISOString()
-      : null,
-  });
+  if (!tokens.refresh_token) {
+    throw new Error(
+      "Google did not return a refresh token. Disconnect, then connect again.",
+    );
+  }
+
+  const connectedEmail = getEmailFromIdToken(tokens.id_token);
+  const stored = await loadStoredTokens();
+  const metadata = stored?.metadata ? parseMetadata(stored.metadata) : {};
+
+  await upsertCalendarTokens(
+    {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      expires_at: tokens.expiry_date
+        ? new Date(tokens.expiry_date).toISOString()
+        : null,
+      metadata: connectedEmail
+        ? ({ ...metadata, connected_email: connectedEmail } as Json)
+        : (stored?.metadata ?? null),
+    },
+    { replaceTokens: true },
+  );
 }
 
 async function isCalendarConnected(): Promise<boolean> {
@@ -265,9 +360,8 @@ export async function setupSharedCalendar(): Promise<void> {
   const stored = await loadStoredTokens();
   const metadata = parseMetadata(stored?.metadata);
 
-  const oauth2 = google.oauth2({ version: "v2", auth });
-  const { data: profile } = await oauth2.userinfo.get();
-  const connectedEmail = profile.email?.trim().toLowerCase() || null;
+  const metadataEmail = metadata.connected_email?.trim().toLowerCase() || null;
+  const connectedEmail = metadataEmail;
 
   let calendarId = metadata.calendar_id;
   if (calendarId) {

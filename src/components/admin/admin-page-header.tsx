@@ -22,22 +22,31 @@ export function AdminPageHeader({
   className,
 }: AdminPageHeaderProps) {
   return (
-    <div className={cn("flex items-center justify-between", className)}>
-      <div className="flex items-center gap-4">
-        <Button asChild variant="ghost" size="sm">
+    <div
+      className={cn(
+        "flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between",
+        className,
+      )}
+    >
+      <div className="flex min-w-0 items-start gap-3 sm:items-center sm:gap-4">
+        <Button asChild variant="ghost" size="sm" className="shrink-0">
           <Link href={backHref}>
             <ArrowLeft className="h-4 w-4" />
             {backLabel}
           </Link>
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-white">{title}</h1>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-white sm:text-2xl">{title}</h1>
           {subtitle ? (
             <p className="text-sm text-white/60">{subtitle}</p>
           ) : null}
         </div>
       </div>
-      {actions}
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-3 sm:shrink-0">
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }

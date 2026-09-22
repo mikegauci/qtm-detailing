@@ -195,9 +195,9 @@ export function BookingDetail({
           </>
         }
         actions={
-          <div className="flex items-center gap-3">
+          <div className="flex w-full items-center gap-3 sm:w-auto">
             <Select value={booking.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-36">
+              <SelectTrigger className="w-full sm:w-36">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

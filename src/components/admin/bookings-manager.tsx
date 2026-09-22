@@ -125,6 +125,9 @@ export function BookingsManager({ bookings }: { bookings: Booking[] }) {
           </AdminTableHeaderCell>
           <AdminTableHeaderCell>Status</AdminTableHeaderCell>
           <AdminTableHeaderCell className="hidden sm:table-cell">
+            Deposit
+          </AdminTableHeaderCell>
+          <AdminTableHeaderCell className="hidden sm:table-cell">
             Total
           </AdminTableHeaderCell>
           <AdminTableHeaderCell aria-hidden="true" className="w-8" />
@@ -135,6 +138,9 @@ export function BookingsManager({ bookings }: { bookings: Booking[] }) {
             const bookingVehicles = Array.isArray(booking.booking_vehicles)
               ? booking.booking_vehicles
               : [];
+            const depositAmount = booking.deposit_amount;
+            const hasDeposit =
+              depositAmount != null && Number(depositAmount) > 0;
             return (
               <AdminTableRow
                 key={booking.id}
@@ -162,6 +168,18 @@ export function BookingsManager({ bookings }: { bookings: Booking[] }) {
                 </AdminTableCell>
                 <AdminTableCell>
                   <BookingStatusBadge status={booking.status} />
+                </AdminTableCell>
+                <AdminTableCell
+                  className={cn(
+                    "hidden sm:table-cell",
+                    hasDeposit && !booking.deposit_paid
+                      ? "text-white/40"
+                      : "text-white/70",
+                  )}
+                >
+                  {hasDeposit
+                    ? `€${Number(depositAmount).toFixed(2)}`
+                    : "—"}
                 </AdminTableCell>
                 <AdminTableCell className="hidden text-white/70 sm:table-cell">
                   €{Number(booking.total_price).toFixed(2)}

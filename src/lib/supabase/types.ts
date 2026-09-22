@@ -122,6 +122,8 @@ export type Database = {
           confirmation_code: string
           created_at: string
           customer_id: string
+          deposit_amount: number | null
+          deposit_paid: boolean
           end_date: string | null
           end_time: string
           google_event_id: string | null
@@ -137,6 +139,8 @@ export type Database = {
           confirmation_code: string
           created_at?: string
           customer_id: string
+          deposit_amount?: number | null
+          deposit_paid?: boolean
           end_date?: string | null
           end_time: string
           google_event_id?: string | null
@@ -152,6 +156,8 @@ export type Database = {
           confirmation_code?: string
           created_at?: string
           customer_id?: string
+          deposit_amount?: number | null
+          deposit_paid?: boolean
           end_date?: string | null
           end_time?: string
           google_event_id?: string | null
@@ -773,6 +779,7 @@ export type Database = {
         | "completed"
         | "paid"
         | "cancelled"
+        | "rescheduling"
       lead_status: "new" | "contacted" | "quoted" | "converted" | "lost"
     }
     CompositeTypes: {
@@ -908,6 +915,7 @@ export const Constants = {
         "completed",
         "paid",
         "cancelled",
+        "rescheduling",
       ],
       lead_status: ["new", "contacted", "quoted", "converted", "lost"],
     },

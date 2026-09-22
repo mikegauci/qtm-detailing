@@ -62,12 +62,30 @@ export function BookingDetail({
   const [isPending, startTransition] = useTransition();
   const [addServiceId, setAddServiceId] = useState("");
   const [chargedAmount, setChargedAmount] = useState("");
+  const [depositPaid, setDepositPaid] = useState(booking.deposit_paid);
+  const [depositAmount, setDepositAmount] = useState("");
 
   useEffect(() => {
     setChargedAmount(
       Number(booking.total_price) > 0 ? String(Number(booking.total_price)) : "",
     );
   }, [booking.total_price]);
+
+  useEffect(() => {
+    setDepositPaid(booking.deposit_paid);
+    setDepositAmount(
+      booking.deposit_amount !== null && Number(booking.deposit_amount) > 0
+        ? String(Number(booking.deposit_amount))
+        : "",
+    );
+  }, [booking.deposit_paid, booking.deposit_amount]);
+
+  const hasDepositChanges =
+    depositPaid !== booking.deposit_paid ||
+    depositAmount !==
+      (booking.deposit_amount !== null && Number(booking.deposit_amount) > 0
+        ? String(Number(booking.deposit_amount))
+        : "");
 
   const unaddedServices = availableServices.filter(
     (s) => !bookingServices.some((bs) => bs.service_id === s.id),
@@ -124,13 +142,24 @@ export function BookingDetail({
     const trimmedAmount = chargedAmount.trim();
     const parsedAmount =
       trimmedAmount === "" ? null : Number(trimmedAmount);
+    const trimmedDepositAmount = depositAmount.trim();
+    const parsedDepositAmount =
+      trimmedDepositAmount === "" ? null : Number(trimmedDepositAmount);
 
     if (trimmedAmount !== "" && (parsedAmount === null || parsedAmount < 0)) {
       toast.error("Enter a valid amount.");
       return;
     }
 
-    if (!addServiceId && parsedAmount === null) {
+    if (
+      trimmedDepositAmount !== "" &&
+      (parsedDepositAmount === null || parsedDepositAmount < 0)
+    ) {
+      toast.error("Enter a valid deposit amount.");
+      return;
+    }
+
+    if (!addServiceId && parsedAmount === null && !hasDepositChanges) {
       toast.error("Select a service or enter an amount.");
       return;
     }
@@ -147,16 +176,38 @@ export function BookingDetail({
         return;
       }
 
+      const updateData: {
+        total_price?: number;
+        deposit_paid?: boolean;
+        deposit_amount?: number | null;
+      } = {};
+
       if (parsedAmount !== null) {
-        const result = await updateBooking(booking.id, {
-          total_price: parsedAmount,
-        });
-        if (!result.success) {
-          toast.error(result.message);
-          return;
-        }
-        toast.success("Charged customer updated.");
+        updateData.total_price = parsedAmount;
       }
+
+      if (hasDepositChanges) {
+        updateData.deposit_paid = depositPaid;
+        updateData.deposit_amount = parsedDepositAmount;
+      }
+
+      if (Object.keys(updateData).length === 0) {
+        return;
+      }
+
+      const result = await updateBooking(booking.id, updateData);
+      if (!result.success) {
+        toast.error(result.message);
+        return;
+      }
+
+      toast.success(
+        parsedAmount !== null && hasDepositChanges
+          ? "Booking amounts updated."
+          : parsedAmount !== null
+            ? "Charged customer updated."
+            : "Deposit updated.",
+      );
     });
   }
 
@@ -326,7 +377,28 @@ export function BookingDetail({
             <p className="text-sm text-white/50">No services listed.</p>
           )}
 
-          <div className="flex flex-wrap items-center gap-2 border-t border-white/10 pt-4">
+          <div className="flex flex-wrap items-center gap-4 border-t border-white/10 pt-4">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-white">
+              <input
+                type="checkbox"
+                checked={depositPaid}
+                onChange={(event) => setDepositPaid(event.target.checked)}
+                className="rounded"
+              />
+              Paid deposit
+            </label>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={depositAmount}
+              onChange={(event) => setDepositAmount(event.target.value)}
+              placeholder="Deposit (EUR)"
+              className="w-40"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
             {unaddedServices.length > 0 && (
               <Select value={addServiceId} onValueChange={setAddServiceId}>
                 <SelectTrigger className="min-w-[200px] flex-1">
@@ -355,7 +427,9 @@ export function BookingDetail({
               onClick={handleServicesRow}
               disabled={
                 isPending ||
-                (!addServiceId && chargedAmount.trim() === "")
+                (!addServiceId &&
+                  chargedAmount.trim() === "" &&
+                  !hasDepositChanges)
               }
             >
               {isPending ? (

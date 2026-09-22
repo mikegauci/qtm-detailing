@@ -221,6 +221,8 @@ export async function updateBooking(
     end_date?: string | null;
     notes?: string | null;
     total_price?: number;
+    deposit_paid?: boolean;
+    deposit_amount?: number | null;
   },
 ): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();

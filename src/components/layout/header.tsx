@@ -50,10 +50,9 @@ export function Header({ settings }: { settings: SiteConfig }) {
           <Image
             src="/qtm-logo.png"
             alt="QTM Detailing"
-            width={140}
-            height={48}
-            className="h-10 w-auto sm:h-12"
-            style={{ width: "auto", height: "auto" }}
+            width={300}
+            height={136}
+            className="h-11 w-auto sm:h-14"
             priority
           />
         </Link>

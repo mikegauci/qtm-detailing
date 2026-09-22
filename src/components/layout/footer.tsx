@@ -15,10 +15,9 @@ export function Footer({ settings }: { settings: SiteConfig }) {
             <Image
               src="/qtm-logo.png"
               alt="QTM Detailing"
-              width={120}
-              height={40}
-              className="mb-4 h-10"
-              style={{ width: "auto", height: "auto" }}
+              width={300}
+              height={136}
+              className="mb-4 h-11 w-auto"
             />
             <p className="max-w-sm text-muted-foreground">
               {settings.description}

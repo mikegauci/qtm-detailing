@@ -19,8 +19,8 @@ import {
 } from "@/components/admin/customer-vehicles-panel";
 import { AdminPageHeader } from "@/components/admin/admin-page-header";
 import type { Tables } from "@/lib/supabase/types";
-import { BOOKING_STATUS_LABELS, formatBookingDateRange } from "@/lib/utils/booking";
-import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
+import { formatBookingDateRange } from "@/lib/utils/booking";
+import { BookingStatusSelect } from "@/components/admin/booking-status-select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -42,8 +42,6 @@ type Service = Tables<"services">;
 type BookingService = Tables<"booking_services"> & {
   services: Pick<Service, "id" | "name"> | null;
 };
-
-const STATUS_OPTIONS = Object.keys(BOOKING_STATUS_LABELS);
 
 export function BookingDetail({
   booking,
@@ -195,24 +193,11 @@ export function BookingDetail({
           </>
         }
         actions={
-          <div className="flex w-full items-center gap-3 sm:w-auto">
-            <Select value={booking.status} onValueChange={handleStatusChange}>
-              <SelectTrigger className="w-full sm:w-36">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {BOOKING_STATUS_LABELS[status]}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <BookingStatusBadge
-              status={booking.status}
-              className="hidden sm:inline"
-            />
-          </div>
+          <BookingStatusSelect
+            value={booking.status}
+            onValueChange={handleStatusChange}
+            disabled={isPending}
+          />
         }
       />
 

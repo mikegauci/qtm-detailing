@@ -28,6 +28,7 @@ const STATUS_COLOR_IDS: Record<string, string> = {
   completed: "10",
   paid: "3",
   rescheduling: "7",
+  consulting: "2",
 };
 
 const BOOKING_SYNC_SELECT =

@@ -16,6 +16,7 @@ export const BOOKING_STATUS_LABELS: Record<string, string> = {
   paid: "Paid",
   cancelled: "Cancelled",
   rescheduling: "Rescheduling",
+  consulting: "Consulting",
 };
 
 export const BOOKING_STATUS_COLORS: Record<string, string> = {
@@ -25,6 +26,7 @@ export const BOOKING_STATUS_COLORS: Record<string, string> = {
   paid: "bg-purple-500/20 text-purple-300 border-purple-500/30",
   cancelled: "bg-red-500/20 text-red-300 border-red-500/30",
   rescheduling: "bg-sky-500/20 text-sky-300 border-sky-500/30",
+  consulting: "bg-teal-500/20 text-teal-300 border-teal-500/30",
 };
 
 export const CALENDAR_STATUS_COLORS: Record<string, string> = {
@@ -34,6 +36,7 @@ export const CALENDAR_STATUS_COLORS: Record<string, string> = {
   paid: "#a855f7",
   cancelled: "#ef4444",
   rescheduling: "#0ea5e9",
+  consulting: "#14b8a6",
 };
 
 export const CALENDAR_LEGEND_STATUSES = [
@@ -43,6 +46,7 @@ export const CALENDAR_LEGEND_STATUSES = [
   "paid",
   "cancelled",
   "rescheduling",
+  "consulting",
 ] as const;
 
 export const LEAD_STATUS_LABELS: Record<string, string> = {
@@ -91,7 +95,12 @@ export function getCalendarDisplayStatus(
   endDate: string | null | undefined,
   today: string,
 ): string {
-  if (status === "cancelled" || status === "paid" || status === "rescheduling") {
+  if (
+    status === "cancelled" ||
+    status === "paid" ||
+    status === "rescheduling" ||
+    status === "consulting"
+  ) {
     return status;
   }
 

@@ -43,6 +43,7 @@ export function BookingForm({
     {},
   );
   const [showNewCustomer, setShowNewCustomer] = useState(false);
+  const [isConsultation, setIsConsultation] = useState(false);
 
   const customerVehicles = useMemo(() => {
     const customer = customers.find((c) => c.id === customerId);
@@ -81,7 +82,7 @@ export function BookingForm({
       toast.error("Please select a customer.");
       return;
     }
-    if (!selectedServices.length) {
+    if (!isConsultation && !selectedServices.length) {
       toast.error("Please select at least one service.");
       return;
     }
@@ -108,6 +109,7 @@ export function BookingForm({
         booking_date: formData.get("booking_date") as string,
         end_date: (formData.get("end_date") as string) || null,
         notes: (formData.get("notes") as string) || null,
+        status: isConsultation ? "consulting" : "booked",
         service_ids: selectedServices,
         service_prices: servicePricesPayload,
       });
@@ -225,12 +227,33 @@ export function BookingForm({
               <Label htmlFor="notes">Notes</Label>
               <Textarea id="notes" name="notes" rows={3} />
             </div>
+            <label className="flex cursor-pointer items-center gap-3 rounded-lg border border-white/10 p-3">
+              <input
+                type="checkbox"
+                checked={isConsultation}
+                onChange={(event) => setIsConsultation(event.target.checked)}
+                className="rounded"
+              />
+              <div>
+                <p className="font-medium text-white">Consultation</p>
+                <p className="text-sm text-white/50">
+                  Mark this as a consultation appointment instead of a detailing
+                  booking.
+                </p>
+              </div>
+            </label>
           </CardContent>
         </Card>
 
         <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Services</CardTitle>
+            {isConsultation && (
+              <p className="text-sm text-white/50">
+                Optional for consultations. Add services if you already know what
+                the customer wants to discuss.
+              </p>
+            )}
           </CardHeader>
           <CardContent>
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">

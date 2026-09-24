@@ -132,13 +132,26 @@ async function insertBookingVehicles(
 export async function createBooking(data: BookingInput): Promise<BookingActionResult> {
   const { supabase } = await requireAdmin();
 
-  const { data: services, error: servicesError } = await supabase
-    .from("services")
-    .select("id, price")
-    .in("id", data.service_ids);
+  const isConsultation = data.status === "consulting";
+  const serviceIds = [...new Set(data.service_ids)];
 
-  if (servicesError || !services?.length) {
+  if (!isConsultation && !serviceIds.length) {
     return { success: false, message: "Please select at least one service." };
+  }
+
+  let services: { id: string; price: number }[] = [];
+
+  if (serviceIds.length) {
+    const { data: fetchedServices, error: servicesError } = await supabase
+      .from("services")
+      .select("id, price")
+      .in("id", serviceIds);
+
+    if (servicesError || !fetchedServices?.length) {
+      return { success: false, message: "Please select at least one service." };
+    }
+
+    services = fetchedServices;
   }
 
   const totalPrice = services.reduce(
@@ -182,19 +195,21 @@ export async function createBooking(data: BookingInput): Promise<BookingActionRe
     return { success: false, message: error?.message ?? "Failed to create booking." };
   }
 
-  const serviceRows = services.map((s) => ({
-    booking_id: booking.id,
-    service_id: s.id,
-    price_snapshot: data.service_prices?.[s.id] ?? Number(s.price),
-  }));
+  if (services.length) {
+    const serviceRows = services.map((s) => ({
+      booking_id: booking.id,
+      service_id: s.id,
+      price_snapshot: data.service_prices?.[s.id] ?? Number(s.price),
+    }));
 
-  const { error: servicesInsertError } = await supabase
-    .from("booking_services")
-    .insert(serviceRows);
+    const { error: servicesInsertError } = await supabase
+      .from("booking_services")
+      .insert(serviceRows);
 
-  if (servicesInsertError) {
-    await supabase.from("bookings").delete().eq("id", booking.id);
-    return { success: false, message: servicesInsertError.message };
+    if (servicesInsertError) {
+      await supabase.from("bookings").delete().eq("id", booking.id);
+      return { success: false, message: servicesInsertError.message };
+    }
   }
 
   const vehiclesInsert = await insertBookingVehicles(

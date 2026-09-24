@@ -780,6 +780,7 @@ export type Database = {
         | "paid"
         | "cancelled"
         | "rescheduling"
+        | "consulting"
       lead_status: "new" | "contacted" | "quoted" | "converted" | "lost"
     }
     CompositeTypes: {
@@ -916,6 +917,7 @@ export const Constants = {
         "paid",
         "cancelled",
         "rescheduling",
+        "consulting",
       ],
       lead_status: ["new", "contacted", "quoted", "converted", "lost"],
     },

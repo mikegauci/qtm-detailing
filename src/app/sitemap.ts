@@ -13,7 +13,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const baseUrl = getProductionSiteUrl(settings);
-  const routes = ["/", "/services", "/gallery", "/about", "/contact"];
+  const routes = ["/", "/services", "/gallery", "/about", "/contact", "/privacy", "/terms"];
 
   return routes.map((route) => ({
     url: joinSiteUrl(baseUrl, route),

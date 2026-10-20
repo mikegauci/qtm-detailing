@@ -113,7 +113,20 @@ export function Footer({ settings }: { settings: SiteConfig }) {
             © {currentYear} {settings.name}. All rights reserved.
           </p>
           <p className="text-sm text-muted-foreground">
-            Premium automotive detailing · Malta
+            Premium automotive detailing · Malta ·{" "}
+            <Link
+              href="/privacy"
+              className="transition-colors hover:text-foreground"
+            >
+              Privacy
+            </Link>{" "}
+            ·{" "}
+            <Link
+              href="/terms"
+              className="transition-colors hover:text-foreground"
+            >
+              Terms
+            </Link>
           </p>
         </div>
       </div>

@@ -58,12 +58,37 @@ export default async function PrivacyPage() {
         <section>
           <h2>Google services</h2>
           <p>
-            Our internal admin system connects to Google Calendar and Google
-            Drive using Google sign-in. This is used only by QTM Detailing staff
-            to keep a shared calendar of bookings and to store vehicle photos.
-            Data obtained through Google APIs is used solely for these purposes,
-            is not shared with third parties, and is not used for advertising.
-            Our use of information received from Google APIs adheres to the{" "}
+            The QTM Detailing admin system lets our staff sign in with a Google
+            account. It is not available to customers or the public. When a staff
+            member connects their Google account, the app accesses:
+          </p>
+          <ul className="my-3">
+            <li>
+              <strong className="text-foreground">Email address</strong> (via
+              Google sign-in): to show which Google account is connected.
+            </li>
+            <li>
+              <strong className="text-foreground">Google Calendar</strong>: to
+              create a &ldquo;QTM Bookings&rdquo; calendar, share it with our
+              staff, and add, update or remove booking events on it when
+              bookings change in our admin system. We do not read or change any
+              other calendars or events.
+            </li>
+            <li>
+              <strong className="text-foreground">Google Drive (read-only)</strong>
+              : to list and display vehicle photos stored in our business Drive
+              folder. We do not create, change or delete Drive files.
+            </li>
+          </ul>
+          <p>
+            Google access tokens are stored securely in our database and are
+            used only by our server to perform the actions above. Google user
+            data is not sold, not shared with third parties, not used for
+            advertising, and not used to train AI models. You can remove the
+            app&apos;s access at any time from your Google Account&apos;s
+            third-party connections page, after which the stored tokens stop
+            working. Our use of information received from Google APIs adheres
+            to the{" "}
             <a
               href="https://developers.google.com/terms/api-services-user-data-policy"
               target="_blank"

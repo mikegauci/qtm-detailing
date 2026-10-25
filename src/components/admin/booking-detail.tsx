@@ -64,6 +64,9 @@ export function BookingDetail({
   const [chargedAmount, setChargedAmount] = useState("");
   const [depositPaid, setDepositPaid] = useState(booking.deposit_paid);
   const [depositAmount, setDepositAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState(
+    booking.payment_method ?? "",
+  );
 
   useEffect(() => {
     setChargedAmount(
@@ -80,12 +83,19 @@ export function BookingDetail({
     );
   }, [booking.deposit_paid, booking.deposit_amount]);
 
+  useEffect(() => {
+    setPaymentMethod(booking.payment_method ?? "");
+  }, [booking.payment_method]);
+
   const hasDepositChanges =
     depositPaid !== booking.deposit_paid ||
     depositAmount !==
       (booking.deposit_amount !== null && Number(booking.deposit_amount) > 0
         ? String(Number(booking.deposit_amount))
         : "");
+
+  const hasPaymentMethodChanges =
+    paymentMethod.trim() !== (booking.payment_method ?? "");
 
   const unaddedServices = availableServices.filter(
     (s) => !bookingServices.some((bs) => bs.service_id === s.id),
@@ -159,7 +169,12 @@ export function BookingDetail({
       return;
     }
 
-    if (!addServiceId && parsedAmount === null && !hasDepositChanges) {
+    if (
+      !addServiceId &&
+      parsedAmount === null &&
+      !hasDepositChanges &&
+      !hasPaymentMethodChanges
+    ) {
       toast.error("Select a service or enter an amount.");
       return;
     }
@@ -180,6 +195,7 @@ export function BookingDetail({
         total_price?: number;
         deposit_paid?: boolean;
         deposit_amount?: number | null;
+        payment_method?: string | null;
       } = {};
 
       if (parsedAmount !== null) {
@@ -189,6 +205,10 @@ export function BookingDetail({
       if (hasDepositChanges) {
         updateData.deposit_paid = depositPaid;
         updateData.deposit_amount = parsedDepositAmount;
+      }
+
+      if (hasPaymentMethodChanges) {
+        updateData.payment_method = paymentMethod.trim() || null;
       }
 
       if (Object.keys(updateData).length === 0) {
@@ -206,7 +226,9 @@ export function BookingDetail({
           ? "Booking amounts updated."
           : parsedAmount !== null
             ? "Charged customer updated."
-            : "Deposit updated.",
+            : hasDepositChanges
+              ? "Deposit updated."
+              : "Payment method updated.",
       );
     });
   }
@@ -396,6 +418,13 @@ export function BookingDetail({
               placeholder="Deposit (EUR)"
               className="w-40"
             />
+            <Input
+              type="text"
+              value={paymentMethod}
+              onChange={(event) => setPaymentMethod(event.target.value)}
+              placeholder="Payment method (e.g. Cash, BOV, Revolut)"
+              className="w-72"
+            />
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -429,7 +458,8 @@ export function BookingDetail({
                 isPending ||
                 (!addServiceId &&
                   chargedAmount.trim() === "" &&
-                  !hasDepositChanges)
+                  !hasDepositChanges &&
+                  !hasPaymentMethodChanges)
               }
             >
               {isPending ? (

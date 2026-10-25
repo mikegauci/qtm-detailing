@@ -129,6 +129,7 @@ export type Database = {
           google_event_id: string | null
           id: string
           notes: string | null
+          payment_method: string | null
           start_time: string
           status: Database["public"]["Enums"]["booking_status"]
           total_price: number
@@ -146,6 +147,7 @@ export type Database = {
           google_event_id?: string | null
           id?: string
           notes?: string | null
+          payment_method?: string | null
           start_time: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price: number
@@ -163,6 +165,7 @@ export type Database = {
           google_event_id?: string | null
           id?: string
           notes?: string | null
+          payment_method?: string | null
           start_time?: string
           status?: Database["public"]["Enums"]["booking_status"]
           total_price?: number

@@ -7,8 +7,20 @@ import { formatBookingDateRange, LEAD_STATUS_LABELS } from "@/lib/utils/booking"
 import { BookingStatusBadge } from "@/components/admin/booking-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  SalesStats,
+  type SalesBooking,
+  type SalesRange,
+} from "@/components/admin/sales-stats";
 
-export default async function AdminDashboardPage() {
+export default async function AdminDashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ range?: string }>;
+}) {
+  const { range: rangeParam } = await searchParams;
+  const range: SalesRange =
+    rangeParam === "last_month" || rangeParam === "all" ? rangeParam : "this_month";
   const { supabase } = await requireAdmin();
   const today = getBusinessToday();
 
@@ -18,6 +30,7 @@ export default async function AdminDashboardPage() {
     { data: inventoryItems },
     { data: recentLeads },
     { data: todayBookings },
+    { data: salesBookings },
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -43,6 +56,12 @@ export default async function AdminDashboardPage() {
       .or(`end_date.gte.${today},and(end_date.is.null,booking_date.eq.${today})`)
       .neq("status", "cancelled")
       .order("booking_date", { ascending: true }),
+    supabase
+      .from("bookings")
+      .select(
+        "booking_date, status, total_price, booking_services(price_snapshot, services(name))",
+      )
+      .neq("status", "cancelled"),
   ]);
 
   const lowStockItems =
@@ -98,6 +117,12 @@ export default async function AdminDashboardPage() {
           </Link>
         ))}
       </div>
+
+      <SalesStats
+        bookings={(salesBookings ?? []) as SalesBooking[]}
+        range={range}
+        today={today}
+      />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>

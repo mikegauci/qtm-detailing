@@ -126,35 +126,39 @@ export function SalesStats({
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stages.map((s) => (
-          <Card key={s.status}>
-            <CardContent className="pt-0">
-              <p className="text-sm text-white/60">
-                {BOOKING_STATUS_LABELS[s.status]}
-              </p>
-              <p className="mt-1 text-2xl font-bold text-white">
-                {currency.format(s.total)}
-              </p>
-              <p className="text-xs text-white/40">
-                {s.count} booking{s.count === 1 ? "" : "s"}
-              </p>
-            </CardContent>
-          </Card>
+          <Link key={s.status} href={`/admin/bookings?status=${s.status}`}>
+            <Card className="transition-colors hover:border-brand-purple-500/30">
+              <CardContent className="pt-0">
+                <p className="text-sm text-white/60">
+                  {BOOKING_STATUS_LABELS[s.status]}
+                </p>
+                <p className="mt-1 text-2xl font-bold text-white">
+                  {currency.format(s.total)}
+                </p>
+                <p className="text-xs text-white/40">
+                  {s.count} booking{s.count === 1 ? "" : "s"}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <Card>
-          <CardContent className="pt-0">
-            <p className="text-sm text-white/60">Pending payment (all time)</p>
-            <p className="mt-1 text-2xl font-bold text-white">
-              {currency.format(pendingTotal)}
-            </p>
-            <p className="text-xs text-white/40">
-              {pendingRows.length} completed booking
-              {pendingRows.length === 1 ? "" : "s"} awaiting payment
-            </p>
-          </CardContent>
-        </Card>
+        <Link href="/admin/bookings?status=completed">
+          <Card className="transition-colors hover:border-brand-purple-500/30">
+            <CardContent className="pt-0">
+              <p className="text-sm text-white/60">Pending payment (all time)</p>
+              <p className="mt-1 text-2xl font-bold text-white">
+                {currency.format(pendingTotal)}
+              </p>
+              <p className="text-xs text-white/40">
+                {pendingRows.length} completed booking
+                {pendingRows.length === 1 ? "" : "s"} awaiting payment
+              </p>
+            </CardContent>
+          </Card>
+        </Link>
         <Card>
           <CardContent className="pt-0">
             <p className="text-sm text-white/60">

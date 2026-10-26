@@ -44,8 +44,14 @@ type Booking = Tables<"bookings"> & {
 
 const STATUS_OPTIONS = Object.keys(BOOKING_STATUS_LABELS);
 
-export function BookingsManager({ bookings }: { bookings: Booking[] }) {
-  const [statusFilter, setStatusFilter] = useState("all");
+export function BookingsManager({
+  bookings,
+  initialStatus = "all",
+}: {
+  bookings: Booking[];
+  initialStatus?: string;
+}) {
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
 
   const filteredBookings = useMemo(() => {
     if (statusFilter === "all") return bookings;

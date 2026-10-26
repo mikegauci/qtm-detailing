@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 import { getRelation } from "@/lib/admin/supabase-relations";
-import { BOOKING_STATUS_LABELS } from "@/lib/utils/booking";
+import { BOOKING_STATUS_COLORS, BOOKING_STATUS_LABELS } from "@/lib/utils/booking";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type SalesRange = "this_month" | "last_month" | "all";
@@ -127,15 +127,17 @@ export function SalesStats({
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         {stages.map((s) => (
           <Link key={s.status} href={`/admin/bookings?status=${s.status}`}>
-            <Card className="transition-colors hover:border-brand-purple-500/30">
+            <Card
+              className={`transition-opacity hover:opacity-80 ${BOOKING_STATUS_COLORS[s.status]}`}
+            >
               <CardContent className="pt-0">
-                <p className="text-sm text-white/60">
+                <p className="text-sm opacity-80">
                   {BOOKING_STATUS_LABELS[s.status]}
                 </p>
-                <p className="mt-1 text-2xl font-bold text-white">
+                <p className="mt-1 text-2xl font-bold">
                   {currency.format(s.total)}
                 </p>
-                <p className="text-xs text-white/40">
+                <p className="text-xs opacity-60">
                   {s.count} booking{s.count === 1 ? "" : "s"}
                 </p>
               </CardContent>
@@ -146,25 +148,27 @@ export function SalesStats({
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Link href="/admin/bookings?status=completed">
-          <Card className="transition-colors hover:border-brand-purple-500/30">
+          <Card
+            className="transition-opacity hover:opacity-80 bg-red-500/20 text-red-300 border-red-500/30"
+          >
             <CardContent className="pt-0">
-              <p className="text-sm text-white/60">Pending payment (all time)</p>
-              <p className="mt-1 text-2xl font-bold text-white">
+              <p className="text-sm opacity-80">Pending payment (all time)</p>
+              <p className="mt-1 text-2xl font-bold">
                 {currency.format(pendingTotal)}
               </p>
-              <p className="text-xs text-white/40">
+              <p className="text-xs opacity-60">
                 {pendingRows.length} completed booking
                 {pendingRows.length === 1 ? "" : "s"} awaiting payment
               </p>
             </CardContent>
           </Card>
         </Link>
-        <Card>
+        <Card className="bg-amber-500/20 text-amber-300 border-amber-500/30">
           <CardContent className="pt-0">
-            <p className="text-sm text-white/60">
+            <p className="text-sm opacity-80">
               Pipeline (Booked + In Progress + Completed)
             </p>
-            <p className="mt-1 text-2xl font-bold text-white">
+            <p className="mt-1 text-2xl font-bold">
               {currency.format(pipelineTotal)}
             </p>
           </CardContent>

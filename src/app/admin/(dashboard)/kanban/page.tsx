@@ -1,9 +1,12 @@
+import { syncAllBookingStatuses } from "@/lib/admin/sync-booking-statuses";
+import { getBusinessToday } from "@/lib/utils/dates";
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getRelation } from "@/lib/admin/supabase-relations";
 import { BookingsKanbanLazy } from "@/components/admin/lazy/bookings-kanban-lazy";
 
 export default async function KanbanPage() {
   const { supabase } = await requireAdmin();
+  await syncAllBookingStatuses(supabase, getBusinessToday());
 
   const { data: bookings } = await supabase
     .from("bookings")

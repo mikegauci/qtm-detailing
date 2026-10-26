@@ -17,6 +17,7 @@ export async function syncBookingStatusesFromDates(
   supabase: BookingSupabase,
   bookings: BookingStatusRow[],
   today: string,
+  { revalidate = true }: { revalidate?: boolean } = {},
 ): Promise<Map<string, Enums<"booking_status">>> {
   const updates = new Map<string, Enums<"booking_status">>();
 
@@ -48,12 +49,33 @@ export async function syncBookingStatusesFromDates(
     throw new Error(failedUpdate.error.message);
   }
 
-  revalidatePath("/admin");
-  revalidatePath("/admin/bookings");
-  revalidatePath("/admin/kanban");
+  if (revalidate) {
+    revalidatePath("/admin");
+    revalidatePath("/admin/bookings");
+    revalidatePath("/admin/kanban");
+  }
   void Promise.all(
     [...updates.keys()].map((id) => syncBookingToGoogleCalendar(id)),
   );
 
   return updates;
+}
+
+/** Advances booked/in-progress bookings based on today's date, before a page reads them. */
+export async function syncAllBookingStatuses(
+  supabase: BookingSupabase,
+  today: string,
+) {
+  const { data } = await supabase
+    .from("bookings")
+    .select("id, status, booking_date, end_date")
+    .in("status", ["booked", "in_progress"]);
+
+  try {
+    await syncBookingStatusesFromDates(supabase, data ?? [], today, {
+      revalidate: false,
+    });
+  } catch (error) {
+    console.error("Booking status sync failed", error);
+  }
 }

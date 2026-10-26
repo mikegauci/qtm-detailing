@@ -26,15 +26,14 @@ export type SalesBooking = {
 
 const PIPELINE_STATUSES = ["booked", "in_progress", "completed"] as const;
 const STAGES = [
-  "consulting",
   "rescheduling",
   ...PIPELINE_STATUSES,
   "paid",
 ] as const;
 
-const currency = new Intl.NumberFormat("en-AU", {
+const currency = new Intl.NumberFormat("en-IE", {
   style: "currency",
-  currency: "AUD",
+  currency: "EUR",
   maximumFractionDigits: 0,
 });
 
@@ -71,6 +70,11 @@ export function SalesStats({
   const pipelineTotal = stages
     .filter((s) => (PIPELINE_STATUSES as readonly string[]).includes(s.status))
     .reduce((sum, s) => sum + s.total, 0);
+  const pendingRows = bookings.filter((b) => b.status === "completed");
+  const pendingTotal = pendingRows.reduce(
+    (sum, b) => sum + Number(b.total_price),
+    0,
+  );
   const avgJob = paid.count ? paid.total / paid.count : 0;
 
   const byService = new Map<string, number>();
@@ -138,7 +142,19 @@ export function SalesStats({
         ))}
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="pt-0">
+            <p className="text-sm text-white/60">Pending payment (all time)</p>
+            <p className="mt-1 text-2xl font-bold text-white">
+              {currency.format(pendingTotal)}
+            </p>
+            <p className="text-xs text-white/40">
+              {pendingRows.length} completed booking
+              {pendingRows.length === 1 ? "" : "s"} awaiting payment
+            </p>
+          </CardContent>
+        </Card>
         <Card>
           <CardContent className="pt-0">
             <p className="text-sm text-white/60">
@@ -165,18 +181,20 @@ export function SalesStats({
             <CardTitle>Paid revenue, last 6 months</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex h-40 items-end gap-3">
+            <div className="flex gap-3">
               {months.map((m) => (
                 <div key={m.key} className="flex flex-1 flex-col items-center gap-1">
                   <span className="text-xs text-white/60">
                     {currency.format(m.total)}
                   </span>
-                  <div
-                    className="w-full rounded-t bg-brand-purple-500/60"
-                    style={{
-                      height: `${maxMonth ? Math.max((m.total / maxMonth) * 100, m.total ? 4 : 0) : 0}%`,
-                    }}
-                  />
+                  <div className="flex h-36 w-full items-end">
+                    <div
+                      className="w-full rounded-t bg-brand-purple-500"
+                      style={{
+                        height: `${maxMonth ? Math.max((m.total / maxMonth) * 100, m.total ? 3 : 0) : 0}%`,
+                      }}
+                    />
+                  </div>
                   <span className="text-xs text-white/50">{m.label}</span>
                 </div>
               ))}
@@ -199,7 +217,7 @@ export function SalesStats({
                     </div>
                     <div className="mt-1 h-2 rounded bg-white/10">
                       <div
-                        className="h-2 rounded bg-brand-purple-500/60"
+                        className="h-2 rounded bg-brand-purple-500"
                         style={{ width: `${(total / maxService) * 100}%` }}
                       />
                     </div>

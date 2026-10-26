@@ -1,3 +1,5 @@
+import { syncAllBookingStatuses } from "@/lib/admin/sync-booking-statuses";
+import { getBusinessToday } from "@/lib/utils/dates";
 import { notFound } from "next/navigation";
 import { BookingDetail } from "@/components/admin/booking-detail";
 import { requireAdmin } from "@/lib/supabase/admin";
@@ -10,6 +12,7 @@ export default async function BookingDetailPage({
 }) {
   const { id } = await params;
   const { supabase } = await requireAdmin();
+  await syncAllBookingStatuses(supabase, getBusinessToday());
 
   const [{ data: bookingDetail }, { data: availableServices }] =
     await Promise.all([

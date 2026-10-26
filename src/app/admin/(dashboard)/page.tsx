@@ -1,3 +1,4 @@
+import { syncAllBookingStatuses } from "@/lib/admin/sync-booking-statuses";
 import Link from "next/link";
 import { format } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
@@ -23,6 +24,7 @@ export default async function AdminDashboardPage({
     rangeParam === "last_month" || rangeParam === "all" ? rangeParam : "this_month";
   const { supabase } = await requireAdmin();
   const today = getBusinessToday();
+  await syncAllBookingStatuses(supabase, today);
 
   const [
     { count: newLeadsCount },

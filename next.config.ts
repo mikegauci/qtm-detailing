@@ -26,6 +26,15 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "motion"],
   },
+  async redirects() {
+    return [
+      {
+        source: "/pricing",
+        destination: "/qtm-detailing-pricing-page",
+        permanent: true,
+      },
+    ];
+  },
   images: supabaseHost
     ? {
         remotePatterns: [

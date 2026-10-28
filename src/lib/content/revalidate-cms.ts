@@ -11,7 +11,7 @@ export function revalidatePublicContent() {
   revalidatePath("/gallery");
   revalidatePath("/about");
   revalidatePath("/contact");
-  revalidatePath("/pricing");
+  revalidatePath("/qtm-detailing-pricing-page");
 }
 
 export function revalidateGalleryContent() {

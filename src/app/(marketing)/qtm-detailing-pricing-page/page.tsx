@@ -18,7 +18,7 @@ import { getMarketingPageMetadata } from "@/lib/seo/page-metadata";
 export async function generateMetadata() {
   return getMarketingPageMetadata({
     pageKey: "pricing",
-    path: "/pricing",
+    path: "/qtm-detailing-pricing-page",
     defaultSeo: defaultPricingSeo,
   });
 }

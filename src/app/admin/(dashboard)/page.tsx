@@ -13,6 +13,7 @@ import {
   type SalesBooking,
   type SalesRange,
 } from "@/components/admin/sales-stats";
+import { PartnerSplitWidget } from "@/components/admin/partner-split-widget";
 
 export default async function AdminDashboardPage({
   searchParams,
@@ -33,6 +34,8 @@ export default async function AdminDashboardPage({
     { data: recentLeads },
     { data: todayBookings },
     { data: salesBookings },
+    { data: financeExpenses },
+    { data: partnerPayouts },
   ] = await Promise.all([
     supabase
       .from("leads")
@@ -64,6 +67,8 @@ export default async function AdminDashboardPage({
         "booking_date, status, total_price, booking_services(price_snapshot, services(name))",
       )
       .neq("status", "cancelled"),
+    supabase.from("finance_expenses").select("expense_date, category, amount, paid_on"),
+    supabase.from("partner_payouts").select("paid_on, amount, direction"),
   ]);
 
   const lowStockItems =
@@ -124,6 +129,16 @@ export default async function AdminDashboardPage({
         bookings={(salesBookings ?? []) as SalesBooking[]}
         range={range}
         today={today}
+      />
+
+      <PartnerSplitWidget
+        revenue={(salesBookings ?? []).filter((b) => b.status === "paid")}
+        expenses={financeExpenses ?? []}
+        payouts={partnerPayouts ?? []}
+        range={range}
+        today={today}
+        basePath="/admin"
+        showManageLink
       />
 
       <div className="grid gap-6 lg:grid-cols-2">

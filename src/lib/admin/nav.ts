@@ -14,6 +14,7 @@ import {
   Euro,
   Boxes,
   ListOrdered,
+  Wallet,
 } from "lucide-react";
 
 export const crmNav = [
@@ -24,6 +25,7 @@ export const crmNav = [
   { label: "Bookings", href: "/admin/bookings", icon: ListOrdered },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Inventory", href: "/admin/inventory", icon: Boxes },
+  { label: "Finances", href: "/admin/finances", icon: Wallet },
 ] as const;
 
 export const contentNav = [

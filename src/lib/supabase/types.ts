@@ -260,6 +260,42 @@ export type Database = {
         }
         Relationships: []
       }
+      finance_expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          invoice_path: string | null
+          notes: string | null
+          paid_on: string | null
+        }
+        Insert: {
+          amount: number
+          category: string
+          created_at?: string
+          description: string
+          expense_date: string
+          id?: string
+          invoice_path?: string | null
+          notes?: string | null
+          paid_on?: string | null
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          invoice_path?: string | null
+          notes?: string | null
+          paid_on?: string | null
+        }
+        Relationships: []
+      }
       gallery_photos: {
         Row: {
           ai_enhanced_at: string | null
@@ -445,6 +481,47 @@ export type Database = {
           sort_order?: number
         }
         Relationships: []
+      }
+      partner_payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          direction: string
+          expense_id: string | null
+          id: string
+          method: string | null
+          notes: string | null
+          paid_on: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          direction?: string
+          expense_id?: string | null
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paid_on: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          direction?: string
+          expense_id?: string | null
+          id?: string
+          method?: string | null
+          notes?: string | null
+          paid_on?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_payouts_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "finance_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pricing_items: {
         Row: {

@@ -1,12 +1,3 @@
-import { format, parseISO } from "date-fns";
-
-export type FinanceRange = "this_month" | "last_month" | "all";
-
-export const FINANCE_RANGE_LABELS: Record<FinanceRange, string> = {
-  this_month: "This month",
-  last_month: "Last month",
-  all: "All time",
-};
 
 export const EXPENSE_CATEGORIES = ["products", "other", "utilities"] as const;
 export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
@@ -38,15 +29,6 @@ export function incubatorShareOn(date: string) {
 export function currentSplitLabel(today: string) {
   const mine = incubatorShareOn(today);
   return `${Math.round((1 - mine) * 100)}/${Math.round(mine * 100)}`;
-}
-
-export function inFinanceRange(date: string, range: FinanceRange, today: string) {
-  if (range === "all") return true;
-  const month = today.slice(0, 7);
-  if (range === "this_month") return date.startsWith(month);
-  const d = parseISO(`${month}-01`);
-  d.setMonth(d.getMonth() - 1);
-  return date.startsWith(format(d, "yyyy-MM"));
 }
 
 export type RevenueRow = { booking_date: string; total_price: number };

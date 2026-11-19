@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { Info } from "lucide-react";
+import { DATE_RANGE_LABELS, inDateRange, type DateRange } from "@/lib/admin/date-range";
+import { DateRangeTabs } from "@/components/admin/date-range-tabs";
 import {
-  FINANCE_RANGE_LABELS,
   PARTNER_NAMES,
   SETTLED_BEFORE,
   SETTLED_BEFORE_LABEL,
   currentSplitLabel,
   euro,
-  inFinanceRange,
   summarize,
   type ExpenseRow,
-  type FinanceRange,
   type PayoutRow,
   type RevenueRow,
 } from "@/lib/admin/partner-split";
@@ -56,7 +55,7 @@ export function PartnerSplitWidget({
   revenue: RevenueRow[];
   expenses: ExpenseRow[];
   payouts: PayoutRow[];
-  range: FinanceRange;
+  range: DateRange;
   today: string;
   basePath: string;
   showManageLink?: boolean;
@@ -72,9 +71,9 @@ export function PartnerSplitWidget({
     pendingPayouts,
   );
   const scoped = summarize(
-    revenue.filter((r) => inFinanceRange(r.booking_date, range, today)),
-    paidExpenses.filter((e) => inFinanceRange(e.expense_date, range, today)),
-    payouts.filter((p) => inFinanceRange(p.paid_on, range, today)),
+    revenue.filter((r) => inDateRange(r.booking_date, range, today)),
+    paidExpenses.filter((e) => inDateRange(e.expense_date, range, today)),
+    payouts.filter((p) => inDateRange(p.paid_on, range, today)),
   );
   const { owner, incubator } = PARTNER_NAMES;
   const owed = outstanding.balance;
@@ -112,21 +111,7 @@ export function PartnerSplitWidget({
               Manage expenses
             </Link>
           )}
-          <div className="flex gap-1 rounded-lg border border-white/10 p-1 text-sm">
-            {(Object.keys(FINANCE_RANGE_LABELS) as FinanceRange[]).map((key) => (
-              <Link
-                key={key}
-                href={key === "this_month" ? basePath : `${basePath}?range=${key}`}
-                className={`rounded-md px-3 py-1 ${
-                  key === range
-                    ? "bg-brand-purple-500/30 text-white"
-                    : "text-white/60 hover:text-white"
-                }`}
-              >
-                {FINANCE_RANGE_LABELS[key]}
-              </Link>
-            ))}
-          </div>
+          <DateRangeTabs range={range} basePath={basePath} />
         </div>
       </div>
 
@@ -206,7 +191,7 @@ export function PartnerSplitWidget({
 
       <Card>
         <CardHeader>
-          <CardTitle>Profit, {FINANCE_RANGE_LABELS[range].toLowerCase()}</CardTitle>
+          <CardTitle>Profit, {DATE_RANGE_LABELS[range].toLowerCase()}</CardTitle>
         </CardHeader>
         <CardContent>
           <Line label="Revenue (paid bookings)" value={scoped.revenue} />

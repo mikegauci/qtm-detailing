@@ -2,6 +2,7 @@ import { syncAllBookingStatuses } from "@/lib/admin/sync-booking-statuses";
 import Link from "next/link";
 import { format } from "date-fns";
 import { requireAdmin } from "@/lib/supabase/admin";
+import { parseDateRange } from "@/lib/admin/date-range";
 import { getBusinessToday } from "@/lib/utils/dates";
 import { getRelation } from "@/lib/admin/supabase-relations";
 import { formatBookingDateRange, LEAD_STATUS_LABELS } from "@/lib/utils/booking";
@@ -21,8 +22,7 @@ export default async function AdminDashboardPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const { range: rangeParam } = await searchParams;
-  const range: SalesRange =
-    rangeParam === "last_month" || rangeParam === "all" ? rangeParam : "this_month";
+  const range: SalesRange = parseDateRange(rangeParam);
   const { supabase } = await requireAdmin();
   const today = getBusinessToday();
   await syncAllBookingStatuses(supabase, today);

@@ -1,6 +1,6 @@
 import { requireAdmin } from "@/lib/supabase/admin";
 import { getBusinessToday } from "@/lib/utils/dates";
-import type { FinanceRange } from "@/lib/admin/partner-split";
+import { parseDateRange } from "@/lib/admin/date-range";
 import { PartnerSplitWidget } from "@/components/admin/partner-split-widget";
 import { FinancesManager } from "@/components/admin/finances-manager";
 
@@ -10,8 +10,7 @@ export default async function FinancesPage({
   searchParams: Promise<{ range?: string }>;
 }) {
   const { range: rangeParam } = await searchParams;
-  const range: FinanceRange =
-    rangeParam === "last_month" || rangeParam === "all" ? rangeParam : "this_month";
+  const range = parseDateRange(rangeParam);
   const { supabase } = await requireAdmin();
   const today = getBusinessToday();
 

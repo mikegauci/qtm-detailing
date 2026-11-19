@@ -550,7 +550,7 @@ export function FinancesManager({
 
       <section className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-white">Payments</h2>
+          <h2 className="text-lg font-semibold text-white">Job Payments</h2>
           <Dialog open={showPayout} onOpenChange={setShowPayout}>
             <DialogTrigger asChild>
               <Button>

@@ -1,16 +1,12 @@
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
+import { inDateRange, type DateRange } from "@/lib/admin/date-range";
+import { DateRangeTabs } from "@/components/admin/date-range-tabs";
 import { getRelation } from "@/lib/admin/supabase-relations";
 import { BOOKING_STATUS_COLORS, BOOKING_STATUS_LABELS } from "@/lib/utils/booking";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-export type SalesRange = "this_month" | "last_month" | "all";
-
-export const SALES_RANGE_LABELS: Record<SalesRange, string> = {
-  this_month: "This month",
-  last_month: "Last month",
-  all: "All time",
-};
+export type SalesRange = DateRange;
 
 export type SalesBooking = {
   booking_date: string;
@@ -37,15 +33,6 @@ const currency = new Intl.NumberFormat("en-IE", {
   maximumFractionDigits: 0,
 });
 
-function inRange(date: string, range: SalesRange, today: string) {
-  if (range === "all") return true;
-  const month = today.slice(0, 7);
-  if (range === "this_month") return date.startsWith(month);
-  const d = parseISO(`${month}-01`);
-  d.setMonth(d.getMonth() - 1);
-  return date.startsWith(format(d, "yyyy-MM"));
-}
-
 export function SalesStats({
   bookings,
   range,
@@ -55,7 +42,7 @@ export function SalesStats({
   range: SalesRange;
   today: string;
 }) {
-  const scoped = bookings.filter((b) => inRange(b.booking_date, range, today));
+  const scoped = bookings.filter((b) => inDateRange(b.booking_date, range, today));
 
   const stages = STAGES.map((status) => {
     const rows = scoped.filter((b) => b.status === status);
@@ -107,21 +94,7 @@ export function SalesStats({
     <section className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="text-lg font-semibold text-white">Sales</h2>
-        <div className="flex gap-1 rounded-lg border border-white/10 p-1 text-sm">
-          {(Object.keys(SALES_RANGE_LABELS) as SalesRange[]).map((key) => (
-            <Link
-              key={key}
-              href={key === "this_month" ? "/admin" : `/admin?range=${key}`}
-              className={`rounded-md px-3 py-1 ${
-                key === range
-                  ? "bg-brand-purple-500/30 text-white"
-                  : "text-white/60 hover:text-white"
-              }`}
-            >
-              {SALES_RANGE_LABELS[key]}
-            </Link>
-          ))}
-        </div>
+        <DateRangeTabs range={range} basePath="/admin" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">

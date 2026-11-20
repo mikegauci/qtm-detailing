@@ -29,8 +29,7 @@ export default async function FinancesPage({
   ]);
 
   const invoicePaths = (expenses ?? [])
-    .map((e) => e.invoice_path)
-    .filter((path): path is string => Boolean(path));
+    .flatMap((e) => e.invoice_paths);
   const invoiceUrls: Record<string, string> = {};
   if (invoicePaths.length) {
     const { data: signed } = await supabase.storage

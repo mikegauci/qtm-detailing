@@ -269,6 +269,7 @@ export type Database = {
           expense_date: string
           id: string
           invoice_path: string | null
+          invoice_paths: string[]
           notes: string | null
           paid_on: string | null
         }
@@ -280,6 +281,7 @@ export type Database = {
           expense_date: string
           id?: string
           invoice_path?: string | null
+          invoice_paths?: string[]
           notes?: string | null
           paid_on?: string | null
         }
@@ -291,6 +293,7 @@ export type Database = {
           expense_date?: string
           id?: string
           invoice_path?: string | null
+          invoice_paths?: string[]
           notes?: string | null
           paid_on?: string | null
         }

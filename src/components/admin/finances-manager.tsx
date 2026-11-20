@@ -57,6 +57,7 @@ type Expense = Tables<"finance_expenses">;
 type Payout = Tables<"partner_payouts">;
 
 const MAX_INVOICE_BYTES = 10 * 1024 * 1024;
+const MAX_ATTACHMENTS = 10;
 
 function paidBy(category: string) {
   return UTILITY_CATEGORIES.includes(category as ExpenseCategory)
@@ -72,32 +73,43 @@ function isPdf(path: string) {
   return path.toLowerCase().endsWith(".pdf");
 }
 
+function AttachmentTile({ path, url }: { path: string; url?: string }) {
+  if (isPdf(path) || !url) {
+    return (
+      <span className="flex h-full w-full flex-col items-center justify-center text-red-300">
+        <FileText className="h-4 w-4" />
+        <span className="text-[9px] font-semibold">{isPdf(path) ? "PDF" : "FILE"}</span>
+      </span>
+    );
+  }
+  return <img src={url} alt="Attachment" loading="lazy" className="h-full w-full object-cover" />;
+}
+
 function InvoiceThumb({
-  path,
-  url,
+  paths,
+  invoiceUrls,
   onOpen,
 }: {
-  path: string | null;
-  url?: string;
+  paths: string[];
+  invoiceUrls: Record<string, string>;
   onOpen: () => void;
 }) {
-  if (!path || !url) {
+  const first = paths[0];
+  if (!first || !invoiceUrls[first]) {
     return <div className="h-10 w-10 rounded-md border border-dashed border-white/10" />;
   }
   return (
     <button
       type="button"
       onClick={onOpen}
-      title="Quick view invoice"
-      className="block h-10 w-10 overflow-hidden rounded-md border border-white/10 bg-white/5 transition hover:border-brand-purple-400"
+      title={paths.length > 1 ? `Quick view ${paths.length} attachments` : "Quick view attachment"}
+      className="relative block h-10 w-10 overflow-hidden rounded-md border border-white/10 bg-white/5 transition hover:border-brand-purple-400"
     >
-      {isPdf(path) ? (
-        <span className="flex h-full w-full flex-col items-center justify-center text-red-300">
-          <FileText className="h-4 w-4" />
-          <span className="text-[9px] font-semibold">PDF</span>
+      <AttachmentTile path={first} url={invoiceUrls[first]} />
+      {paths.length > 1 && (
+        <span className="absolute right-0 bottom-0 rounded-tl bg-black/80 px-1 text-[10px] font-semibold text-white">
+          {paths.length}
         </span>
-      ) : (
-        <img src={url} alt="Invoice" loading="lazy" className="h-full w-full object-cover" />
       )}
     </button>
   );
@@ -108,13 +120,9 @@ function formatDate(date: string) {
 }
 
 async function uploadInvoice(file: File): Promise<string | null> {
-  if (file.size > MAX_INVOICE_BYTES) {
-    toast.error("Invoice must be 10 MB or smaller.");
-    return null;
-  }
   const prepared = await createInvoiceUploadUrl(file.name);
   if (!prepared.success || !prepared.signedUrl || !prepared.path) {
-    toast.error(prepared.message);
+    toast.error(`${file.name}: ${prepared.message}`);
     return null;
   }
   const res = await fetch(prepared.signedUrl, {
@@ -123,13 +131,40 @@ async function uploadInvoice(file: File): Promise<string | null> {
     body: file,
   });
   if (!res.ok) {
-    toast.error("Invoice upload failed.");
+    toast.error(`${file.name}: upload failed.`);
     return null;
   }
   return prepared.path;
 }
 
-function ExpenseFields({ idPrefix, expense, today }: { idPrefix: string; expense?: Expense; today: string }) {
+/** Uploads every picked file; returns null (after a toast) if any check or upload fails. */
+async function uploadInvoices(formData: FormData, keptCount: number): Promise<string[] | null> {
+  const files = formData.getAll("invoice").filter((f): f is File => f instanceof File && f.size > 0);
+  if (keptCount + files.length > MAX_ATTACHMENTS) {
+    toast.error(`Up to ${MAX_ATTACHMENTS} attachments per expense.`);
+    return null;
+  }
+  const tooBig = files.find((f) => f.size > MAX_INVOICE_BYTES);
+  if (tooBig) {
+    toast.error(`${tooBig.name} is over 10 MB.`);
+    return null;
+  }
+  const paths = await Promise.all(files.map(uploadInvoice));
+  return paths.every(Boolean) ? (paths as string[]) : null;
+}
+
+function ExpenseFields({
+  idPrefix,
+  expense,
+  today,
+  invoiceUrls = {},
+}: {
+  idPrefix: string;
+  expense?: Expense;
+  today: string;
+  invoiceUrls?: Record<string, string>;
+}) {
+  const existing = expense?.invoice_paths ?? [];
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -183,18 +218,32 @@ function ExpenseFields({ idPrefix, expense, today }: { idPrefix: string; expense
       </div>
       <div className="space-y-2">
         <Label htmlFor={`${idPrefix}_invoice`}>
-          Invoice (PDF or photo){expense?.invoice_path ? ", replaces current" : ""}
+          {existing.length ? "Add attachments" : "Attachments"} (PDFs or photos, up to {MAX_ATTACHMENTS})
         </Label>
         <Input
           id={`${idPrefix}_invoice`}
           name="invoice"
           type="file"
           accept="application/pdf,image/*"
+          multiple
         />
-        {expense?.invoice_path && (
-          <label className="flex items-center gap-2 text-xs text-white/60">
-            <input type="checkbox" name="remove_invoice" /> Remove current invoice
-          </label>
+        {existing.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs text-white/60">Current attachments: tick to remove</p>
+            <div className="flex flex-wrap gap-2">
+              {existing.map((path, i) => (
+                <label
+                  key={path}
+                  className="flex cursor-pointer items-center gap-1.5 rounded-md border border-white/10 p-1 pr-2 text-xs text-white/70 has-checked:border-red-400/60 has-checked:opacity-60"
+                >
+                  <span className="block h-8 w-8 overflow-hidden rounded bg-white/5">
+                    <AttachmentTile path={path} url={invoiceUrls[path]} />
+                  </span>
+                  <input type="checkbox" name="remove_invoice" value={path} />#{i + 1}
+                </label>
+              ))}
+            </div>
+          </div>
         )}
       </div>
       <label className="flex items-center gap-2 text-sm text-white/80">
@@ -240,17 +289,16 @@ export function FinancesManager({
   const [editing, setEditing] = useState<Expense | null>(null);
   const [showPayout, setShowPayout] = useState(false);
   const [previewing, setPreviewing] = useState<Expense | null>(null);
-  const previewUrl = previewing?.invoice_path ? invoiceUrls[previewing.invoice_path] : undefined;
+  const [previewIndex, setPreviewIndex] = useState(0);
+  const previewPaths = previewing?.invoice_paths ?? [];
+  const previewPath = previewPaths[previewIndex];
+  const previewUrl = previewPath ? invoiceUrls[previewPath] : undefined;
 
   function handleCreate(formData: FormData) {
     startTransition(async () => {
-      const file = formData.get("invoice") as File | null;
-      let invoicePath: string | null = null;
-      if (file && file.size > 0) {
-        invoicePath = await uploadInvoice(file);
-        if (!invoicePath) return;
-      }
-      const result = await createExpense({ ...readExpenseForm(formData), invoice_path: invoicePath });
+      const invoicePaths = await uploadInvoices(formData, 0);
+      if (!invoicePaths) return;
+      const result = await createExpense({ ...readExpenseForm(formData), invoice_paths: invoicePaths });
       if (result.success) {
         toast.success(result.message);
         setShowCreate(false);
@@ -261,17 +309,15 @@ export function FinancesManager({
   function handleUpdate(formData: FormData) {
     if (!editing) return;
     const id = editing.id;
+    const removing = formData.getAll("remove_invoice").map(String);
+    const keptCount = editing.invoice_paths.filter((p) => !removing.includes(p)).length;
     startTransition(async () => {
-      const file = formData.get("invoice") as File | null;
-      let invoicePath: string | null = null;
-      if (file && file.size > 0) {
-        invoicePath = await uploadInvoice(file);
-        if (!invoicePath) return;
-      }
+      const invoicePaths = await uploadInvoices(formData, keptCount);
+      if (!invoicePaths) return;
       const result = await updateExpense(id, {
         ...readExpenseForm(formData),
-        invoice_path: invoicePath,
-        remove_invoice: formData.get("remove_invoice") === "on",
+        invoice_paths: invoicePaths,
+        remove_invoice_paths: removing,
       });
       if (result.success) {
         toast.success(result.message);
@@ -302,7 +348,7 @@ export function FinancesManager({
   }
 
   function handleDeleteExpense(id: string) {
-    if (!confirm("Delete this expense and its invoice?")) return;
+    if (!confirm("Delete this expense and its attachments?")) return;
     startTransition(async () => {
       const result = await deleteExpense(id);
       if (result.success) toast.success(result.message);
@@ -389,9 +435,12 @@ export function FinancesManager({
               <AdminTableRow key={e.id}>
                 <AdminTableCell>
                   <InvoiceThumb
-                    path={e.invoice_path}
-                    url={e.invoice_path ? invoiceUrls[e.invoice_path] : undefined}
-                    onOpen={() => setPreviewing(e)}
+                    paths={e.invoice_paths}
+                    invoiceUrls={invoiceUrls}
+                    onOpen={() => {
+                      setPreviewIndex(0);
+                      setPreviewing(e);
+                    }}
                   />
                 </AdminTableCell>
                 <AdminTableCell className="whitespace-nowrap text-white/70">
@@ -490,7 +539,7 @@ export function FinancesManager({
                           <DialogTitle>Edit expense</DialogTitle>
                         </DialogHeader>
                         <form action={handleUpdate} className="space-y-4">
-                          <ExpenseFields idPrefix="edit" expense={e} today={today} />
+                          <ExpenseFields idPrefix="edit" expense={e} today={today} invoiceUrls={invoiceUrls} />
                           <SubmitButton isPending={isPending} label="Save changes" pendingLabel="Saving..." />
                         </form>
                       </DialogContent>
@@ -516,9 +565,28 @@ export function FinancesManager({
             <DialogHeader>
               <DialogTitle>{previewing?.description}</DialogTitle>
             </DialogHeader>
-            {previewing?.invoice_path && previewUrl ? (
+            {previewPath && previewUrl ? (
               <div className="space-y-3">
-                {isPdf(previewing.invoice_path) ? (
+                {previewPaths.length > 1 && (
+                  <div className="flex flex-wrap gap-2">
+                    {previewPaths.map((path, i) => (
+                      <button
+                        key={path}
+                        type="button"
+                        onClick={() => setPreviewIndex(i)}
+                        title={`Attachment ${i + 1}`}
+                        className={`block h-12 w-12 overflow-hidden rounded-md border bg-white/5 transition ${
+                          i === previewIndex
+                            ? "border-brand-purple-400"
+                            : "border-white/10 hover:border-white/30"
+                        }`}
+                      >
+                        <AttachmentTile path={path} url={invoiceUrls[path]} />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {isPdf(previewPath) ? (
                   <iframe
                     src={previewUrl}
                     title="Invoice PDF"
@@ -542,7 +610,7 @@ export function FinancesManager({
                 </a>
               </div>
             ) : (
-              <p className="text-sm text-white/60">Invoice link expired. Refresh the page.</p>
+              <p className="text-sm text-white/60">Attachment link expired. Refresh the page.</p>
             )}
           </DialogContent>
         </Dialog>

@@ -14,6 +14,7 @@ import {
 const INVOICE_BUCKET = "expense-invoices";
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const ALLOWED_EXTENSIONS = ["pdf", "jpg", "jpeg", "png", "webp", "heic"];
+const MAX_ATTACHMENTS = 10;
 
 function revalidateFinances() {
   revalidatePath("/admin/finances");
@@ -26,7 +27,7 @@ type ExpenseInput = {
   description: string;
   amount: number;
   notes?: string | null;
-  invoice_path?: string | null;
+  invoice_paths?: string[];
   paid?: boolean;
 };
 
@@ -37,8 +38,12 @@ function validateExpense(data: ExpenseInput): string | null {
   }
   if (!data.description.trim()) return "Description is required.";
   if (!Number.isFinite(data.amount) || data.amount < 0) return "Invalid amount.";
-  if (data.invoice_path && !data.invoice_path.startsWith("invoices/")) {
-    return "Invalid invoice file.";
+  const paths = data.invoice_paths ?? [];
+  if (paths.some((p) => !p.startsWith("invoices/") || p.includes(".."))) {
+    return "Invalid attachment.";
+  }
+  if (paths.length > MAX_ATTACHMENTS) {
+    return `Up to ${MAX_ATTACHMENTS} attachments per expense.`;
   }
   return null;
 }
@@ -74,7 +79,7 @@ export async function createExpense(data: ExpenseInput): Promise<ActionResult> {
     description: data.description.trim(),
     amount: data.amount,
     notes: data.notes?.trim() || null,
-    invoice_path: data.invoice_path ?? null,
+    invoice_paths: data.invoice_paths ?? [],
     paid_on: data.paid === false ? null : data.expense_date,
   });
 
@@ -85,7 +90,7 @@ export async function createExpense(data: ExpenseInput): Promise<ActionResult> {
 
 export async function updateExpense(
   id: string,
-  data: ExpenseInput & { remove_invoice?: boolean },
+  data: ExpenseInput & { remove_invoice_paths?: string[] },
 ): Promise<ActionResult> {
   const { supabase } = await requireAdmin();
   const invalid = validateExpense(data);
@@ -93,16 +98,19 @@ export async function updateExpense(
 
   const { data: existing } = await supabase
     .from("finance_expenses")
-    .select("invoice_path, paid_on")
+    .select("invoice_paths, paid_on")
     .eq("id", id)
     .single();
+  if (!existing) return { success: false, message: "Expense not found." };
 
-  let invoicePath = existing?.invoice_path ?? null;
-  if (data.invoice_path || data.remove_invoice) {
-    if (invoicePath) {
-      await supabase.storage.from(INVOICE_BUCKET).remove([invoicePath]);
-    }
-    invoicePath = data.invoice_path ?? null;
+  const removing = new Set(data.remove_invoice_paths ?? []);
+  const removed = existing.invoice_paths.filter((p: string) => removing.has(p));
+  const invoicePaths = [
+    ...existing.invoice_paths.filter((p: string) => !removing.has(p)),
+    ...(data.invoice_paths ?? []),
+  ];
+  if (invoicePaths.length > MAX_ATTACHMENTS) {
+    return { success: false, message: `Up to ${MAX_ATTACHMENTS} attachments per expense.` };
   }
 
   const { error } = await supabase
@@ -113,15 +121,18 @@ export async function updateExpense(
       description: data.description.trim(),
       amount: data.amount,
       notes: data.notes?.trim() || null,
-      invoice_path: invoicePath,
+      invoice_paths: invoicePaths,
       paid_on:
         data.paid === false
           ? null
-          : (existing?.paid_on ?? (data.paid ? data.expense_date : null)),
+          : (existing.paid_on ?? (data.paid ? data.expense_date : null)),
     })
     .eq("id", id);
 
   if (error) return { success: false, message: error.message };
+  if (removed.length) {
+    await supabase.storage.from(INVOICE_BUCKET).remove(removed);
+  }
   revalidateFinances();
   return { success: true, message: "Expense updated." };
 }
@@ -151,15 +162,15 @@ export async function deleteExpense(id: string): Promise<ActionResult> {
 
   const { data: existing } = await supabase
     .from("finance_expenses")
-    .select("invoice_path")
+    .select("invoice_paths")
     .eq("id", id)
     .single();
 
   const { error } = await supabase.from("finance_expenses").delete().eq("id", id);
   if (error) return { success: false, message: error.message };
 
-  if (existing?.invoice_path) {
-    await supabase.storage.from(INVOICE_BUCKET).remove([existing.invoice_path]);
+  if (existing?.invoice_paths.length) {
+    await supabase.storage.from(INVOICE_BUCKET).remove(existing.invoice_paths);
   }
   revalidateFinances();
   return { success: true, message: "Expense deleted." };

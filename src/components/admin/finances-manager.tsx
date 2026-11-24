@@ -88,7 +88,8 @@ function inboxDraft(item: InboxItem): Expense {
     notes: item.invoice_number ? `Invoice ${item.invoice_number}` : null,
     invoice_path: null,
     invoice_paths: item.attachment_paths,
-    paid_on: null,
+    // Pre-ticks "Already paid"; untick it for bills still to be paid.
+    paid_on: item.invoice_date ?? item.received_at.slice(0, 10),
     shared: item.suggested_shared,
   };
 }
@@ -546,7 +547,7 @@ export function FinancesManager({
               </h3>
             </div>
             <p className="text-xs text-white/60">
-              Sent to finance@ and read automatically. Check the details, then add each one as an
+              Check the details, then add each one as an
               expense or dismiss it. They are not counted in the split until added.
             </p>
             <ul className="space-y-2">

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { format, parseISO } from "date-fns";
 import {
   Check,
@@ -43,8 +43,12 @@ import {
   euro,
   isPaidByOwner,
   isSplitExpense,
+  ownerOnlyAmount,
+  parseExpenseItems,
   settlementAmount,
+  splitAmount,
   type ExpenseCategory,
+  type ExpenseItem,
 } from "@/lib/admin/partner-split";
 import type { Tables } from "@/lib/supabase/types";
 import { Badge } from "@/components/ui/badge";
@@ -91,6 +95,7 @@ function inboxDraft(item: InboxItem): Expense {
     // Pre-ticks "Already paid"; untick it for bills still to be paid.
     paid_on: item.invoice_date ?? item.received_at.slice(0, 10),
     shared: item.suggested_shared,
+    items: item.items,
   };
 }
 
@@ -191,6 +196,101 @@ async function uploadInvoices(formData: FormData, keptCount: number): Promise<st
   return paths.every(Boolean) ? (paths as string[]) : null;
 }
 
+/** Invoice lines, each split with Mike or Max-only. Posts them as JSON in `items`. */
+function LineItemsEditor({
+  items,
+  onChange,
+  onCollapse,
+}: {
+  items: ExpenseItem[];
+  onChange: (items: ExpenseItem[]) => void;
+  onCollapse: () => void;
+}) {
+  const total = items.reduce((sum, i) => sum + (Number.isFinite(i.amount) ? i.amount : 0), 0);
+  const maxOnly = items
+    .filter((i) => !i.shared)
+    .reduce((sum, i) => sum + (Number.isFinite(i.amount) ? i.amount : 0), 0);
+  const update = (index: number, patch: Partial<ExpenseItem>) =>
+    onChange(items.map((item, i) => (i === index ? { ...item, ...patch } : item)));
+
+  return (
+    <div className="space-y-2 rounded-xl border border-white/10 p-3">
+      <input type="hidden" name="items" value={JSON.stringify(items)} />
+      <div className="flex items-center justify-between gap-2">
+        <Label>Lines</Label>
+        <span className="text-xs text-white/50">
+          Untick &ldquo;Split&rdquo; for {PARTNER_NAMES.owner}-only items
+        </span>
+      </div>
+      {items.map((item, i) => (
+        <div key={i} className="space-y-1.5 rounded-lg bg-white/5 p-2">
+          <Input
+            aria-label={`Line ${i + 1} description`}
+            placeholder="Item"
+            value={item.description}
+            onChange={(e) => update(i, { description: e.target.value })}
+            required
+          />
+          <div className="flex items-center gap-2">
+            <Input
+              aria-label={`Line ${i + 1} amount`}
+              type="number"
+              step="0.01"
+              min="0"
+              className="w-32"
+              value={Number.isFinite(item.amount) ? item.amount : ""}
+              onChange={(e) => update(i, { amount: e.target.value === "" ? NaN : Number(e.target.value) })}
+              required
+            />
+            <label className="flex items-center gap-1.5 text-sm text-white/80">
+              <input
+                type="checkbox"
+                checked={item.shared}
+                onChange={(e) => update(i, { shared: e.target.checked })}
+              />
+              Split
+            </label>
+            <Button
+              type="button"
+              size="icon-sm"
+              variant="ghost"
+              className="ml-auto"
+              title="Remove line"
+              disabled={items.length === 1}
+              onClick={() => onChange(items.filter((_, j) => j !== i))}
+            >
+              <Trash2 className="h-4 w-4 text-red-400" />
+            </Button>
+          </div>
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => onChange([...items, { description: "", amount: NaN, shared: true }])}
+        >
+          <Plus className="h-4 w-4" />
+          Add line
+        </Button>
+        <button type="button" onClick={onCollapse} className="text-xs text-white/50 hover:text-white">
+          Use a single amount instead
+        </button>
+      </div>
+      <p className="text-xs text-white/60 tabular-nums">
+        Total {euro.format(total)}
+        {maxOnly > 0 && (
+          <>
+            {" "}· {PARTNER_NAMES.owner}-only {euro.format(maxOnly)} · split{" "}
+            {euro.format(total - maxOnly)}
+          </>
+        )}
+      </p>
+    </div>
+  );
+}
+
 function ExpenseFields({
   idPrefix,
   expense,
@@ -206,6 +306,26 @@ function ExpenseFields({
   onView?: (paths: string[], index: number) => void;
 }) {
   const existing = expense?.invoice_paths ?? [];
+  const [items, setItems] = useState<ExpenseItem[]>(() => parseExpenseItems(expense?.items));
+  const [singleAmount, setSingleAmount] = useState<number | undefined>(expense?.amount);
+  const amountRef = useRef<HTMLInputElement>(null);
+  const sharedRef = useRef<HTMLInputElement>(null);
+  const itemized = items.length > 0;
+  const itemsTotal = items.reduce((sum, i) => sum + (Number.isFinite(i.amount) ? i.amount : 0), 0);
+
+  function breakIntoLines() {
+    const amount = amountRef.current?.value ? Number(amountRef.current.value) : NaN;
+    setItems([
+      { description: "", amount, shared: sharedRef.current?.checked ?? true },
+      { description: "", amount: NaN, shared: true },
+    ]);
+  }
+
+  function useSingleAmount() {
+    setSingleAmount(Math.round(itemsTotal * 100) / 100);
+    setItems([]);
+  }
+
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
@@ -221,15 +341,28 @@ function ExpenseFields({
         </div>
         <div className="space-y-2">
           <Label htmlFor={`${idPrefix}_amount`}>Amount (€)</Label>
-          <Input
-            id={`${idPrefix}_amount`}
-            name="amount"
-            type="number"
-            step="0.01"
-            min="0"
-            defaultValue={expense?.amount}
-            required
-          />
+          {itemized ? (
+            <Input
+              key="total"
+              id={`${idPrefix}_amount`}
+              value={itemsTotal.toFixed(2)}
+              readOnly
+              title="Total of the lines below"
+              className="text-white/60"
+            />
+          ) : (
+            <Input
+              key="amount"
+              ref={amountRef}
+              id={`${idPrefix}_amount`}
+              name="amount"
+              type="number"
+              step="0.01"
+              min="0"
+              defaultValue={singleAmount}
+              required
+            />
+          )}
         </div>
       </div>
       <div className="space-y-2">
@@ -312,21 +445,36 @@ function ExpenseFields({
           </div>
         )}
       </div>
-      <label className="flex items-start gap-2 text-sm text-white/80">
-        <input
-          type="checkbox"
-          name="shared"
-          className="mt-0.5"
-          defaultChecked={expense ? expense.shared !== false : true}
-        />
-        <span>
-          Split with {PARTNER_NAMES.incubator}
-          <span className="block text-xs text-white/50">
-            Untick for things only {PARTNER_NAMES.owner} pays for, like equipment. It stays in the
-            books but is not taken off the profit split. Water &amp; electricity are always split.
-          </span>
-        </span>
-      </label>
+      {itemized ? (
+        <LineItemsEditor items={items} onChange={setItems} onCollapse={useSingleAmount} />
+      ) : (
+        <div className="space-y-2">
+          <label className="flex items-start gap-2 text-sm text-white/80">
+            <input
+              ref={sharedRef}
+              type="checkbox"
+              name="shared"
+              className="mt-0.5"
+              defaultChecked={expense ? expense.shared !== false : true}
+            />
+            <span>
+              Split with {PARTNER_NAMES.incubator}
+              <span className="block text-xs text-white/50">
+                Untick for things only {PARTNER_NAMES.owner} pays for, like equipment. It stays in
+                the books but is not taken off the profit split. Water &amp; electricity are
+                always split.
+              </span>
+            </span>
+          </label>
+          <button
+            type="button"
+            onClick={breakIntoLines}
+            className="text-xs text-brand-purple-400 hover:underline"
+          >
+            Mixed invoice? Break it into lines
+          </button>
+        </div>
+      )}
       <label className="flex items-center gap-2 text-sm text-white/80">
         <input
           type="checkbox"
@@ -344,14 +492,18 @@ function ExpenseFields({
 }
 
 function readExpenseForm(formData: FormData) {
+  const items = parseExpenseItems(JSON.parse(String(formData.get("items") ?? "[]")));
   return {
     expense_date: String(formData.get("expense_date") ?? ""),
     category: String(formData.get("category") ?? ""),
     description: String(formData.get("description") ?? ""),
-    amount: Number(formData.get("amount")),
+    // With lines, the server sets the amount to their total.
+    amount: items.length ? items.reduce((sum, i) => sum + i.amount, 0) : Number(formData.get("amount")),
     notes: (formData.get("notes") as string) || null,
     paid: formData.get("paid") === "on",
-    shared: formData.get("shared") === "on",
+    // Lines carry their own split flags.
+    shared: items.length ? true : formData.get("shared") === "on",
+    items,
   };
 }
 
@@ -456,7 +608,7 @@ export function FinancesManager({
   }
 
   function handleSettle(expense: Expense) {
-    const amount = settlementAmount(expense.category, expense.expense_date, expense.amount);
+    const amount = settlementAmount(expense.category, expense.expense_date, splitAmount(expense));
     const message = isPaidByOwner(expense.category)
       ? `Record that ${PARTNER_NAMES.incubator} paid ${PARTNER_NAMES.owner} ${euro.format(amount)} for this expense? Only do this if cash changed hands: it adds ${euro.format(amount)} back to what ${PARTNER_NAMES.owner} owes ${PARTNER_NAMES.incubator}.`
       : `Record that ${PARTNER_NAMES.owner} paid ${PARTNER_NAMES.incubator} ${euro.format(amount)} for this bill?`;
@@ -666,11 +818,15 @@ export function FinancesManager({
                   >
                     {EXPENSE_CATEGORY_LABELS[e.category as ExpenseCategory] ?? e.category}
                   </Badge>
-                  {!isSplitExpense(e) && (
+                  {!isSplitExpense(e) ? (
                     <Badge variant="outline" className="mt-1 block w-fit">
                       Not split
                     </Badge>
-                  )}
+                  ) : ownerOnlyAmount(e) > 0 ? (
+                    <Badge variant="outline" className="mt-1 block w-fit">
+                      {euro.format(ownerOnlyAmount(e))} {PARTNER_NAMES.owner}-only
+                    </Badge>
+                  ) : null}
                 </AdminTableCell>
                 <AdminTableCell className="text-white/70">{paidBy(e.category)}</AdminTableCell>
                 <AdminTableCell className="tabular-nums text-white">
@@ -722,7 +878,7 @@ export function FinancesManager({
                             : PARTNER_NAMES.owner}{" "}
                           paid{" "}
                           {euro.format(
-                            settlementAmount(e.category, e.expense_date, e.amount),
+                            settlementAmount(e.category, e.expense_date, splitAmount(e)),
                           )}
                         </Button>
                       ) : null}

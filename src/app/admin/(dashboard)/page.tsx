@@ -67,7 +67,7 @@ export default async function AdminDashboardPage({
         "booking_date, status, total_price, booking_services(price_snapshot, services(name))",
       )
       .neq("status", "cancelled"),
-    supabase.from("finance_expenses").select("expense_date, category, amount, paid_on, shared"),
+    supabase.from("finance_expenses").select("expense_date, category, amount, paid_on, shared, items"),
     supabase.from("partner_payouts").select("paid_on, amount, direction"),
   ]);
 

@@ -270,6 +270,7 @@ export type Database = {
           id: string
           invoice_path: string | null
           invoice_paths: string[]
+          items: Json
           notes: string | null
           paid_on: string | null
           shared: boolean
@@ -283,6 +284,7 @@ export type Database = {
           id?: string
           invoice_path?: string | null
           invoice_paths?: string[]
+          items?: Json
           notes?: string | null
           paid_on?: string | null
           shared?: boolean
@@ -296,6 +298,7 @@ export type Database = {
           id?: string
           invoice_path?: string | null
           invoice_paths?: string[]
+          items?: Json
           notes?: string | null
           paid_on?: string | null
           shared?: boolean
@@ -314,6 +317,7 @@ export type Database = {
           id: string
           invoice_date: string | null
           invoice_number: string | null
+          items: Json
           received_at: string
           resend_email_id: string
           status: string
@@ -333,6 +337,7 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_number?: string | null
+          items?: Json
           received_at?: string
           resend_email_id: string
           status?: string
@@ -352,6 +357,7 @@ export type Database = {
           id?: string
           invoice_date?: string | null
           invoice_number?: string | null
+          items?: Json
           received_at?: string
           resend_email_id?: string
           status?: string

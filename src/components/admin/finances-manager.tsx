@@ -88,7 +88,8 @@ function inboxDraft(item: InboxItem): Expense {
     notes: item.invoice_number ? `Invoice ${item.invoice_number}` : null,
     invoice_path: null,
     invoice_paths: item.attachment_paths,
-    paid_on: null,
+    // Pre-ticks "Already paid"; untick it for bills still to be paid.
+    paid_on: item.invoice_date ?? item.received_at.slice(0, 10),
     shared: item.suggested_shared,
   };
 }

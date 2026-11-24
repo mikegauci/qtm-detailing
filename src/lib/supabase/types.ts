@@ -299,6 +299,71 @@ export type Database = {
         }
         Relationships: []
       }
+      expense_inbox: {
+        Row: {
+          ai_notes: string | null
+          amount: number | null
+          attachment_paths: string[]
+          created_at: string
+          description: string | null
+          expense_id: string | null
+          from_email: string
+          id: string
+          invoice_date: string | null
+          invoice_number: string | null
+          received_at: string
+          resend_email_id: string
+          status: string
+          subject: string
+          suggested_category: string | null
+          vendor: string | null
+        }
+        Insert: {
+          ai_notes?: string | null
+          amount?: number | null
+          attachment_paths?: string[]
+          created_at?: string
+          description?: string | null
+          expense_id?: string | null
+          from_email: string
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          received_at?: string
+          resend_email_id: string
+          status?: string
+          subject?: string
+          suggested_category?: string | null
+          vendor?: string | null
+        }
+        Update: {
+          ai_notes?: string | null
+          amount?: number | null
+          attachment_paths?: string[]
+          created_at?: string
+          description?: string | null
+          expense_id?: string | null
+          from_email?: string
+          id?: string
+          invoice_date?: string | null
+          invoice_number?: string | null
+          received_at?: string
+          resend_email_id?: string
+          status?: string
+          subject?: string
+          suggested_category?: string | null
+          vendor?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expense_inbox_expense_id_fkey"
+            columns: ["expense_id"]
+            isOneToOne: false
+            referencedRelation: "finance_expenses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       gallery_photos: {
         Row: {
           ai_enhanced_at: string | null

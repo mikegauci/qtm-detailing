@@ -14,7 +14,7 @@ export default async function FinancesPage({
   const { supabase } = await requireAdmin();
   const today = getBusinessToday();
 
-  const [{ data: revenue }, { data: expenses }, { data: payouts }] = await Promise.all([
+  const [{ data: revenue }, { data: expenses }, { data: payouts }, { data: inbox }] = await Promise.all([
     supabase.from("bookings").select("booking_date, total_price").eq("status", "paid"),
     supabase
       .from("finance_expenses")
@@ -26,10 +26,17 @@ export default async function FinancesPage({
       .select("*")
       .order("paid_on", { ascending: false })
       .order("created_at", { ascending: false }),
+    supabase
+      .from("expense_inbox")
+      .select("*")
+      .eq("status", "pending")
+      .order("received_at", { ascending: false }),
   ]);
 
-  const invoicePaths = (expenses ?? [])
-    .flatMap((e) => e.invoice_paths);
+  const invoicePaths = [
+    ...(expenses ?? []).flatMap((e) => e.invoice_paths),
+    ...(inbox ?? []).flatMap((i) => i.attachment_paths),
+  ];
   const invoiceUrls: Record<string, string> = {};
   if (invoicePaths.length) {
     const { data: signed } = await supabase.storage
@@ -61,6 +68,7 @@ export default async function FinancesPage({
       <FinancesManager
         expenses={expenses ?? []}
         payouts={payouts ?? []}
+        inbox={inbox ?? []}
         invoiceUrls={invoiceUrls}
         today={today}
       />

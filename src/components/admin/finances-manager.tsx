@@ -2,14 +2,27 @@
 
 import { useState, useTransition } from "react";
 import { format, parseISO } from "date-fns";
-import { Check, ExternalLink, FileText, HandCoins, Pencil, Plus, Trash2, Undo2 } from "lucide-react";
+import {
+  Check,
+  ExternalLink,
+  FileText,
+  HandCoins,
+  Inbox,
+  Pencil,
+  Plus,
+  Trash2,
+  Undo2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
+  acceptInboxInvoice,
   createExpense,
   createInvoiceUploadUrl,
   createPayout,
   deleteExpense,
   deletePayout,
+  dismissInboxInvoice,
   recordExpenseSettlement,
   setExpensePaid,
   updateExpense,
@@ -55,6 +68,27 @@ import { Textarea } from "@/components/ui/textarea";
 
 type Expense = Tables<"finance_expenses">;
 type Payout = Tables<"partner_payouts">;
+type InboxItem = Tables<"expense_inbox">;
+type Preview = { title: string; paths: string[] };
+
+/** Shapes an emailed invoice like an expense so the normal expense form can be prefilled. */
+function inboxDraft(item: InboxItem): Expense {
+  const category = EXPENSE_CATEGORIES.includes(item.suggested_category as ExpenseCategory)
+    ? (item.suggested_category as string)
+    : "other";
+  return {
+    id: item.id,
+    created_at: item.created_at,
+    expense_date: item.invoice_date ?? item.received_at.slice(0, 10),
+    amount: item.amount ?? (undefined as unknown as number),
+    category,
+    description: item.description || item.vendor || item.subject || "Emailed invoice",
+    notes: item.invoice_number ? `Invoice ${item.invoice_number}` : null,
+    invoice_path: null,
+    invoice_paths: item.attachment_paths,
+    paid_on: null,
+  };
+}
 
 const MAX_INVOICE_BYTES = 10 * 1024 * 1024;
 const MAX_ATTACHMENTS = 10;
@@ -276,11 +310,13 @@ function readExpenseForm(formData: FormData) {
 export function FinancesManager({
   expenses,
   payouts,
+  inbox,
   invoiceUrls,
   today,
 }: {
   expenses: Expense[];
   payouts: Payout[];
+  inbox: InboxItem[];
   invoiceUrls: Record<string, string>;
   today: string;
 }) {
@@ -288,9 +324,10 @@ export function FinancesManager({
   const [showCreate, setShowCreate] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [showPayout, setShowPayout] = useState(false);
-  const [previewing, setPreviewing] = useState<Expense | null>(null);
+  const [reviewing, setReviewing] = useState<InboxItem | null>(null);
+  const [previewing, setPreviewing] = useState<Preview | null>(null);
   const [previewIndex, setPreviewIndex] = useState(0);
-  const previewPaths = previewing?.invoice_paths ?? [];
+  const previewPaths = previewing?.paths ?? [];
   const previewPath = previewPaths[previewIndex];
   const previewUrl = previewPath ? invoiceUrls[previewPath] : undefined;
 
@@ -323,6 +360,35 @@ export function FinancesManager({
         toast.success(result.message);
         setEditing(null);
       } else toast.error(result.message);
+    });
+  }
+
+  function handleAcceptInbox(formData: FormData) {
+    if (!reviewing) return;
+    const id = reviewing.id;
+    const removing = formData.getAll("remove_invoice").map(String);
+    const keptCount = reviewing.attachment_paths.filter((p) => !removing.includes(p)).length;
+    startTransition(async () => {
+      const invoicePaths = await uploadInvoices(formData, keptCount);
+      if (!invoicePaths) return;
+      const result = await acceptInboxInvoice(id, {
+        ...readExpenseForm(formData),
+        invoice_paths: invoicePaths,
+        remove_invoice_paths: removing,
+      });
+      if (result.success) {
+        toast.success(result.message);
+        setReviewing(null);
+      } else toast.error(result.message);
+    });
+  }
+
+  function handleDismissInbox(item: InboxItem) {
+    if (!confirm(`Dismiss "${item.subject || "this email"}"? Its attachments will be deleted.`)) return;
+    startTransition(async () => {
+      const result = await dismissInboxInvoice(item.id);
+      if (result.success) toast.success(result.message);
+      else toast.error(result.message);
     });
   }
 
@@ -417,6 +483,94 @@ export function FinancesManager({
           </Dialog>
         </div>
 
+        {inbox.length > 0 && (
+          <div className="space-y-3 rounded-2xl border border-brand-purple-400/40 bg-brand-purple-400/5 p-4">
+            <div className="flex items-center gap-2">
+              <Inbox className="h-4 w-4 text-brand-purple-400" />
+              <h3 className="text-sm font-semibold text-white">
+                Emailed invoices to review ({inbox.length})
+              </h3>
+            </div>
+            <p className="text-xs text-white/60">
+              Sent to finance@ and read automatically. Check the details, then add each one as an
+              expense or dismiss it. They are not counted in the split until added.
+            </p>
+            <ul className="space-y-2">
+              {inbox.map((item) => {
+                const draft = inboxDraft(item);
+                return (
+                  <li
+                    key={item.id}
+                    className="flex flex-wrap items-center gap-3 rounded-xl border border-white/10 bg-black/20 p-3"
+                  >
+                    <InvoiceThumb
+                      paths={item.attachment_paths}
+                      invoiceUrls={invoiceUrls}
+                      onOpen={() => {
+                        setPreviewIndex(0);
+                        setPreviewing({ title: draft.description, paths: item.attachment_paths });
+                      }}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium text-white">{draft.description}</p>
+                      <p className="truncate text-xs text-white/50">
+                        {item.vendor ? `${item.vendor} · ` : ""}
+                        {item.invoice_date ? formatDate(item.invoice_date) : "No date found"} · from{" "}
+                        {item.from_email}
+                      </p>
+                      {item.ai_notes && <p className="text-xs text-amber-300">{item.ai_notes}</p>}
+                    </div>
+                    <span className="tabular-nums font-semibold text-white">
+                      {item.amount != null ? euro.format(Number(item.amount)) : "—"}
+                    </span>
+                    <div className="flex gap-1">
+                      <Button size="sm" onClick={() => setReviewing(item)} disabled={isPending}>
+                        <Check className="h-4 w-4" />
+                        Review and add
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => handleDismissInbox(item)}
+                        disabled={isPending}
+                        title="Dismiss"
+                      >
+                        <X className="h-4 w-4 text-red-400" />
+                      </Button>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+
+        <Dialog open={Boolean(reviewing)} onOpenChange={(open) => !open && setReviewing(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add emailed invoice</DialogTitle>
+            </DialogHeader>
+            {reviewing && (
+              <form action={handleAcceptInbox} className="space-y-4">
+                <p className="text-xs text-white/60">
+                  From {reviewing.from_email}: &ldquo;{reviewing.subject}&rdquo;. Filled in by AI, so
+                  check the amount and date against the attachment.
+                </p>
+                {reviewing.ai_notes && (
+                  <p className="text-xs text-amber-300">{reviewing.ai_notes}</p>
+                )}
+                <ExpenseFields
+                  idPrefix="inbox"
+                  expense={inboxDraft(reviewing)}
+                  today={today}
+                  invoiceUrls={invoiceUrls}
+                />
+                <SubmitButton isPending={isPending} label="Add expense" pendingLabel="Saving..." />
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+
         <AdminDataTable isEmpty={expenses.length === 0} emptyMessage="No expenses recorded yet.">
           <AdminTableHead>
             <AdminTableHeaderCell className="w-14">
@@ -439,7 +593,7 @@ export function FinancesManager({
                     invoiceUrls={invoiceUrls}
                     onOpen={() => {
                       setPreviewIndex(0);
-                      setPreviewing(e);
+                      setPreviewing({ title: e.description, paths: e.invoice_paths });
                     }}
                   />
                 </AdminTableCell>
@@ -563,7 +717,7 @@ export function FinancesManager({
         <Dialog open={Boolean(previewing)} onOpenChange={(open) => !open && setPreviewing(null)}>
           <DialogContent className="sm:max-w-3xl">
             <DialogHeader>
-              <DialogTitle>{previewing?.description}</DialogTitle>
+              <DialogTitle>{previewing?.title}</DialogTitle>
             </DialogHeader>
             {previewPath && previewUrl ? (
               <div className="space-y-3">

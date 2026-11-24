@@ -193,11 +193,14 @@ function ExpenseFields({
   expense,
   today,
   invoiceUrls = {},
+  onView,
 }: {
   idPrefix: string;
   expense?: Expense;
   today: string;
   invoiceUrls?: Record<string, string>;
+  /** Opens the attachment viewer popup at this index of the current attachments. */
+  onView?: (paths: string[], index: number) => void;
 }) {
   const existing = expense?.invoice_paths ?? [];
   return (
@@ -279,17 +282,16 @@ function ExpenseFields({
                     <span className="px-1 group-has-checked:line-through group-has-checked:opacity-60">
                       #{i + 1}
                     </span>
-                    {url && (
-                      <a
-                        href={url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                    {url && onView && (
+                      <button
+                        type="button"
+                        onClick={() => onView(existing, i)}
                         title={`View attachment ${i + 1}`}
                         className="rounded p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
                       >
                         <Eye className="h-4 w-4" />
                         <span className="sr-only">View attachment {i + 1}</span>
-                      </a>
+                      </button>
                     )}
                     <label
                       title={`Remove attachment ${i + 1} when saving`}
@@ -388,6 +390,13 @@ export function FinancesManager({
         setEditing(null);
       } else toast.error(result.message);
     });
+  }
+
+  function openViewer(title: string) {
+    return (paths: string[], index: number) => {
+      setPreviewIndex(index);
+      setPreviewing({ title, paths });
+    };
   }
 
   function handleAcceptInbox(formData: FormData) {
@@ -591,6 +600,7 @@ export function FinancesManager({
                   expense={inboxDraft(reviewing)}
                   today={today}
                   invoiceUrls={invoiceUrls}
+                  onView={openViewer(inboxDraft(reviewing).description)}
                 />
                 <SubmitButton isPending={isPending} label="Add expense" pendingLabel="Saving..." />
               </form>
@@ -720,7 +730,13 @@ export function FinancesManager({
                           <DialogTitle>Edit expense</DialogTitle>
                         </DialogHeader>
                         <form action={handleUpdate} className="space-y-4">
-                          <ExpenseFields idPrefix="edit" expense={e} today={today} invoiceUrls={invoiceUrls} />
+                          <ExpenseFields
+                            idPrefix="edit"
+                            expense={e}
+                            today={today}
+                            invoiceUrls={invoiceUrls}
+                            onView={openViewer(e.description)}
+                          />
                           <SubmitButton isPending={isPending} label="Save changes" pendingLabel="Saving..." />
                         </form>
                       </DialogContent>

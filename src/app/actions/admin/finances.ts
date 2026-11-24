@@ -176,6 +176,83 @@ export async function deleteExpense(id: string): Promise<ActionResult> {
   return { success: true, message: "Expense deleted." };
 }
 
+/** Turns an emailed invoice into a real expense, reusing the stored attachments. */
+export async function acceptInboxInvoice(
+  inboxId: string,
+  data: ExpenseInput & { remove_invoice_paths?: string[] },
+): Promise<ActionResult> {
+  const { supabase } = await requireAdmin();
+
+  const { data: item } = await supabase
+    .from("expense_inbox")
+    .select("attachment_paths, status")
+    .eq("id", inboxId)
+    .single();
+  if (!item || item.status !== "pending") {
+    return { success: false, message: "This invoice was already handled." };
+  }
+
+  const removing = (data.remove_invoice_paths ?? []).filter((p) =>
+    item.attachment_paths.includes(p),
+  );
+  const invoicePaths = [
+    ...item.attachment_paths.filter((p: string) => !removing.includes(p)),
+    ...(data.invoice_paths ?? []),
+  ];
+  const expense = { ...data, invoice_paths: invoicePaths };
+  const invalid = validateExpense(expense);
+  if (invalid) return { success: false, message: invalid };
+
+  const { data: created, error } = await supabase
+    .from("finance_expenses")
+    .insert({
+      expense_date: expense.expense_date,
+      category: expense.category,
+      description: expense.description.trim(),
+      amount: expense.amount,
+      notes: expense.notes?.trim() || null,
+      invoice_paths: invoicePaths,
+      paid_on: expense.paid === false ? null : expense.expense_date,
+    })
+    .select("id")
+    .single();
+  if (error || !created) return { success: false, message: error?.message ?? "Could not save." };
+
+  await supabase
+    .from("expense_inbox")
+    .update({ status: "accepted", expense_id: created.id, attachment_paths: invoicePaths })
+    .eq("id", inboxId);
+  if (removing.length) await supabase.storage.from(INVOICE_BUCKET).remove(removing);
+
+  revalidateFinances();
+  return { success: true, message: "Expense added." };
+}
+
+export async function dismissInboxInvoice(inboxId: string): Promise<ActionResult> {
+  const { supabase } = await requireAdmin();
+
+  const { data: item } = await supabase
+    .from("expense_inbox")
+    .select("attachment_paths, status")
+    .eq("id", inboxId)
+    .single();
+  if (!item || item.status !== "pending") {
+    return { success: false, message: "This invoice was already handled." };
+  }
+
+  const { error } = await supabase
+    .from("expense_inbox")
+    .update({ status: "dismissed", attachment_paths: [] })
+    .eq("id", inboxId);
+  if (error) return { success: false, message: error.message };
+
+  if (item.attachment_paths.length) {
+    await supabase.storage.from(INVOICE_BUCKET).remove(item.attachment_paths);
+  }
+  revalidateFinances();
+  return { success: true, message: "Invoice dismissed." };
+}
+
 export async function createPayout(data: {
   paid_on: string;
   amount: number;

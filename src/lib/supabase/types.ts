@@ -272,6 +272,7 @@ export type Database = {
           invoice_paths: string[]
           notes: string | null
           paid_on: string | null
+          shared: boolean
         }
         Insert: {
           amount: number
@@ -284,6 +285,7 @@ export type Database = {
           invoice_paths?: string[]
           notes?: string | null
           paid_on?: string | null
+          shared?: boolean
         }
         Update: {
           amount?: number
@@ -296,6 +298,7 @@ export type Database = {
           invoice_paths?: string[]
           notes?: string | null
           paid_on?: string | null
+          shared?: boolean
         }
         Relationships: []
       }
@@ -316,6 +319,7 @@ export type Database = {
           status: string
           subject: string
           suggested_category: string | null
+          suggested_shared: boolean
           vendor: string | null
         }
         Insert: {
@@ -334,6 +338,7 @@ export type Database = {
           status?: string
           subject?: string
           suggested_category?: string | null
+          suggested_shared?: boolean
           vendor?: string | null
         }
         Update: {
@@ -352,6 +357,7 @@ export type Database = {
           status?: string
           subject?: string
           suggested_category?: string | null
+          suggested_shared?: boolean
           vendor?: string | null
         }
         Relationships: [

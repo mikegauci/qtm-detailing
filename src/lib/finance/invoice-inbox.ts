@@ -51,7 +51,7 @@ type Extraction = {
   total_amount: number | null;
   currency: string | null;
   category: (typeof EXPENSE_CATEGORIES)[number];
-  max_only_equipment: boolean;
+  line_items: { description: string; amount: number; max_only_equipment: boolean }[];
   description: string;
   notes: string | null;
 };
@@ -132,7 +132,7 @@ const EXTRACTION_SCHEMA = {
     "total_amount",
     "currency",
     "category",
-    "max_only_equipment",
+    "line_items",
     "description",
     "notes",
   ],
@@ -156,10 +156,24 @@ const EXTRACTION_SCHEMA = {
       description:
         "utilities = water and electricity bills (e.g. ARMS, Enemalta, WSC). products = detailing products, chemicals, tools, equipment, supplies. other = anything else.",
     },
-    max_only_equipment: {
-      type: "boolean",
+    line_items: {
+      type: "array",
       description:
-        "True when the invoice is for durable equipment or machinery the owner buys for himself (e.g. polishers, pressure washers, vacuums, steamers, extractors, generators, compressors, lights). False for consumables and supplies (chemicals, shampoos, coatings, pads, microfibres, air fresheners, towels), utilities and services.",
+        "Every product or service line on the invoice. Each amount must include that line's share of VAT, discounts and delivery so the lines add up to total_amount. Use a single line for bills without itemised products (e.g. utilities).",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["description", "amount", "max_only_equipment"],
+        properties: {
+          description: { type: "string", description: "Short item name with quantity, e.g. 'Rupes LHR15 polisher x1'." },
+          amount: { type: "number" },
+          max_only_equipment: {
+            type: "boolean",
+            description:
+              "True for durable equipment or machinery the owner buys for himself (polishers, pressure washers, vacuums, steamers, extractors, generators, compressors, lights). False for consumables and supplies (chemicals, shampoos, coatings, pads, microfibres, air fresheners, towels), delivery, utilities and services.",
+          },
+        },
+      },
     },
     description: {
       type: "string",
@@ -220,6 +234,35 @@ async function extractInvoice(
   });
 
   return JSON.parse(response.output_text) as Extraction;
+}
+
+/**
+ * Turns the AI's lines into expense items that add up exactly to the invoice total:
+ * small gaps (VAT or rounding the AI missed) are spread proportionally, and the last
+ * line absorbs the final cent.
+ */
+function fitLinesToTotal(lines: Extraction["line_items"], total: number | null) {
+  const clean = lines
+    .filter((l) => Number.isFinite(l.amount) && l.amount >= 0 && l.description.trim())
+    .slice(0, 50)
+    .map((l) => ({
+      description: l.description.trim().slice(0, 200),
+      amount: Math.round(l.amount * 100) / 100,
+      shared: !l.max_only_equipment,
+    }));
+  const sum = clean.reduce((s, l) => s + l.amount, 0);
+  if (!clean.length || total == null || sum <= 0 || Math.abs(sum - total) < 0.005) return clean;
+
+  const factor = total / sum;
+  let running = 0;
+  return clean.map((l, i) => {
+    const amount =
+      i === clean.length - 1
+        ? Math.round((total - running) * 100) / 100
+        : Math.round(l.amount * factor * 100) / 100;
+    running += amount;
+    return { ...l, amount };
+  });
 }
 
 function validDate(value: string | null) {
@@ -284,6 +327,11 @@ export async function processInboundEmail(emailId: string): Promise<InboundResul
     paths.push(path);
   }
 
+  const total =
+    extraction.total_amount != null && Number.isFinite(extraction.total_amount)
+      ? Math.round(extraction.total_amount * 100) / 100
+      : null;
+  const items = fitLinesToTotal(extraction.line_items, total);
   const currency = extraction.currency?.toUpperCase();
   const notes = [
     extraction.notes,
@@ -302,12 +350,11 @@ export async function processInboundEmail(emailId: string): Promise<InboundResul
     vendor: extraction.vendor,
     invoice_number: extraction.invoice_number,
     invoice_date: validDate(extraction.invoice_date),
-    amount:
-      extraction.total_amount != null && Number.isFinite(extraction.total_amount)
-        ? Math.round(extraction.total_amount * 100) / 100
-        : null,
+    amount: total ?? (items.length ? items.reduce((sum, i) => sum + i.amount, 0) : null),
     suggested_category: extraction.category,
-    suggested_shared: !extraction.max_only_equipment,
+    // One line: no breakdown needed, the expense-level flag carries the split.
+    suggested_shared: items.length === 1 ? items[0].shared : true,
+    items: items.length > 1 ? items : [],
     description: extraction.description,
     ai_notes: notes || null,
   });

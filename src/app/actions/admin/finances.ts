@@ -9,6 +9,8 @@ import {
   isPaidByOwner,
   isSplitExpense,
   settlementAmount,
+  splitAmount,
+  type ExpenseItem,
   type ExpenseCategory,
 } from "@/lib/admin/partner-split";
 
@@ -32,9 +34,34 @@ type ExpenseInput = {
   paid?: boolean;
   /** false = Max paid for it alone (e.g. equipment); kept out of the split. */
   shared?: boolean;
+  /** Optional invoice lines; when given, `amount` is their total. */
+  items?: ExpenseItem[];
 };
 
+const MAX_ITEMS = 50;
+
+/** Cleans the lines and, when there are any, makes `amount` their total. */
+function normalizeItems(data: ExpenseInput): string | null {
+  const items = data.items ?? [];
+  if (items.length > MAX_ITEMS) return `Up to ${MAX_ITEMS} lines per expense.`;
+  for (const item of items) {
+    if (!Number.isFinite(item.amount) || item.amount < 0) return "Every line needs a valid amount.";
+    if (!item.description.trim()) return "Every line needs a description.";
+  }
+  data.items = items.map((i) => ({
+    description: i.description.trim().slice(0, 200),
+    amount: Math.round(i.amount * 100) / 100,
+    shared: i.shared !== false,
+  }));
+  if (data.items.length) {
+    data.amount = Math.round(data.items.reduce((sum, i) => sum + i.amount, 0) * 100) / 100;
+  }
+  return null;
+}
+
 function validateExpense(data: ExpenseInput): string | null {
+  const itemsError = normalizeItems(data);
+  if (itemsError) return itemsError;
   if (!DATE_RE.test(data.expense_date)) return "Invalid date.";
   if (!EXPENSE_CATEGORIES.includes(data.category as ExpenseCategory)) {
     return "Invalid category.";
@@ -85,6 +112,7 @@ export async function createExpense(data: ExpenseInput): Promise<ActionResult> {
     invoice_paths: data.invoice_paths ?? [],
     paid_on: data.paid === false ? null : data.expense_date,
     shared: data.shared !== false,
+    items: data.items ?? [],
   });
 
   if (error) return { success: false, message: error.message };
@@ -131,6 +159,7 @@ export async function updateExpense(
           ? null
           : (existing.paid_on ?? (data.paid ? data.expense_date : null)),
       shared: data.shared !== false,
+      items: data.items ?? [],
     })
     .eq("id", id);
 
@@ -219,6 +248,7 @@ export async function acceptInboxInvoice(
       invoice_paths: invoicePaths,
       paid_on: expense.paid === false ? null : expense.expense_date,
       shared: expense.shared !== false,
+      items: expense.items ?? [],
     })
     .select("id")
     .single();
@@ -292,7 +322,7 @@ export async function recordExpenseSettlement(
 
   const { data: expense } = await supabase
     .from("finance_expenses")
-    .select("category, description, amount, expense_date, shared")
+    .select("category, description, amount, expense_date, shared, items")
     .eq("id", expenseId)
     .single();
 
@@ -302,7 +332,7 @@ export async function recordExpenseSettlement(
     return { success: false, message: "This expense is not split, so there is nothing to settle." };
   }
   const byOwner = isPaidByOwner(expense.category);
-  const amount = settlementAmount(expense.category, expense.expense_date, expense.amount);
+  const amount = settlementAmount(expense.category, expense.expense_date, splitAmount(expense));
   if (amount <= 0) return { success: false, message: "Nothing to settle on this expense." };
 
   const payer = byOwner ? PARTNER_NAMES.incubator : PARTNER_NAMES.owner;

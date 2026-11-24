@@ -39,16 +39,50 @@ export type ExpenseRow = {
   paid_on?: string | null;
   /** false = paid by the owner alone (e.g. equipment): recorded but not split. */
   shared?: boolean | null;
+  /** Optional invoice lines; when present they decide what is split. */
+  items?: unknown;
 };
+
+export type ExpenseItem = { description: string; amount: number; shared: boolean };
+
+/** Reads the `items` JSON column defensively (bad rows are ignored). */
+export function parseExpenseItems(value: unknown): ExpenseItem[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((i): i is Record<string, unknown> => Boolean(i) && typeof i === "object")
+    .map((i) => ({
+      description: String(i.description ?? ""),
+      amount: Number(i.amount),
+      shared: i.shared !== false,
+    }))
+    .filter((i) => Number.isFinite(i.amount));
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+/** The part of an expense the owner pays alone. Utilities are always fully split. */
+export function ownerOnlyAmount(e: Pick<ExpenseRow, "category" | "shared" | "items" | "amount">) {
+  if (UTILITY_CATEGORIES.includes(e.category as ExpenseCategory)) return 0;
+  const items = parseExpenseItems(e.items);
+  if (items.length) {
+    return round2(items.filter((i) => !i.shared).reduce((sum, i) => sum + i.amount, 0));
+  }
+  return e.shared === false ? Number(e.amount) : 0;
+}
+
+/** The part of an expense that goes into the partner split. */
+export function splitAmount(e: Pick<ExpenseRow, "category" | "shared" | "items" | "amount">) {
+  return round2(Math.max(0, Number(e.amount) - ownerOnlyAmount(e)));
+}
 export type PayoutRow = { paid_on: string; amount: number; direction?: string | null };
 
 export function isPaidByOwner(category: string) {
   return !UTILITY_CATEGORIES.includes(category as ExpenseCategory);
 }
 
-/** Owner-only purchases are kept out of the split; utilities always split 50/50. */
-export function isSplitExpense(e: Pick<ExpenseRow, "category" | "shared">) {
-  return UTILITY_CATEGORIES.includes(e.category as ExpenseCategory) || e.shared !== false;
+/** True when any part of the expense is split; utilities always split 50/50. */
+export function isSplitExpense(e: Pick<ExpenseRow, "category" | "shared" | "items" | "amount">) {
+  return splitAmount(e) > 0;
 }
 
 export function settlementAmount(category: string, expenseDate: string, amount: number) {
@@ -93,10 +127,9 @@ export function summarize(
   let utilities = 0;
   let ownerOnlyExpenses = 0;
   for (const e of expenses) {
-    const amount = Number(e.amount);
-    if (!isSplitExpense(e)) {
-      ownerOnlyExpenses += amount;
-    } else if (UTILITY_CATEGORIES.includes(e.category as ExpenseCategory)) {
+    ownerOnlyExpenses += ownerOnlyAmount(e);
+    const amount = splitAmount(e);
+    if (UTILITY_CATEGORIES.includes(e.category as ExpenseCategory)) {
       utilities += amount;
     } else {
       sharedExpenses += amount;

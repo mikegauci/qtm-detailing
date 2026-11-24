@@ -5,6 +5,7 @@ import { format, parseISO } from "date-fns";
 import {
   Check,
   ExternalLink,
+  Eye,
   FileText,
   HandCoins,
   Inbox,
@@ -263,20 +264,46 @@ function ExpenseFields({
         />
         {existing.length > 0 && (
           <div className="space-y-1.5">
-            <p className="text-xs text-white/60">Current attachments: tick to remove</p>
+            <p className="text-xs text-white/60">Current attachments</p>
             <div className="flex flex-wrap gap-2">
-              {existing.map((path, i) => (
-                <label
-                  key={path}
-                  className="flex cursor-pointer items-center gap-1.5 rounded-md border border-white/10 p-1 pr-2 text-xs text-white/70 has-checked:border-red-400/60 has-checked:opacity-60"
-                >
-                  <span className="block h-8 w-8 overflow-hidden rounded bg-white/5">
-                    <AttachmentTile path={path} url={invoiceUrls[path]} />
-                  </span>
-                  <input type="checkbox" name="remove_invoice" value={path} />#{i + 1}
-                </label>
-              ))}
+              {existing.map((path, i) => {
+                const url = invoiceUrls[path];
+                return (
+                  <div
+                    key={path}
+                    className="group flex items-center gap-1 rounded-md border border-white/10 p-1 text-xs text-white/70 has-checked:border-red-400/60"
+                  >
+                    <span className="block h-8 w-8 overflow-hidden rounded bg-white/5 group-has-checked:opacity-40">
+                      <AttachmentTile path={path} url={url} />
+                    </span>
+                    <span className="px-1 group-has-checked:line-through group-has-checked:opacity-60">
+                      #{i + 1}
+                    </span>
+                    {url && (
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        title={`View attachment ${i + 1}`}
+                        className="rounded p-1.5 text-white/60 transition hover:bg-white/10 hover:text-white"
+                      >
+                        <Eye className="h-4 w-4" />
+                        <span className="sr-only">View attachment {i + 1}</span>
+                      </a>
+                    )}
+                    <label
+                      title={`Remove attachment ${i + 1} when saving`}
+                      className="cursor-pointer rounded p-1.5 text-white/60 transition hover:bg-white/10 hover:text-red-400 has-checked:bg-red-500/20 has-checked:text-red-400"
+                    >
+                      <input type="checkbox" name="remove_invoice" value={path} className="sr-only" />
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Remove attachment {i + 1}</span>
+                    </label>
+                  </div>
+                );
+              })}
             </div>
+            <p className="text-xs text-white/40">Attachments marked for removal are deleted when you save.</p>
           </div>
         )}
       </div>

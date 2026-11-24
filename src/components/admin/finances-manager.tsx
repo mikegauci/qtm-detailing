@@ -547,7 +547,7 @@ export function FinancesManager({
               </h3>
             </div>
             <p className="text-xs text-white/60">
-              Sent to finance@ and read automatically. Check the details, then add each one as an
+              Check the details, then add each one as an
               expense or dismiss it. They are not counted in the split until added.
             </p>
             <ul className="space-y-2">

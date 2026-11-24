@@ -51,6 +51,7 @@ type Extraction = {
   total_amount: number | null;
   currency: string | null;
   category: (typeof EXPENSE_CATEGORIES)[number];
+  max_only_equipment: boolean;
   description: string;
   notes: string | null;
 };
@@ -131,6 +132,7 @@ const EXTRACTION_SCHEMA = {
     "total_amount",
     "currency",
     "category",
+    "max_only_equipment",
     "description",
     "notes",
   ],
@@ -153,6 +155,11 @@ const EXTRACTION_SCHEMA = {
       enum: [...EXPENSE_CATEGORIES],
       description:
         "utilities = water and electricity bills (e.g. ARMS, Enemalta, WSC). products = detailing products, chemicals, tools, equipment, supplies. other = anything else.",
+    },
+    max_only_equipment: {
+      type: "boolean",
+      description:
+        "True when the invoice is for durable equipment or machinery the owner buys for himself (e.g. polishers, pressure washers, vacuums, steamers, extractors, generators, compressors, lights). False for consumables and supplies (chemicals, shampoos, coatings, pads, microfibres, air fresheners, towels), utilities and services.",
     },
     description: {
       type: "string",
@@ -300,6 +307,7 @@ export async function processInboundEmail(emailId: string): Promise<InboundResul
         ? Math.round(extraction.total_amount * 100) / 100
         : null,
     suggested_category: extraction.category,
+    suggested_shared: !extraction.max_only_equipment,
     description: extraction.description,
     ai_notes: notes || null,
   });

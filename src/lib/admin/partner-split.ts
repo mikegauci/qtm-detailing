@@ -37,11 +37,18 @@ export type ExpenseRow = {
   category: string;
   amount: number;
   paid_on?: string | null;
+  /** false = paid by the owner alone (e.g. equipment): recorded but not split. */
+  shared?: boolean | null;
 };
 export type PayoutRow = { paid_on: string; amount: number; direction?: string | null };
 
 export function isPaidByOwner(category: string) {
   return !UTILITY_CATEGORIES.includes(category as ExpenseCategory);
+}
+
+/** Owner-only purchases are kept out of the split; utilities always split 50/50. */
+export function isSplitExpense(e: Pick<ExpenseRow, "category" | "shared">) {
+  return UTILITY_CATEGORIES.includes(e.category as ExpenseCategory) || e.shared !== false;
 }
 
 export function settlementAmount(category: string, expenseDate: string, amount: number) {
@@ -54,6 +61,7 @@ export function settlementAmount(category: string, expenseDate: string, amount: 
 export type PartnerSummary = {
   revenue: number;
   sharedExpenses: number;
+  ownerOnlyExpenses: number;
   utilities: number;
   profit: number;
   incubatorProfit: number;
@@ -83,9 +91,12 @@ export function summarize(
   let sharedExpenses = 0;
   let incubatorExpenses = 0;
   let utilities = 0;
+  let ownerOnlyExpenses = 0;
   for (const e of expenses) {
     const amount = Number(e.amount);
-    if (UTILITY_CATEGORIES.includes(e.category as ExpenseCategory)) {
+    if (!isSplitExpense(e)) {
+      ownerOnlyExpenses += amount;
+    } else if (UTILITY_CATEGORIES.includes(e.category as ExpenseCategory)) {
       utilities += amount;
     } else {
       sharedExpenses += amount;
@@ -109,6 +120,7 @@ export function summarize(
   return {
     revenue: totalRevenue,
     sharedExpenses,
+    ownerOnlyExpenses,
     utilities,
     profit,
     incubatorProfit,

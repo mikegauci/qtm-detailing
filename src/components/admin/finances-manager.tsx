@@ -42,6 +42,7 @@ import {
   UTILITY_CATEGORIES,
   euro,
   isPaidByOwner,
+  isSplitExpense,
   settlementAmount,
   type ExpenseCategory,
 } from "@/lib/admin/partner-split";
@@ -88,6 +89,7 @@ function inboxDraft(item: InboxItem): Expense {
     invoice_path: null,
     invoice_paths: item.attachment_paths,
     paid_on: null,
+    shared: item.suggested_shared,
   };
 }
 
@@ -309,6 +311,21 @@ function ExpenseFields({
           </div>
         )}
       </div>
+      <label className="flex items-start gap-2 text-sm text-white/80">
+        <input
+          type="checkbox"
+          name="shared"
+          className="mt-0.5"
+          defaultChecked={expense ? expense.shared !== false : true}
+        />
+        <span>
+          Split with {PARTNER_NAMES.incubator}
+          <span className="block text-xs text-white/50">
+            Untick for things only {PARTNER_NAMES.owner} pays for, like equipment. It stays in the
+            books but is not taken off the profit split. Water &amp; electricity are always split.
+          </span>
+        </span>
+      </label>
       <label className="flex items-center gap-2 text-sm text-white/80">
         <input
           type="checkbox"
@@ -333,6 +350,7 @@ function readExpenseForm(formData: FormData) {
     amount: Number(formData.get("amount")),
     notes: (formData.get("notes") as string) || null,
     paid: formData.get("paid") === "on",
+    shared: formData.get("shared") === "on",
   };
 }
 
@@ -647,6 +665,11 @@ export function FinancesManager({
                   >
                     {EXPENSE_CATEGORY_LABELS[e.category as ExpenseCategory] ?? e.category}
                   </Badge>
+                  {!isSplitExpense(e) && (
+                    <Badge variant="outline" className="mt-1 block w-fit">
+                      Not split
+                    </Badge>
+                  )}
                 </AdminTableCell>
                 <AdminTableCell className="text-white/70">{paidBy(e.category)}</AdminTableCell>
                 <AdminTableCell className="tabular-nums text-white">
@@ -685,7 +708,7 @@ export function FinancesManager({
                             <Undo2 className="h-4 w-4 text-white/50" />
                           </Button>
                         </div>
-                      ) : (
+                      ) : isSplitExpense(e) ? (
                         <Button
                           size="sm"
                           variant="outline"
@@ -701,7 +724,7 @@ export function FinancesManager({
                             settlementAmount(e.category, e.expense_date, e.amount),
                           )}
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   ) : (
                     <Button

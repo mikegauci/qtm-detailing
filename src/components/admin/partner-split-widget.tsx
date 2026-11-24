@@ -199,6 +199,15 @@ export function PartnerSplitWidget({
           <Line label="Profit to split" value={scoped.profit} sign="=" strong />
           <Line label={`${owner}'s share`} value={scoped.ownerProfit} muted />
           <Line label={`${incubator}'s share`} value={scoped.incubatorProfit} muted />
+          {scoped.ownerOnlyExpenses > 0 && (
+            <div className="mt-2 border-t border-white/10 pt-1">
+              <Line
+                label={`${owner}-only purchases (not split)`}
+                value={scoped.ownerOnlyExpenses}
+                muted
+              />
+            </div>
+          )}
         </CardContent>
       </Card>
     </section>

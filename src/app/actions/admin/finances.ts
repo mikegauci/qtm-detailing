@@ -7,6 +7,7 @@ import {
   EXPENSE_CATEGORIES,
   PARTNER_NAMES,
   isPaidByOwner,
+  isSplitExpense,
   settlementAmount,
   type ExpenseCategory,
 } from "@/lib/admin/partner-split";
@@ -29,6 +30,8 @@ type ExpenseInput = {
   notes?: string | null;
   invoice_paths?: string[];
   paid?: boolean;
+  /** false = Max paid for it alone (e.g. equipment); kept out of the split. */
+  shared?: boolean;
 };
 
 function validateExpense(data: ExpenseInput): string | null {
@@ -81,6 +84,7 @@ export async function createExpense(data: ExpenseInput): Promise<ActionResult> {
     notes: data.notes?.trim() || null,
     invoice_paths: data.invoice_paths ?? [],
     paid_on: data.paid === false ? null : data.expense_date,
+    shared: data.shared !== false,
   });
 
   if (error) return { success: false, message: error.message };
@@ -126,6 +130,7 @@ export async function updateExpense(
         data.paid === false
           ? null
           : (existing.paid_on ?? (data.paid ? data.expense_date : null)),
+      shared: data.shared !== false,
     })
     .eq("id", id);
 
@@ -213,6 +218,7 @@ export async function acceptInboxInvoice(
       notes: expense.notes?.trim() || null,
       invoice_paths: invoicePaths,
       paid_on: expense.paid === false ? null : expense.expense_date,
+      shared: expense.shared !== false,
     })
     .select("id")
     .single();
@@ -286,12 +292,15 @@ export async function recordExpenseSettlement(
 
   const { data: expense } = await supabase
     .from("finance_expenses")
-    .select("category, description, amount, expense_date")
+    .select("category, description, amount, expense_date, shared")
     .eq("id", expenseId)
     .single();
 
   if (!expense) return { success: false, message: "Expense not found." };
 
+  if (!isSplitExpense(expense)) {
+    return { success: false, message: "This expense is not split, so there is nothing to settle." };
+  }
   const byOwner = isPaidByOwner(expense.category);
   const amount = settlementAmount(expense.category, expense.expense_date, expense.amount);
   if (amount <= 0) return { success: false, message: "Nothing to settle on this expense." };

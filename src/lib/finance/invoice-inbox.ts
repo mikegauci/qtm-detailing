@@ -170,7 +170,7 @@ const EXTRACTION_SCHEMA = {
           max_only_equipment: {
             type: "boolean",
             description:
-              "True for durable equipment or machinery the owner buys for himself (polishers, pressure washers, vacuums, steamers, extractors, generators, compressors, lights). False for consumables and supplies (chemicals, shampoos, coatings, pads, microfibres, air fresheners, towels), delivery, utilities and services.",
+              "True only for machines and power tools the owner buys for himself: polishers, pressure washers, vacuums, steamers, extractors, generators, compressors, work lights, and similar powered equipment. False for everything else, including chemicals, shampoos, coatings, pads, microfibres, towels, air fresheners, tape, and hand-held accessories such as spray bottles, foamers, sprayers, brushes, buckets and applicators, plus delivery, utilities and services. When unsure, use false.",
           },
         },
       },
@@ -272,6 +272,42 @@ function validDate(value: string | null) {
 }
 
 /** Fetches a received email from Resend, decides if it is an invoice, and queues it for review. */
+const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
+  pdf: "application/pdf",
+  jpg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+};
+
+/**
+ * Reads invoice lines from attachments already in storage. Lines are fitted to
+ * `fitTo` (the amount the admin entered) when given, else to the invoice total.
+ */
+export async function readLinesFromStoredInvoices(paths: string[], fitTo: number | null) {
+  const supabase = createServiceClient();
+  const files = [];
+  for (const path of paths) {
+    const ext = path.split(".").pop()?.toLowerCase() ?? "";
+    if (!AI_READABLE.has(ext)) continue;
+    const { data, error } = await supabase.storage.from(INVOICE_BUCKET).download(path);
+    if (error || !data) continue;
+    files.push({
+      filename: path.split("/").pop() ?? path,
+      ext,
+      contentType: CONTENT_TYPE_BY_EXTENSION[ext],
+      data: Buffer.from(await data.arrayBuffer()),
+    });
+  }
+  if (!files.length) return { items: [], total: null };
+
+  const extraction = await extractInvoice({ from: "", subject: "", body: "" }, files);
+  const total =
+    extraction.total_amount != null && Number.isFinite(extraction.total_amount)
+      ? Math.round(extraction.total_amount * 100) / 100
+      : null;
+  return { items: fitLinesToTotal(extraction.line_items, fitTo ?? total), total };
+}
+
 export async function processInboundEmail(emailId: string): Promise<InboundResult> {
   const supabase = createServiceClient();
 

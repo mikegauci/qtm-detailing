@@ -909,7 +909,7 @@ export function FinancesManager({
                           {isPaidByOwner(e.category)
                             ? PARTNER_NAMES.incubator
                             : PARTNER_NAMES.owner}{" "}
-                          paid{" "}
+                          needs to pay{" "}
                           {euro.format(
                             settlementAmount(e.category, e.expense_date, splitAmount(e)),
                           )}

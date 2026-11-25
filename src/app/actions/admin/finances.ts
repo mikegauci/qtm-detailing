@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import type { ActionResult } from "@/types/action-result";
 import { requireAdmin } from "@/lib/supabase/admin";
+import { readLinesFromStoredInvoices } from "@/lib/finance/invoice-inbox";
 import {
   EXPENSE_CATEGORIES,
   PARTNER_NAMES,
@@ -262,6 +263,27 @@ export async function acceptInboxInvoice(
 
   revalidateFinances();
   return { success: true, message: "Expense added." };
+}
+
+/** Has the AI read the lines of attached invoices so an expense can be split per item. */
+export async function readInvoiceLines(
+  paths: string[],
+  fitTo: number | null,
+): Promise<ActionResult<{ items?: ExpenseItem[]; total?: number | null }>> {
+  await requireAdmin();
+  const safe = paths.filter((p) => p.startsWith("invoices/") && !p.includes("..")).slice(0, MAX_ATTACHMENTS);
+  if (!safe.length) return { success: false, message: "No PDF or photo attached to read." };
+  try {
+    const { items, total } = await readLinesFromStoredInvoices(
+      safe,
+      fitTo != null && Number.isFinite(fitTo) && fitTo > 0 ? fitTo : null,
+    );
+    if (!items.length) return { success: false, message: "Couldn't find lines on the attachment." };
+    return { success: true, message: `Read ${items.length} lines from the invoice.`, items, total };
+  } catch (error) {
+    console.error("[readInvoiceLines]", error);
+    return { success: false, message: "Couldn't read the invoice. Add the lines by hand." };
+  }
 }
 
 export async function dismissInboxInvoice(inboxId: string): Promise<ActionResult> {

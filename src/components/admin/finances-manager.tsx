@@ -24,6 +24,7 @@ import {
   deleteExpense,
   deletePayout,
   dismissInboxInvoice,
+  readInvoiceLines,
   recordExpenseSettlement,
   setExpensePaid,
   updateExpense,
@@ -308,6 +309,7 @@ function ExpenseFields({
   const existing = expense?.invoice_paths ?? [];
   const [items, setItems] = useState<ExpenseItem[]>(() => parseExpenseItems(expense?.items));
   const [singleAmount, setSingleAmount] = useState<number | undefined>(expense?.amount);
+  const [readingLines, setReadingLines] = useState(false);
   const amountRef = useRef<HTMLInputElement>(null);
   const sharedRef = useRef<HTMLInputElement>(null);
   const itemized = items.length > 0;
@@ -315,10 +317,37 @@ function ExpenseFields({
 
   function breakIntoLines() {
     const amount = amountRef.current?.value ? Number(amountRef.current.value) : NaN;
-    setItems([
-      { description: "", amount, shared: sharedRef.current?.checked ?? true },
-      { description: "", amount: NaN, shared: true },
-    ]);
+    const manual = () =>
+      setItems([
+        { description: "", amount, shared: sharedRef.current?.checked ?? true },
+        { description: "", amount: NaN, shared: true },
+      ]);
+    if (!existing.length) return manual();
+
+    setReadingLines(true);
+    readInvoiceLines(existing, Number.isFinite(amount) ? amount : null)
+      .then((result) => {
+        if (result.success && result.items?.length) {
+          setItems(result.items);
+          if (
+            Number.isFinite(amount) &&
+            result.total != null &&
+            Math.abs(result.total - amount) >= 0.01
+          ) {
+            toast.warning(
+              `The invoice total is ${euro.format(result.total)}, but the amount entered was ${euro.format(amount)}. Lines were adjusted to the amount entered, so check them.`,
+            );
+          } else toast.success(`${result.message} Check them before saving.`);
+        } else {
+          toast.error(result.message);
+          manual();
+        }
+      })
+      .catch(() => {
+        toast.error("Couldn't read the invoice. Add the lines by hand.");
+        manual();
+      })
+      .finally(() => setReadingLines(false));
   }
 
   function useSingleAmount() {
@@ -469,9 +498,14 @@ function ExpenseFields({
           <button
             type="button"
             onClick={breakIntoLines}
-            className="text-xs text-brand-purple-400 hover:underline"
+            disabled={readingLines}
+            className="text-xs text-brand-purple-400 hover:underline disabled:opacity-60"
           >
-            Mixed invoice? Break it into lines
+            {readingLines
+              ? "Reading the invoice lines…"
+              : existing.length
+                ? "Mixed invoice? Read its lines from the attachment"
+                : "Mixed invoice? Break it into lines"}
           </button>
         </div>
       )}

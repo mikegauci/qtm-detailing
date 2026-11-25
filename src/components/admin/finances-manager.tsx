@@ -358,7 +358,7 @@ function ExpenseFields({
   return (
     <>
       <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor={`${idPrefix}_date`}>Date</Label>
           <Input
             id={`${idPrefix}_date`}
@@ -368,7 +368,7 @@ function ExpenseFields({
             required
           />
         </div>
-        <div className="space-y-2">
+        <div className="min-w-0 space-y-2">
           <Label htmlFor={`${idPrefix}_amount`}>Amount (€)</Label>
           {itemized ? (
             <Input
@@ -490,8 +490,7 @@ function ExpenseFields({
               Split with {PARTNER_NAMES.incubator}
               <span className="block text-xs text-white/50">
                 Untick for things only {PARTNER_NAMES.owner} pays for, like equipment. It stays in
-                the books but is not taken off the profit split. Water &amp; electricity are
-                always split.
+                the books but is not taken off the profit split.
               </span>
             </span>
           </label>
@@ -1043,11 +1042,11 @@ export function FinancesManager({
               </DialogHeader>
               <form action={handleCreatePayout} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="payout_date">Date</Label>
                     <Input id="payout_date" name="paid_on" type="date" defaultValue={today} required />
                   </div>
-                  <div className="space-y-2">
+                  <div className="min-w-0 space-y-2">
                     <Label htmlFor="payout_amount">Amount (€)</Label>
                     <Input id="payout_amount" name="amount" type="number" step="0.01" min="0.01" required />
                   </div>

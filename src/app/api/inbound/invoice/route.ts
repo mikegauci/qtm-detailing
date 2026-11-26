@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { processInboundEmail, verifyWebhookSignature } from "@/lib/finance/invoice-inbox";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /** Resend `email.received` webhook: emails sent to finance@ are copied here by Purelymail. */
 export async function POST(request: Request) {

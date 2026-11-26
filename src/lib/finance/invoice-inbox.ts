@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import OpenAI from "openai";
+import PostalMime from "postal-mime";
 import { EXPENSE_CATEGORIES } from "@/lib/admin/partner-split";
 import { createServiceClient } from "@/lib/supabase/service";
 
@@ -114,11 +115,17 @@ function extensionFor(att: Pick<ResendAttachment, "content_type" | "filename">) 
 }
 
 /** PDFs always count; images only when attached (inline images are usually logos and signatures). */
-function isInvoiceCandidate(att: ResendAttachment) {
-  const ext = extensionFor(att);
-  if (!ext || att.size > MAX_ATTACHMENT_BYTES) return false;
-  if (ext === "pdf") return true;
-  return att.content_disposition !== "inline" && att.size > 15 * 1024;
+function isInvoiceCandidate(att: { ext: string | null; size: number; inline: boolean }) {
+  if (!att.ext || att.size > MAX_ATTACHMENT_BYTES) return false;
+  if (att.ext === "pdf") return true;
+  return !att.inline && att.size > 15 * 1024;
+}
+
+function isForwardedEmail(att: ResendAttachment) {
+  return (
+    att.content_type.toLowerCase() === "message/rfc822" ||
+    att.filename?.toLowerCase().endsWith(".eml") === true
+  );
 }
 
 const EXTRACTION_SCHEMA = {
@@ -271,7 +278,6 @@ function validDate(value: string | null) {
     : null;
 }
 
-/** Fetches a received email from Resend, decides if it is an invoice, and queues it for review. */
 const CONTENT_TYPE_BY_EXTENSION: Record<string, string> = {
   pdf: "application/pdf",
   jpg: "image/jpeg",
@@ -308,46 +314,73 @@ export async function readLinesFromStoredInvoices(paths: string[], fitTo: number
   return { items: fitLinesToTotal(extraction.line_items, fitTo ?? total), total };
 }
 
-export async function processInboundEmail(emailId: string): Promise<InboundResult> {
+
+type InvoiceFile = { filename: string; ext: string; contentType: string; data: Buffer };
+
+/** One invoice email's worth of documents. A forwarded .eml attachment is its own unit. */
+type UnitContent = {
+  from: string;
+  subject: string;
+  body: string;
+  receivedAt: string;
+  files: InvoiceFile[];
+};
+type InboxUnit = {
+  /** Stored as `resend_email_id`; unique per unit so retries skip what is already queued. */
+  key: string;
+  load: () => Promise<UnitContent>;
+};
+
+const UNIT_CONCURRENCY = 4;
+const MAX_FORWARDED_EMAILS = 50;
+
+/** Opens a forwarded .eml and keeps the invoice-looking attachments. */
+async function readForwardedEmail(
+  att: ResendAttachment,
+  fallback: { from: string; receivedAt: string },
+): Promise<UnitContent> {
+  const res = await fetch(att.download_url, { cache: "no-store" });
+  if (!res.ok) throw new Error(`Attachment download failed: ${res.status}`);
+  const parsed = await PostalMime.parse(await res.arrayBuffer());
+
+  const files: InvoiceFile[] = [];
+  for (const part of parsed.attachments) {
+    const data = Buffer.from(part.content as ArrayBuffer);
+    const ext = extensionFor({ content_type: part.mimeType, filename: part.filename });
+    if (!isInvoiceCandidate({ ext, size: data.length, inline: part.disposition === "inline" })) continue;
+    files.push({
+      filename: part.filename ?? `attachment.${ext}`,
+      ext: ext!,
+      contentType: part.mimeType,
+      data,
+    });
+  }
+
+  return {
+    from: parsed.from?.address ?? fallback.from,
+    subject: parsed.subject ?? "",
+    body: parsed.text?.trim() || (parsed.html ? htmlToText(parsed.html) : ""),
+    receivedAt: parsed.date ?? fallback.receivedAt,
+    files,
+  };
+}
+
+async function processUnit(unit: InboxUnit): Promise<InboundResult> {
   const supabase = createServiceClient();
 
-  const { data: existing } = await supabase
-    .from("expense_inbox")
-    .select("id")
-    .eq("resend_email_id", emailId)
-    .maybeSingle();
-  if (existing) return { status: "duplicate" };
+  const content = await unit.load();
+  const { files } = content;
+  if (!files.length) return { status: "ignored", reason: "no PDF or image attachments" };
 
-  const email = await resendGet<ReceivedEmail>(`/emails/receiving/${emailId}`);
-  const { data: attachments } = await resendGet<{ data: ResendAttachment[] }>(
-    `/emails/receiving/${emailId}/attachments?limit=100`,
-  );
-
-  const candidates = attachments.filter(isInvoiceCandidate).slice(0, MAX_ATTACHMENTS);
-  if (!candidates.length) return { status: "ignored", reason: "no PDF or image attachments" };
-
-  const subject = email.subject ?? "";
-  const body = email.text?.trim() || (email.html ? htmlToText(email.html) : "");
-  const haystack = [subject, body, ...candidates.map((a) => a.filename ?? "")].join("\n");
+  const haystack = [content.subject, content.body, ...files.map((f) => f.filename)].join("\n");
   if (!INVOICE_KEYWORDS.test(haystack)) {
     return { status: "ignored", reason: "no invoice keywords" };
   }
 
-  const files = await Promise.all(
-    candidates.map(async (att) => {
-      const res = await fetch(att.download_url, { cache: "no-store" });
-      if (!res.ok) throw new Error(`Attachment download failed: ${res.status}`);
-      const ext = extensionFor(att)!;
-      return {
-        filename: att.filename ?? `attachment.${ext}`,
-        ext,
-        contentType: att.content_type,
-        data: Buffer.from(await res.arrayBuffer()),
-      };
-    }),
+  const extraction = await extractInvoice(
+    { from: content.from, subject: content.subject, body: content.body },
+    files,
   );
-
-  const extraction = await extractInvoice({ from: email.from, subject, body }, files);
   if (!extraction.is_invoice) return { status: "ignored", reason: "AI: not an invoice" };
 
   const paths: string[] = [];
@@ -378,10 +411,10 @@ export async function processInboundEmail(emailId: string): Promise<InboundResul
     .join(" ");
 
   const { error } = await supabase.from("expense_inbox").insert({
-    resend_email_id: emailId,
-    from_email: email.from,
-    subject,
-    received_at: email.created_at,
+    resend_email_id: unit.key,
+    from_email: content.from,
+    subject: content.subject,
+    received_at: content.receivedAt,
     attachment_paths: paths,
     vendor: extraction.vendor,
     invoice_number: extraction.invoice_number,
@@ -402,4 +435,84 @@ export async function processInboundEmail(emailId: string): Promise<InboundResul
     throw new Error(`Inbox insert failed: ${error.message}`);
   }
   return { status: "stored" };
+}
+
+/**
+ * Fetches a received email from Resend and queues every invoice in it for review.
+ * Attachments sitting directly on the email form one invoice; each forwarded .eml
+ * attachment (e.g. a bulk forward) is read as its own invoice.
+ */
+export async function processInboundEmail(emailId: string): Promise<InboundResult> {
+  const supabase = createServiceClient();
+
+  const email = await resendGet<ReceivedEmail>(`/emails/receiving/${emailId}`);
+  const { data: attachments } = await resendGet<{ data: ResendAttachment[] }>(
+    `/emails/receiving/${emailId}/attachments?limit=100`,
+  );
+  const subject = email.subject ?? "";
+  const body = email.text?.trim() || (email.html ? htmlToText(email.html) : "");
+
+  const units: InboxUnit[] = [];
+
+  const direct = attachments
+    .filter((a) => !isForwardedEmail(a))
+    .filter((a) =>
+      isInvoiceCandidate({ ext: extensionFor(a), size: a.size, inline: a.content_disposition === "inline" }),
+    )
+    .slice(0, MAX_ATTACHMENTS);
+  if (direct.length) {
+    units.push({
+      key: emailId,
+      load: async () => ({
+        from: email.from,
+        subject,
+        body,
+        receivedAt: email.created_at,
+        files: await Promise.all(
+          direct.map(async (att) => {
+            const res = await fetch(att.download_url, { cache: "no-store" });
+            if (!res.ok) throw new Error(`Attachment download failed: ${res.status}`);
+            const ext = extensionFor(att)!;
+            return {
+              filename: att.filename ?? `attachment.${ext}`,
+              ext,
+              contentType: att.content_type,
+              data: Buffer.from(await res.arrayBuffer()),
+            };
+          }),
+        ),
+      }),
+    });
+  }
+
+  for (const att of attachments.filter(isForwardedEmail).slice(0, MAX_FORWARDED_EMAILS)) {
+    units.push({
+      key: `${emailId}:${att.id}`,
+      load: () => readForwardedEmail(att, { from: email.from, receivedAt: email.created_at }),
+    });
+  }
+
+  if (!units.length) return { status: "ignored", reason: "no PDF or image attachments" };
+
+  const { data: existing } = await supabase
+    .from("expense_inbox")
+    .select("resend_email_id")
+    .in("resend_email_id", units.map((u) => u.key));
+  const seen = new Set((existing ?? []).map((r) => r.resend_email_id));
+  const pending = units.filter((u) => !seen.has(u.key));
+  if (!pending.length) return { status: "duplicate" };
+
+  const results: InboundResult[] = [];
+  for (let i = 0; i < pending.length; i += UNIT_CONCURRENCY) {
+    const batch = pending.slice(i, i + UNIT_CONCURRENCY);
+    results.push(...(await Promise.all(batch.map(processUnit))));
+  }
+
+  const stored = results.filter((r) => r.status === "stored").length;
+  if (stored) {
+    return units.length > 1
+      ? { status: "stored", reason: `${stored} of ${units.length} invoices queued` }
+      : { status: "stored" };
+  }
+  return results.find((r) => r.status === "ignored") ?? { status: "duplicate" };
 }
